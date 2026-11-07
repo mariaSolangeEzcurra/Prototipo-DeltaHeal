@@ -1,0 +1,79 @@
+# Diseño experimental: 3 configuraciones × 3 APIs × 5 repeticiones = 45 corridas
+# (+ ablaciones opcionales). Ajusta las APIs a las que uses en tu estudio.
+
+repetitions: 5
+random_seed: 2026            # semilla para aleatorizar el orden de las corridas
+# A, B, C + ablaciones (delta_only = delta sin reparación; full_heal = spec completa con
+# reparación) para atribuir el efecto de cada componente: 5 configs × 3 APIs × 5 reps = 75 corridas
+configs: [traditional, llm_full, deltaheal, delta_only, full_heal]
+
+llm:
+  # GRATIS: nivel gratuito de Google AI Studio (sin tarjeta). Clave en .env -> GEMINI_API_KEY
+  provider: gemini             # gemini | groq | ollama (local) | mock | deepseek/openai (pago)
+  model: gemini-2.5-flash      # lista los disponibles: python -m deltaheal models
+  base_url: null               # null = URL por defecto del proveedor
+  rpm: 8                       # llamadas por minuto (bajo el límite gratuito)
+  temperature: 0.2             # >0 para observar la variabilidad entre repeticiones
+  max_tokens: 32000            # presupuesto de salida (incluye el "pensamiento" del modelo)
+  reasoning_effort: low        # limita el pensamiento para que no corte el código (igual para B y C)
+  # Pagas $0, pero se calcula el "costo equivalente" con el precio de lista de la capa de
+  # pago de gemini-2.5-flash (USD por 1M tokens, oct-2026). Confírmalo en ai.google.dev/pricing.
+  price_input_per_mtok: 0.30
+  price_output_per_mtok: 2.50
+
+orchestrator:
+  max_heal_iterations: 3
+  heal_policy: errors
+  repair_mode: patch           # patch: reenvía solo los tests que fallaron | full: archivo completo
+  coverage_scope: delta        # misma base de comparación (ops cambiadas) para las 3 configs
+  traditional_scope: delta
+  schemathesis_examples: 25
+  pytest_timeout: 60
+
+output_dir: benchmark/results
+
+# Cada API define:
+#   spec:      spec OpenAPI vigente (HEAD del escenario). Ruta local o URL ya descargada.
+#   base_url:  URL base de la API corriendo.
+#   scenario:  cómo se construye la versión BASE (el "commit anterior"): se quitan
+#              operaciones y/o propiedades para simular que el commit las agregó.
+#   start / reset / stop: comandos de shell (opcionales). `reset` se ejecuta antes de
+#              cada corrida para partir de un estado limpio de datos.
+#   health:    URL que debe responder < 500 antes de cada corrida.
+apis:
+  - name: petstore3
+    # Swagger Petstore v3 (Apache-2.0). docker run -p 8080:8080 swaggerapi/petstore3:unstable
+    # Incluida desde github.com/swagger-api/swagger-petstore. Para máxima fidelidad, reemplázala por la
+    # que sirve tu contenedor: curl http://localhost:8080/api/v3/openapi.json -o benchmark/specs/petstore3.json
+    spec: benchmark/specs/petstore3.json
+    base_url: http://127.0.0.1:8080/api/v3
+    health: http://127.0.0.1:8080/api/v3/openapi.json
+    start:                                        # borra un contenedor viejo y levanta uno nuevo
+      - docker rm -f petstore3
+      - docker run -d --rm --name petstore3 -p 8080:8080 swaggerapi/petstore3:unstable
+    reset: docker restart petstore3
+    stop: docker stop petstore3
+    scenario:
+      remove_operations: ["PUT /pet", "GET /pet/findByTags", "DELETE /store/order/{orderId}"]
+      remove_properties: {Pet: [tags]}
+
+  - name: api2
+    # Reemplaza por tu segunda API de código abierto (p. ej. una del EvoMaster Benchmark, EMB).
+    spec: benchmark/specs/api2.yaml
+    base_url: http://localhost:8081
+    health: http://localhost:8081/
+    start: null
+    reset: null
+    scenario:
+      remove_operations: []
+      remove_properties: {}
+
+  - name: api3
+    spec: benchmark/specs/api3.yaml
+    base_url: http://localhost:8082
+    health: http://localhost:8082/
+    start: null
+    reset: null
+    scenario:
+      remove_operations: []
+      remove_properties: {}

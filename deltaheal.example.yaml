@@ -1,0 +1,21 @@
+# Copia como deltaheal.yaml y usa: python -m deltaheal run -c deltaheal.yaml
+spec_path: openapi.yaml
+base_ref: origin/main
+base_url: http://localhost:8080
+mode: deltaheal                 # traditional | llm_full | deltaheal | delta_only | full_heal
+
+provider: gemini                # gemini (gratis) | groq (gratis) | ollama (local, gratis) | mock
+model: gemini-2.5-flash         # python -m deltaheal models  -> lista los disponibles
+llm_base_url: null
+llm_rpm: 8                      # respeta el límite por minuto del nivel gratuito
+temperature: 0.0
+max_tokens: 32000
+reasoning_effort: low            # limita el "pensamiento" para que no corte el código
+price_input_per_mtok: 0.30      # precio de LISTA (capa de pago) para el "costo equivalente"
+price_output_per_mtok: 2.50
+
+max_heal_iterations: 3
+heal_policy: errors             # errors: no "cura" fallas de aserción (posibles regresiones)
+coverage_scope: delta
+fail_on: regression
+output_dir: deltaheal-out

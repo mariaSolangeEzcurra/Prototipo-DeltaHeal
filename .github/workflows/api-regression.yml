@@ -1,0 +1,85 @@
+# Testing de regresión de la API en cada Pull Request que modifique el contrato OpenAPI.
+# Ajusta SPEC_PATH y el paso "Levantar API bajo prueba" a tu proyecto.
+name: API regression (DeltaHeal)
+
+on:
+  pull_request:
+    paths:
+      - "examples/demo_api/openapi_v2.yaml"   # ← ruta de tu spec OpenAPI
+      - "examples/demo_api/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  SPEC_PATH: examples/demo_api/openapi_v2.yaml
+  API_BASE_URL: http://localhost:8000
+  DELTAHEAL_PROVIDER: ${{ vars.DELTAHEAL_PROVIDER || 'gemini' }}
+  DELTAHEAL_MODEL: ${{ vars.DELTAHEAL_MODEL || 'gemini-2.5-flash' }}
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # necesario para git diff contra la rama base
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Levantar API bajo prueba
+        # Reemplaza por `docker compose up -d` o el comando de tu servicio.
+        run: |
+          nohup uvicorn examples.demo_api.app:app --port 8000 > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf "$API_BASE_URL/pets" && break; sleep 2; done
+
+      - name: Ejecutar DeltaHeal (análisis delta + self-healing)
+        id: deltaheal
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BASE_REF: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: |
+          set +e
+          python -m deltaheal run \
+            --mode deltaheal \
+            --spec "$SPEC_PATH" \
+            --base-ref "$BASE_REF" \
+            --base-url "$API_BASE_URL" \
+            --output-dir deltaheal-out \
+            --run-id pr \
+            --fail-on regression
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat deltaheal-out/pr/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar reporte en el PR
+        if: github.event_name == 'pull_request' && always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file deltaheal-out/pr/report.md --edit-last || gh pr comment ${{ github.event.pull_request.number }} --body-file deltaheal-out/pr/report.md
+
+      - name: Guardar artefactos (tests generados, JUnit, tráfico HTTP, métricas)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deltaheal-report
+          path: |
+            deltaheal-out/
+            api.log
+
+      - name: Resultado
+        run: |
+          code="${{ steps.deltaheal.outputs.exit_code }}"
+          if [ "$code" = "1" ]; then echo "::error::Posibles regresiones detectadas"; exit 1; fi
+          if [ "$code" = "3" ]; then echo "::error::La API no respondió"; exit 1; fi
+          if [ "$code" = "4" ]; then echo "::error::Se agotó la cuota gratuita del LLM por hoy"; exit 1; fi
+          exit "${code:-0}"

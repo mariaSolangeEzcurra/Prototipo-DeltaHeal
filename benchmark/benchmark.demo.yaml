@@ -1,0 +1,22 @@
+# Prueba de humo del experimento, sin costo: API demo local + LLM simulado.
+#   uvicorn examples.demo_api.app:app --port 8000 &
+#   python benchmark/run_benchmark.py -c benchmark/benchmark.demo.yaml
+repetitions: 2
+random_seed: 1
+configs: [traditional, llm_full, deltaheal, delta_only, full_heal]
+llm:
+  provider: mock
+  model: mock-1
+  mock_inject_error: true
+orchestrator:
+  max_heal_iterations: 3
+  schemathesis_examples: 15
+output_dir: benchmark/results-demo
+apis:
+  - name: demo_petstore
+    spec: examples/demo_api/openapi_v2.yaml
+    base_url: http://127.0.0.1:8000
+    health: http://127.0.0.1:8000/pets
+    scenario:
+      remove_operations: ["PATCH /pets/{petId}"]
+      remove_properties: {PetIn: [age]}

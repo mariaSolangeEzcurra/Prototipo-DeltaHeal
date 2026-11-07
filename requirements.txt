@@ -1,0 +1,15 @@
+# Núcleo del orquestador
+requests>=2.31
+PyYAML>=6.0
+pytest>=8.0
+pytest-timeout>=2.3
+jsonschema>=4.20
+# Configuración A (herramienta tradicional sin IA)
+schemathesis>=4.0
+# Análisis del experimento
+pandas>=2.0
+scipy>=1.11
+matplotlib>=3.8
+# API de demostración
+fastapi>=0.110
+uvicorn>=0.29

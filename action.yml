@@ -1,0 +1,45 @@
+# Acción compuesta reutilizable: permite usar DeltaHeal desde otros repositorios.
+#   - uses: <owner>/deltaheal-api-testing@main
+#     with: { spec: openapi.yaml, base-url: http://localhost:8080 }
+name: DeltaHeal API regression
+description: Testing de regresión de APIs REST con LLMs, análisis delta de OpenAPI y self-healing con Pytest.
+inputs:
+  spec:
+    description: Ruta de la especificación OpenAPI en el repositorio
+    required: true
+  base-url:
+    description: URL base de la API bajo prueba (ya levantada)
+    required: true
+  base-ref:
+    description: Ref git contra la que se calcula el delta
+    default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+  mode:
+    default: deltaheal
+  provider:
+    default: gemini
+  model:
+    default: gemini-2.5-flash
+  llm-base-url:
+    default: ""
+  max-heal-iterations:
+    default: "3"
+  fail-on:
+    default: regression
+outputs:
+  report:
+    description: Ruta del reporte Markdown
+    value: deltaheal-out/action/report.md
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: pip install -r "${{ github.action_path }}/requirements.txt"
+    - shell: bash
+      env:
+        PYTHONPATH: ${{ github.action_path }}
+      run: |
+        python -m deltaheal run --mode "${{ inputs.mode }}" --spec "${{ inputs.spec }}" \
+          --base-ref "${{ inputs.base-ref }}" --base-url "${{ inputs.base-url }}" \
+          --provider "${{ inputs.provider }}" --model "${{ inputs.model }}" ${{ inputs.llm-base-url && format('--llm-base-url {0}', inputs.llm-base-url) || '' }} \
+          --max-heal-iterations "${{ inputs.max-heal-iterations }}" \
+          --fail-on "${{ inputs.fail-on }}" --output-dir deltaheal-out --run-id action

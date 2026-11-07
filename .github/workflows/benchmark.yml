@@ -1,0 +1,61 @@
+# Ejecuta el experimento controlado (3 configuraciones × N APIs × R repeticiones) bajo demanda.
+# Todas las corridas se hacen en el mismo runner para controlar la variabilidad del entorno.
+name: Benchmark experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Archivo de configuración del benchmark"
+        default: benchmark/benchmark.yaml
+      reps:
+        description: "Repeticiones (vacío = usar el archivo)"
+        required: false
+      provider:
+        description: "Proveedor LLM (gemini | groq | mock)"
+        required: false
+      model:
+        description: "Modelo"
+        required: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Correr experimento
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          ARGS="-c ${{ inputs.config }}"
+          [ -n "${{ inputs.reps }}" ] && ARGS="$ARGS --reps ${{ inputs.reps }}"
+          [ -n "${{ inputs.provider }}" ] && ARGS="$ARGS --provider ${{ inputs.provider }}"
+          [ -n "${{ inputs.model }}" ] && ARGS="$ARGS --model ${{ inputs.model }}"
+          # La demo necesita la API local; las APIs reales se levantan con `start` en el YAML.
+          if grep -q demo_petstore "${{ inputs.config }}"; then
+            nohup uvicorn examples.demo_api.app:app --port 8000 > api.log 2>&1 &
+            sleep 5
+          fi
+          python benchmark/run_benchmark.py $ARGS || [ $? -eq 5 ]   # 5 = cuota diaria agotada: se guardan las corridas hechas
+
+      - name: Análisis estadístico
+        run: |
+          OUT=$(python -c "import yaml;print(yaml.safe_load(open('${{ inputs.config }}'))['output_dir'])")
+          python benchmark/analyze.py "$OUT/results.csv"
+          python benchmark/export_evidence.py "$OUT"
+          cat "$OUT/analysis.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: ${{ env.OUT }}

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deltaheal"
+version = "0.1.0"
+description = "Orquestador de testing de regresión de APIs REST con LLMs: análisis delta de OpenAPI + self-healing con Pytest"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.31", "PyYAML>=6.0", "pytest>=8.0", "pytest-timeout>=2.3", "jsonschema>=4.20"]
+
+[project.optional-dependencies]
+baseline = ["schemathesis>=4.0"]
+analysis = ["pandas>=2.0", "scipy>=1.11", "matplotlib>=3.8"]
+demo = ["fastapi>=0.110", "uvicorn>=0.29"]
+
+[project.scripts]
+deltaheal = "deltaheal.cli:main"
+
+[tool.setuptools]
+packages = ["deltaheal"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Demo Pet Store
+  version: 2.0.0
+servers:
+- url: http://localhost:8000
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      summary: Lista mascotas
+      responses:
+        '200':
+          description: Lista de mascotas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '422':
+          description: Parámetro limit inválido
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+    post:
+      operationId: createPet
+      summary: Crea una mascota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetIn'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '422':
+          description: Datos inválidos
+  /pets/{petId}:
+    parameters:
+    - name: petId
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      operationId: getPet
+      summary: Obtiene una mascota
+      responses:
+        '200':
+          description: Mascota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: No existe
+    delete:
+      operationId: deletePet
+      summary: Elimina una mascota
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          description: No existe
+    patch:
+      operationId: patchPet
+      summary: Actualiza parcialmente una mascota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetPatch'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: No existe
+        '422':
+          description: Datos inválidos
+components:
+  schemas:
+    PetIn:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Firulais
+        tag:
+          type: string
+        age:
+          type: integer
+          minimum: 0
+          example: 3
+    Pet:
+      allOf:
+      - $ref: '#/components/schemas/PetIn'
+      - type: object
+        required:
+        - id
+        properties:
+          id:
+            type: integer
+    PetPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        tag:
+          type: string
+        age:
+          type: integer
+          minimum: 0
