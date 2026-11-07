@@ -30,6 +30,11 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
 
+      - name: Carpeta de resultados
+        run: |
+          OUT=$(python -c "import yaml;print(yaml.safe_load(open('${{ inputs.config }}'))['output_dir'])")
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+
       - name: Correr experimento
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -46,16 +51,16 @@ jobs:
           fi
           python benchmark/run_benchmark.py $ARGS || [ $? -eq 5 ]   # 5 = cuota diaria agotada: se guardan las corridas hechas
 
-      - name: Análisis estadístico
+      - name: Análisis estadístico y Excel de evidencias
+        if: always()
         run: |
-          OUT=$(python -c "import yaml;print(yaml.safe_load(open('${{ inputs.config }}'))['output_dir'])")
           python benchmark/analyze.py "$OUT/results.csv"
           python benchmark/export_evidence.py "$OUT"
           cat "$OUT/analysis.md" >> "$GITHUB_STEP_SUMMARY"
-          echo "OUT=$OUT" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: benchmark-results
           path: ${{ env.OUT }}
+          if-no-files-found: warn
