@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="7" time="8.090" timestamp="2026-11-07T12:27:13.659466-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_schemathesis" name="test_api[PUT /pet]" time="2.506"><failure message="ServerError(operation='PUT /pet', title='Server error', message='', case_id=None, severity=&lt;Severity.CRITICAL: 'critical'&gt;) [single exception in FailureGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 43, in test_api
+  |     explore()
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 34, in explore
+  |     @settings(max_examples=25, deadline=None, database=None,
+  |                ^^^
+  | schemathesis.core.failures.FailureGroup: Schemathesis found 1 distinct failure
+  | 
+  | - ST101 Server error
+  | 
+  | [500] Internal Server Error:
+  | 
+  |     `{"code":500,"message":"There was an error processing your request. It has been logged (ID: ec5ab8afa0c6f8c6)"}`
+  | 
+  | Reproduce with:
+  | 
+  |     curl -X PUT -H 'Content-Type: application/json' -d '{"name": "", "photoUrls": []}' http://127.0.0.1:8080/api/v3/pet
+  | 
+  |  (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | schemathesis.core.failures.ServerError: Server error
+    +------------------------------------</failure></testcase><testcase classname="test_schemathesis" name="test_api[POST /pet]" time="0.054"><failure message="ServerError(operation='POST /pet', title='Server error', message='', case_id=None, severity=&lt;Severity.CRITICAL: 'critical'&gt;) [single exception in FailureGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 43, in test_api
+  |     explore()
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 34, in explore
+  |     @settings(max_examples=25, deadline=None, database=None,
+  |                ^^^
+  | schemathesis.core.failures.FailureGroup: Schemathesis found 1 distinct failure
+  | 
+  | - ST101 Server error
+  | 
+  | [500] Internal Server Error:
+  | 
+  |     `{"code":500,"message":"There was an error processing your request. It has been logged (ID: 45c7a57767583d0a)"}`
+  | 
+  | Reproduce with:
+  | 
+  |     curl -X POST -H 'Content-Type: application/json' -d '{"name": "", "photoUrls": []}' http://127.0.0.1:8080/api/v3/pet
+  | 
+  |  (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | schemathesis.core.failures.ServerError: Server error
+    +------------------------------------</failure></testcase><testcase classname="test_schemathesis" name="test_api[GET /pet/findByStatus]" time="1.803" /><testcase classname="test_schemathesis" name="test_api[GET /pet/findByTags]" time="0.026"><failure message="RejectedPositiveData(operation='GET /pet/findByTags', title='Schema-valid request rejected', message='Valid data should have been accepted\nExpected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx', case_id=None, severity=&lt;Severity.MEDIUM: 'medium'&gt;) [single exception in FailureGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 43, in test_api
+  |     explore()
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 34, in explore
+  |     @settings(max_examples=25, deadline=None, database=None,
+  |                ^^^
+  | schemathesis.core.failures.FailureGroup: Schemathesis found 1 distinct failure
+  | 
+  | - ST202 Schema-valid request rejected
+  | 
+  |     Valid data should have been accepted
+  |     Expected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx
+  | 
+  | [400] Bad Request:
+  | 
+  |     `No tags provided. Try again?`
+  | 
+  | Reproduce with:
+  | 
+  |     curl -X GET 'http://127.0.0.1:8080/api/v3/pet/findByTags?tags='
+  | 
+  |  (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | schemathesis.openapi.checks.RejectedPositiveData: Schema-valid request rejected
+    | 
+    | Valid data should have been accepted
+    | Expected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx
+    +------------------------------------</failure></testcase><testcase classname="test_schemathesis" name="test_api[GET /pet/{petId}]" time="0.036"><failure message="IgnoredAuth(operation='GET /pet/{petId}', title='API accepts requests without authentication', message='Expected 401 or 403, got `200 OK` for `GET /pet/{petId}`', case_id='MtkQYx', severity=&lt;Severity.CRITICAL: 'critical'&gt;) [single exception in FailureGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 43, in test_api
+  |     explore()
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 34, in explore
+  |     @settings(max_examples=25, deadline=None, database=None,
+  |                ^^^
+  | schemathesis.core.failures.FailureGroup: Schemathesis found 1 distinct failure
+  | 
+  | - ST401 API accepts requests without authentication
+  | 
+  |     Expected 401 or 403, got `200 OK` for `GET /pet/{petId}`
+  | 
+  | [200] OK:
+  | 
+  |     `{"id":1,"category":{"id":2,"name":"Cats"},"name":"Cat 1","photoUrls":["url1","url2"],"tags":[{"id":1,"name":"tag1"},{"id":2,"name":"tag2"}],"status":"available"}`
+  | 
+  | Reproduce with:
+  | 
+  |     curl -X GET http://127.0.0.1:8080/api/v3/pet/1
+  | 
+  |  (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | schemathesis.core.failures.IgnoredAuth: API accepts requests without authentication
+    | 
+    | Expected 401 or 403, got `200 OK` for `GET /pet/{petId}`
+    +------------------------------------</failure></testcase><testcase classname="test_schemathesis" name="test_api[POST /pet/{petId}]" time="0.043"><failure message="RejectedPositiveData(operation='POST /pet/{petId}', title='Schema-valid request rejected', message='Valid data should have been accepted\nExpected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx', case_id=None, severity=&lt;Severity.MEDIUM: 'medium'&gt;) [single exception in FailureGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 43, in test_api
+  |     explore()
+  |   File "D:\Tareas\deltaheal-api-testing\deltaheal-api-testing\benchmark\results\petstore3\traditional_r1\test_schemathesis.py", line 34, in explore
+  |     @settings(max_examples=25, deadline=None, database=None,
+  |                ^^^
+  | schemathesis.core.failures.FailureGroup: Schemathesis found 1 distinct failure
+  | 
+  | - ST202 Schema-valid request rejected
+  | 
+  |     Valid data should have been accepted
+  |     Expected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx
+  | 
+  | [400] Bad Request:
+  | 
+  |     `No Name provided. Try again?`
+  | 
+  | Reproduce with:
+  | 
+  |     curl -X POST http://127.0.0.1:8080/api/v3/pet/1
+  | 
+  |  (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | schemathesis.openapi.checks.RejectedPositiveData: Schema-valid request rejected
+    | 
+    | Valid data should have been accepted
+    | Expected: 2xx, 3xx, 401, 403, 404, 409, 429, 5xx
+    +------------------------------------</failure></testcase><testcase classname="test_schemathesis" name="test_api[DELETE /store/order/{orderId}]" time="0.881" /></testsuite></testsuites>

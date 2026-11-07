@@ -1,0 +1,606 @@
+import pytest
+import json
+import uuid
+import random
+import string
+from datetime import datetime, timedelta
+import re
+from jsonschema import validate, ValidationError
+
+# --- Helper functions and Schemas for validation ---
+
+PET_SCHEMA = {
+    "type": "object",
+    "required": ["name", "photoUrls"],
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "name": {"type": "string"},
+        "category": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "format": "int64"},
+                "name": {"type": "string"}
+            }
+        },
+        "photoUrls": {"type": "array", "items": {"type": "string"}},
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer", "format": "int64"},
+                    "name": {"type": "string"}
+                }
+            }
+        },
+        "status": {"type": "string", "enum": ["available", "pending", "sold"]}
+    }
+}
+
+API_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "integer", "format": "int32"},
+        "type": {"type": "string"},
+        "message": {"type": "string"}
+    }
+}
+
+ORDER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "petId": {"type": "integer", "format": "int64"},
+        "quantity": {"type": "integer", "format": "int32"},
+        "shipDate": {"type": "string", "format": "date-time"},
+        "status": {"type": "string", "enum": ["placed", "approved", "delivered"]},
+        "complete": {"type": "boolean"}
+    }
+}
+
+USER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "username": {"type": "string"},
+        "firstName": {"type": "string"},
+        "lastName": {"type": "string"},
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "phone": {"type": "string"},
+        "userStatus": {"type": "integer", "format": "int32"}
+    }
+}
+
+def generate_random_string(length=10):
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+def generate_random_id():
+    return random.randint(100000, 999999)
+
+def create_pet_data(pet_id=None, name=None, status="available"):
+    return {
+        "id": pet_id if pet_id is not None else generate_random_id(),
+        "name": name if name is not None else f"doggie-{generate_random_string(5)}",
+        "category": {
+            "id": random.randint(1, 10),
+            "name": f"category-{generate_random_string(5)}"
+        },
+        "photoUrls": [f"http://example.com/photo/{generate_random_string(5)}.jpg"],
+        "tags": [
+            {"id": random.randint(1, 10), "name": f"tag-{generate_random_string(3)}"}
+        ],
+        "status": status
+    }
+
+def create_user_data(user_id=None, username=None):
+    user_id = user_id if user_id is not None else generate_random_id()
+    username = username if username is not None else f"user_{generate_random_string(5)}"
+    return {
+        "id": user_id,
+        "username": username,
+        "firstName": f"John_{generate_random_string(3)}",
+        "lastName": f"Doe_{generate_random_string(3)}",
+        "email": f"{username}@example.com",
+        "password": "password123",
+        "phone": "123-456-7890",
+        "userStatus": 1
+    }
+
+def create_order_data(order_id=None, pet_id=None, status="placed"):
+    return {
+        "id": order_id if order_id is not None else generate_random_id(),
+        "petId": pet_id if pet_id is not None else generate_random_id(),
+        "quantity": random.randint(1, 10),
+        "shipDate": (datetime.utcnow() + timedelta(days=1)).isoformat(timespec='seconds') + 'Z',
+        "status": status,
+        "complete": False
+    }
+
+def validate_schema(data, schema):
+    try:
+        validate(instance=data, schema=schema)
+    except ValidationError as e:
+        pytest.fail(f"Schema validation failed: {e.message} in {e.path}")
+
+# --- Fixtures ---
+
+@pytest.fixture
+def create_and_delete_pet(api):
+    pet_data = create_pet_data()
+    resp = api.post("/pet", json=pet_data)
+    assert resp.status_code == 200
+    created_pet = resp.json()
+    validate_schema(created_pet, PET_SCHEMA)
+    pet_id = created_pet["id"]
+    yield created_pet
+    api.delete(f"/pet/{pet_id}")
+
+@pytest.fixture
+def create_and_delete_user(api):
+    user_data = create_user_data()
+    resp = api.post("/user", json=user_data)
+    assert resp.status_code == 200
+    created_user = resp.json()
+    validate_schema(created_user, USER_SCHEMA)
+    username = created_user["username"]
+    yield created_user
+    api.delete(f"/user/{username}")
+
+@pytest.fixture
+def create_and_delete_order(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    order_data = create_order_data(pet_id=pet["id"])
+    resp = api.post("/store/order", json=order_data)
+    assert resp.status_code == 200
+    created_order = resp.json()
+    validate_schema(created_order, ORDER_SCHEMA)
+    order_id = created_order["id"]
+    yield created_order
+    # Orders are typically not deleted in real systems, but for test isolation, we attempt it.
+    # The API spec for deleteOrder says "For valid response try integer IDs with value < 1000."
+    # Our generated IDs are > 1000, so this might fail with 400/404, which is expected.
+    # We'll just try to delete it without asserting success.
+    api.delete(f"/store/order/{order_id}")
+
+# --- Pet Operations ---
+
+def test_post_pet_success(api):
+    pet_data = create_pet_data()
+    resp = api.post("/pet", json=pet_data)
+    assert resp.status_code == 200
+    validate_schema(resp.json(), PET_SCHEMA)
+    assert resp.json()["name"] == pet_data["name"]
+    api.delete(f"/pet/{resp.json()['id']}") # Cleanup
+
+def test_post_pet_invalid_input_400(api):
+    pet_data = create_pet_data()
+    del pet_data["name"] # Missing required field
+    resp = api.post("/pet", json=pet_data)
+    assert resp.status_code == 400 # Or 422 depending on server implementation
+
+def test_post_pet_validation_exception_422(api):
+    pet_data = create_pet_data()
+    pet_data["status"] = "invalid_status" # Invalid enum value
+    resp = api.post("/pet", json=pet_data)
+    assert resp.status_code == 422
+
+def test_put_pet_success(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    updated_name = f"updated-{generate_random_string(5)}"
+    pet["name"] = updated_name
+    resp = api.put("/pet", json=pet)
+    assert resp.status_code == 200
+    validate_schema(resp.json(), PET_SCHEMA)
+    assert resp.json()["name"] == updated_name
+
+def test_put_pet_invalid_id_400(api):
+    pet_data = create_pet_data(pet_id="invalid_id") # Invalid ID type
+    resp = api.put("/pet", json=pet_data)
+    assert resp.status_code == 400
+
+def test_put_pet_not_found_404(api):
+    non_existent_id = generate_random_id()
+    pet_data = create_pet_data(pet_id=non_existent_id)
+    resp = api.put("/pet", json=pet_data)
+    assert resp.status_code == 404
+
+def test_put_pet_validation_exception_422(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    pet["status"] = "invalid_status" # Invalid enum value
+    resp = api.put("/pet", json=pet)
+    assert resp.status_code == 422
+
+def test_get_pet_findByStatus_success(api):
+    # Create pets with different statuses for testing
+    pet_available_data = create_pet_data(status="available")
+    pet_pending_data = create_pet_data(status="pending")
+    pet_sold_data = create_pet_data(status="sold")
+
+    resp_available = api.post("/pet", json=pet_available_data)
+    resp_pending = api.post("/pet", json=pet_pending_data)
+    resp_sold = api.post("/pet", json=pet_sold_data)
+
+    assert resp_available.status_code == 200
+    assert resp_pending.status_code == 200
+    assert resp_sold.status_code == 200
+
+    pet_available_id = resp_available.json()["id"]
+    pet_pending_id = resp_pending.json()["id"]
+    pet_sold_id = resp_sold.json()["id"]
+
+    # Test 'available'
+    resp = api.get("/pet/findByStatus", params={"status": "available"})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        assert pet["status"] == "available"
+    assert any(p["id"] == pet_available_id for p in resp.json())
+
+    # Test 'pending'
+    resp = api.get("/pet/findByStatus", params={"status": "pending"})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        assert pet["status"] == "pending"
+    assert any(p["id"] == pet_pending_id for p in resp.json())
+
+    # Test 'sold'
+    resp = api.get("/pet/findByStatus", params={"status": "sold"})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        assert pet["status"] == "sold"
+    assert any(p["id"] == pet_sold_id for p in resp.json())
+
+    # Test multiple statuses
+    resp = api.get("/pet/findByStatus", params={"status": "available,sold"})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        assert pet["status"] in ["available", "sold"]
+    assert any(p["id"] == pet_available_id for p in resp.json())
+    assert any(p["id"] == pet_sold_id for p in resp.json())
+
+    # Cleanup
+    api.delete(f"/pet/{pet_available_id}")
+    api.delete(f"/pet/{pet_pending_id}")
+    api.delete(f"/pet/{pet_sold_id}")
+
+def test_get_pet_findByStatus_invalid_status_400(api):
+    resp = api.get("/pet/findByStatus", params={"status": "invalid_status"})
+    assert resp.status_code == 400
+
+def test_get_pet_findByTags_success(api):
+    tag1 = f"tag-{generate_random_string(5)}"
+    tag2 = f"tag-{generate_random_string(5)}"
+    pet_data_1 = create_pet_data()
+    pet_data_1["tags"] = [{"id": 1, "name": tag1}]
+    pet_data_2 = create_pet_data()
+    pet_data_2["tags"] = [{"id": 2, "name": tag2}]
+    pet_data_3 = create_pet_data()
+    pet_data_3["tags"] = [{"id": 3, "name": tag1}, {"id": 4, "name": tag2}]
+
+    resp1 = api.post("/pet", json=pet_data_1)
+    resp2 = api.post("/pet", json=pet_data_2)
+    resp3 = api.post("/pet", json=pet_data_3)
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+    assert resp3.status_code == 200
+
+    pet_id_1 = resp1.json()["id"]
+    pet_id_2 = resp2.json()["id"]
+    pet_id_3 = resp3.json()["id"]
+
+    # Test with single tag
+    resp = api.get("/pet/findByTags", params={"tags": tag1})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        assert any(t["name"] == tag1 for t in pet.get("tags", []))
+    assert any(p["id"] == pet_id_1 for p in resp.json())
+    assert any(p["id"] == pet_id_3 for p in resp.json())
+
+    # Test with multiple tags
+    resp = api.get("/pet/findByTags", params={"tags": f"{tag1},{tag2}"})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    for pet in resp.json():
+        validate_schema(pet, PET_SCHEMA)
+        tag_names = [t["name"] for t in pet.get("tags", [])]
+        assert any(t in tag_names for t in [tag1, tag2])
+    assert any(p["id"] == pet_id_1 for p in resp.json())
+    assert any(p["id"] == pet_id_2 for p in resp.json())
+    assert any(p["id"] == pet_id_3 for p in resp.json())
+
+    # Cleanup
+    api.delete(f"/pet/{pet_id_1}")
+    api.delete(f"/pet/{pet_id_2}")
+    api.delete(f"/pet/{pet_id_3}")
+
+def test_get_pet_findByTags_invalid_tag_400(api):
+    # The API spec doesn't define what makes a tag invalid,
+    # but typically this would be for malformed input if tags were structured.
+    # For simple strings, it might just return an empty list.
+    # Let's assume an empty string or very long string might trigger it.
+    resp = api.get("/pet/findByTags", params={"tags": ""})
+    # Depending on implementation, this could be 400 or 200 with empty list.
+    # The spec says "Invalid tag value" for 400.
+    assert resp.status_code in [200, 400]
+
+def test_get_pet_byId_success(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    resp = api.get(f"/pet/{pet['id']}")
+    assert resp.status_code == 200
+    validate_schema(resp.json(), PET_SCHEMA)
+    assert resp.json()["id"] == pet["id"]
+
+def test_get_pet_byId_invalid_id_400(api):
+    resp = api.get("/pet/invalid_id")
+    assert resp.status_code == 400
+
+def test_get_pet_byId_not_found_404(api):
+    non_existent_id = generate_random_id()
+    resp = api.get(f"/pet/{non_existent_id}")
+    assert resp.status_code == 404
+
+def test_post_pet_byId_updateWithForm_success(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    new_name = f"form_updated_{generate_random_string(5)}"
+    new_status = "sold"
+    resp = api.post(f"/pet/{pet['id']}", params={"name": new_name, "status": new_status})
+    assert resp.status_code == 200
+    # The spec says 200 returns Pet schema, but often form updates return no content or a simple message.
+    # Assuming it returns the updated pet.
+    validate_schema(resp.json(), PET_SCHEMA)
+    assert resp.json()["name"] == new_name
+    assert resp.json()["status"] == new_status
+
+def test_post_pet_byId_updateWithForm_invalid_input_400(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    # Invalid status value
+    resp = api.post(f"/pet/{pet['id']}", params={"name": "test", "status": "bad_status"})
+    assert resp.status_code == 400
+
+def test_delete_pet_success(api):
+    pet_data = create_pet_data()
+    resp_create = api.post("/pet", json=pet_data)
+    assert resp_create.status_code == 200
+    pet_id = resp_create.json()["id"]
+
+    resp_delete = api.delete(f"/pet/{pet_id}")
+    assert resp_delete.status_code == 200
+    # Verify it's gone
+    resp_get = api.get(f"/pet/{pet_id}")
+    assert resp_get.status_code == 404
+
+def test_delete_pet_invalid_pet_value_400(api):
+    resp = api.delete("/pet/invalid_id")
+    assert resp.status_code == 400
+
+def test_delete_pet_not_found_404(api):
+    non_existent_id = generate_random_id()
+    resp = api.delete(f"/pet/{non_existent_id}")
+    assert resp.status_code == 404
+
+def test_post_pet_byId_uploadImage_success(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    image_data = b"fake image content"
+    metadata = "test_metadata"
+    headers = {"Content-Type": "application/octet-stream"}
+    resp = api.post(f"/pet/{pet['id']}/uploadImage", data=image_data, headers=headers, params={"additionalMetadata": metadata})
+    assert resp.status_code == 200
+    validate_schema(resp.json(), API_RESPONSE_SCHEMA)
+    assert resp.json()["message"] == f"additionalMetadata: {metadata}" # Assuming server echoes metadata
+
+def test_post_pet_byId_uploadImage_no_file_400(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    # Send without data
+    resp = api.post(f"/pet/{pet['id']}/uploadImage")
+    assert resp.status_code == 400
+
+def test_post_pet_byId_uploadImage_pet_not_found_404(api):
+    non_existent_id = generate_random_id()
+    image_data = b"fake image content"
+    headers = {"Content-Type": "application/octet-stream"}
+    resp = api.post(f"/pet/{non_existent_id}/uploadImage", data=image_data, headers=headers)
+    assert resp.status_code == 404
+
+# --- Store Operations ---
+
+def test_get_store_inventory_success(api):
+    resp = api.get("/store/inventory")
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), dict)
+    for key, value in resp.json().items():
+        assert isinstance(key, str)
+        assert isinstance(value, int)
+
+def test_post_store_order_success(api, create_and_delete_pet):
+    pet = create_and_delete_pet
+    order_data = create_order_data(pet_id=pet["id"])
+    resp = api.post("/store/order", json=order_data)
+    assert resp.status_code == 200
+    validate_schema(resp.json(), ORDER_SCHEMA)
+    assert resp.json()["petId"] == pet["id"]
+    api.delete(f"/store/order/{resp.json()['id']}") # Cleanup
+
+def test_post_store_order_invalid_input_400(api):
+    order_data = create_order_data()
+    order_data["quantity"] = "invalid" # Invalid type
+    resp = api.post("/store/order", json=order_data)
+    assert resp.status_code == 400
+
+def test_post_store_order_validation_exception_422(api):
+    order_data = create_order_data()
+    order_data["status"] = "invalid_status" # Invalid enum value
+    resp = api.post("/store/order", json=order_data)
+    assert resp.status_code == 422
+
+def test_get_store_order_byId_success(api, create_and_delete_order):
+    order = create_and_delete_order
+    resp = api.get(f"/store/order/{order['id']}")
+    assert resp.status_code == 200
+    validate_schema(resp.json(), ORDER_SCHEMA)
+    assert resp.json()["id"] == order["id"]
+
+def test_get_store_order_byId_invalid_id_400(api):
+    resp = api.get("/store/order/invalid_id")
+    assert resp.status_code == 400
+
+def test_get_store_order_byId_not_found_404(api):
+    # The spec says "For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions."
+    # Let's try an ID that should result in 404 based on typical petstore behavior (e.g., a large random ID)
+    non_existent_id = generate_random_id()
+    resp = api.get(f"/store/order/{non_existent_id}")
+    assert resp.status_code == 404
+
+def test_delete_store_order_success(api):
+    # Create an order with an ID that the API might allow deleting (e.g., < 1000)
+    pet_data = create_pet_data()
+    resp_pet = api.post("/pet", json=pet_data)
+    assert resp_pet.status_code == 200
+    pet_id = resp_pet.json()["id"]
+
+    order_data = create_order_data(order_id=random.randint(1, 999), pet_id=pet_id)
+    resp_create = api.post("/store/order", json=order_data)
+    assert resp_create.status_code == 200
+    order_id = resp_create.json()["id"]
+
+    resp_delete = api.delete(f"/store/order/{order_id}")
+    assert resp_delete.status_code == 200
+    # Verify it's gone
+    resp_get = api.get(f"/store/order/{order_id}")
+    assert resp_get.status_code == 404
+
+    api.delete(f"/pet/{pet_id}") # Cleanup
+
+def test_delete_store_order_invalid_id_400(api):
+    resp = api.delete("/store/order/invalid_id")
+    assert resp.status_code == 400
+
+def test_delete_store_order_not_found_404(api):
+    # The spec says "For valid response try integer IDs with value < 1000. Anything above 1000 or non-integers will generate API errors."
+    # So a large random ID should result in 404 or 400.
+    non_existent_id = generate_random_id()
+    resp = api.delete(f"/store/order/{non_existent_id}")
+    assert resp.status_code in [400, 404] # Could be 400 if it considers it "invalid" due to size, or 404 if not found.
+
+# --- User Operations ---
+
+def test_post_user_success(api):
+    user_data = create_user_data()
+    resp = api.post("/user", json=user_data)
+    assert resp.status_code == 200
+    validate_schema(resp.json(), USER_SCHEMA)
+    assert resp.json()["username"] == user_data["username"]
+    api.delete(f"/user/{user_data['username']}") # Cleanup
+
+def test_post_user_createWithList_success(api):
+    user_data_1 = create_user_data()
+    user_data_2 = create_user_data()
+    users_list = [user_data_1, user_data_2]
+    resp = api.post("/user/createWithList", json=users_list)
+    assert resp.status_code == 200
+    # The spec says it returns a User schema, which is odd for a list creation.
+    # Assuming it returns the first user or a generic success message.
+    # For now, we'll validate against a single user schema.
+    validate_schema(resp.json(), USER_SCHEMA)
+    api.delete(f"/user/{user_data_1['username']}") # Cleanup
+    api.delete(f"/user/{user_data_2['username']}") # Cleanup
+
+def test_get_user_login_success(api, create_and_delete_user):
+    user = create_and_delete_user
+    resp = api.get("/user/login", params={"username": user["username"], "password": user["password"]})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), str) # Response is a string token
+    assert "X-Rate-Limit" in resp.headers
+    assert "X-Expires-After" in resp.headers
+    assert isinstance(int(resp.headers["X-Rate-Limit"]), int)
+    # Validate date-time format for X-Expires-After
+    try:
+        datetime.fromisoformat(resp.headers["X-Expires-After"].replace('Z', '+00:00'))
+    except ValueError:
+        pytest.fail("X-Expires-After header is not in valid date-time format")
+
+def test_get_user_login_invalid_credentials_400(api):
+    resp = api.get("/user/login", params={"username": "nonexistent", "password": "wrongpassword"})
+    assert resp.status_code == 400
+
+def test_get_user_logout_success(api):
+    # Logout doesn't require a logged-in state to succeed, it just invalidates the current session.
+    resp = api.get("/user/logout")
+    assert resp.status_code == 200
+
+def test_get_user_byName_success(api, create_and_delete_user):
+    user = create_and_delete_user
+    resp = api.get(f"/user/{user['username']}")
+    assert resp.status_code == 200
+    validate_schema(resp.json(), USER_SCHEMA)
+    assert resp.json()["username"] == user["username"]
+
+def test_get_user_byName_invalid_username_400(api):
+    # The spec says "Invalid username supplied" for 400.
+    # This might be for malformed usernames, but for simple strings, it often means not found.
+    # Let's try a username that's syntactically valid but likely non-existent.
+    resp = api.get("/user/invalid-user-@name")
+    assert resp.status_code == 400
+
+def test_get_user_byName_not_found_404(api):
+    non_existent_username = f"nonexistent_{generate_random_string(5)}"
+    resp = api.get(f"/user/{non_existent_username}")
+    assert resp.status_code == 404
+
+def test_put_user_success(api, create_and_delete_user):
+    user = create_and_delete_user
+    updated_first_name = f"Updated_{generate_random_string(5)}"
+    user["firstName"] = updated_first_name
+    resp = api.put(f"/user/{user['username']}", json=user)
+    assert resp.status_code == 200
+    # The spec says 200 with no content, but some APIs return the updated resource.
+    # If it returns content, validate it. If not, just check status.
+    # For now, assuming no content based on description.
+    # Verify update by fetching user
+    resp_get = api.get(f"/user/{user['username']}")
+    assert resp_get.status_code == 200
+    assert resp_get.json()["firstName"] == updated_first_name
+
+def test_put_user_bad_request_400(api, create_and_delete_user):
+    user = create_and_delete_user
+    # Send malformed data (e.g., invalid type for a field)
+    user["id"] = "invalid_id_type"
+    resp = api.put(f"/user/{user['username']}", json=user)
+    assert resp.status_code == 400
+
+def test_put_user_not_found_404(api):
+    non_existent_username = f"nonexistent_{generate_random_string(5)}"
+    user_data = create_user_data(username=non_existent_username)
+    resp = api.put(f"/user/{non_existent_username}", json=user_data)
+    assert resp.status_code == 404
+
+def test_delete_user_success(api):
+    user_data = create_user_data()
+    resp_create = api.post("/user", json=user_data)
+    assert resp_create.status_code == 200
+    username = user_data["username"]
+
+    resp_delete = api.delete(f"/user/{username}")
+    assert resp_delete.status_code == 200
+    # Verify it's gone
+    resp_get = api.get(f"/user/{username}")
+    assert resp_get.status_code == 404
+
+def test_delete_user_invalid_username_400(api):
+    # Similar to GET, malformed username might trigger 400.
+    resp = api.delete("/user/invalid-user-@name")
+    assert resp.status_code == 400
+
+def test_delete_user_not_found_404(api):
+    non_existent_username = f"nonexistent_{generate_random_string(5)}"
+    resp = api.delete(f"/user/{non_existent_username}")
+    assert resp.status_code == 404

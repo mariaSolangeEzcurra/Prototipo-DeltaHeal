@@ -1,0 +1,500 @@
+{
+  "timestamp": "2026-11-07T12:29:53",
+  "mode": "llm_full",
+  "run_id": "llm_full_r1",
+  "model": "gemini-2.5-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /pet",
+      "GET /pet/findByTags",
+      "DELETE /store/order/{orderId}"
+    ],
+    "modified": [
+      "POST /pet",
+      "GET /pet/findByStatus",
+      "GET /pet/{petId}",
+      "POST /pet/{petId}"
+    ],
+    "removed": [],
+    "unchanged_count": 12
+  },
+  "operations_total": 19,
+  "target_operations": [
+    "POST /pet",
+    "PUT /pet",
+    "GET /pet/findByStatus",
+    "GET /pet/findByTags",
+    "GET /pet/{petId}",
+    "POST /pet/{petId}",
+    "DELETE /store/order/{orderId}"
+  ],
+  "context_operations": 19,
+  "spec_context_chars": 22776,
+  "spec_full_chars": 22776,
+  "spec_context_tokens_est": 5694,
+  "spec_full_tokens_est": 5694,
+  "context_reduction": 0.0,
+  "llm_calls": 1,
+  "prompt_tokens": 5920,
+  "completion_tokens": 8723,
+  "total_tokens": 14643,
+  "generation_tokens": 14643,
+  "repair_tokens": 0,
+  "cost_usd": 0.023584,
+  "llm_latency_s": 37.934,
+  "generated_tests": 46,
+  "executable_tests": 44,
+  "executable_rate": 0.9565,
+  "passed": 29,
+  "assertion_failures": 15,
+  "runtime_errors": 2,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.7368,
+  "reasoning_tokens": 918,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 5.696,
+  "test_cases": [
+    {
+      "test": "test_generated::test_post_pet_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_invalid_input_400",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_validation_exception_422",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_pet_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_invalid_id_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_validation_exception_422",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_findByStatus_success",
+      "outcome": "assertion",
+      "message": "Failed: Schema validation failed: 'name' is a required property in deque([])"
+    },
+    {
+      "test": "test_generated::test_get_pet_findByStatus_invalid_status_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_findByTags_success",
+      "outcome": "assertion",
+      "message": "assert False\n +  where False = any(<generator object test_get_pet_findByTags_success.<locals>.<genexpr> at 0x00000237FABEB760>)"
+    },
+    {
+      "test": "test_generated::test_get_pet_findByTags_invalid_tag_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_byId_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_byId_invalid_id_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_byId_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_updateWithForm_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_updateWithForm_invalid_input_400",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_pet_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_pet_invalid_pet_value_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_pet_not_found_404",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_uploadImage_success",
+      "outcome": "runtime_error",
+      "message": "KeyError: 'message'"
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_uploadImage_no_file_400",
+      "outcome": "assertion",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_uploadImage_pet_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_inventory_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_invalid_input_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_validation_exception_422",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_store_order_byId_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_order_byId_invalid_id_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_order_byId_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_invalid_id_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_not_found_404",
+      "outcome": "assertion",
+      "message": "assert 200 in [400, 404]\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_user_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_user_createWithList_success",
+      "outcome": "assertion",
+      "message": "Failed: Schema validation failed: [{'id': 199146, 'username': 'user_zacro', 'firstName': 'John_lsg', 'lastName': 'Doe_tym', 'email': 'user_zacro@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 198162, 'username': 'user_gskxj', 'firstName': 'John_tfj', 'lastName': 'Doe_xah', 'email': 'user_gskxj@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' in deque([])"
+    },
+    {
+      "test": "test_generated::test_get_user_login_success",
+      "outcome": "runtime_error",
+      "message": "requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "test": "test_generated::test_get_user_login_invalid_credentials_400",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_logout_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_byName_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_byName_invalid_username_400",
+      "outcome": "assertion",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_byName_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_bad_request_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_not_found_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_invalid_username_400",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_not_found_404",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_post_pet_invalid_input_400",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_validation_exception_422",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_pet_validation_exception_422",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_findByStatus_success",
+      "message": "Failed: Schema validation failed: 'name' is a required property in deque([])"
+    },
+    {
+      "test": "test_generated::test_get_pet_findByTags_success",
+      "message": "assert False\n +  where False = any(<generator object test_get_pet_findByTags_success.<locals>.<genexpr> at 0x00000237FABEB760>)"
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_updateWithForm_invalid_input_400",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_pet_not_found_404",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_byId_uploadImage_no_file_400",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_store_order_validation_exception_422",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_store_order_not_found_404",
+      "message": "assert 200 in [400, 404]\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_user_createWithList_success",
+      "message": "Failed: Schema validation failed: [{'id': 199146, 'username': 'user_zacro', 'firstName': 'John_lsg', 'lastName': 'Doe_tym', 'email': 'user_zacro@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 198162, 'username': 'user_gskxj', 'firstName': 'John_tfj', 'last"
+    },
+    {
+      "test": "test_generated::test_get_user_login_invalid_credentials_400",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_byName_invalid_username_400",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_invalid_username_400",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_not_found_404",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "max_iterations",
+  "executable_rate_before_heal": 0.9565,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 44,
+      "total": 46,
+      "broken": 2,
+      "assertion_failures": 15,
+      "collection_error": false,
+      "action": "give_up"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 5920,
+      "completion_tokens": 8723,
+      "latency_s": 37.93414889997803,
+      "cost_usd": 0.0235835,
+      "reasoning_tokens": 918,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.7368,
+    "documented_pairs": 19,
+    "covered_pairs": 14,
+    "operations_hit": 7,
+    "operations_total": 7,
+    "total_requests": 93,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /pet": {
+        "documented": [
+          "200",
+          "400",
+          "422"
+        ],
+        "observed": [
+          200
+        ],
+        "covered": [
+          "200"
+        ]
+      },
+      "PUT /pet": {
+        "documented": [
+          "200",
+          "400",
+          "404",
+          "422"
+        ],
+        "observed": [
+          200,
+          400,
+          404
+        ],
+        "covered": [
+          "200",
+          "400",
+          "404"
+        ]
+      },
+      "GET /pet/findByStatus": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/findByTags": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/{petId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400,
+          404
+        ],
+        "covered": [
+          "200",
+          "400",
+          "404"
+        ]
+      },
+      "POST /pet/{petId}": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200
+        ],
+        "covered": [
+          "200"
+        ]
+      },
+      "DELETE /store/order/{orderId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.7556,
+  "duration_s": 43.936,
+  "status": "ok"
+}

@@ -1,0 +1,394 @@
+import pytest
+import requests
+import json
+import uuid
+import random
+import string
+import datetime
+import re
+from jsonschema import validate, ValidationError
+
+# --- Schemas for validation ---
+
+PET_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "name": {"type": "string"},
+        "category": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "format": "int64"},
+                "name": {"type": "string"}
+            },
+            "required": ["id", "name"] # Assuming category must have id and name if present
+        },
+        "photoUrls": {"type": "array", "items": {"type": "string"}},
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer", "format": "int64"},
+                    "name": {"type": "string"}
+                },
+                "required": ["id", "name"] # Assuming tag must have id and name if present
+            }
+        },
+        "status": {"type": "string", "enum": ["available", "pending", "sold"]}
+    },
+    "required": ["name", "photoUrls"]
+}
+
+PET_ARRAY_SCHEMA = {
+    "type": "array",
+    "items": PET_SCHEMA
+}
+
+# --- Helper functions ---
+
+def generate_random_pet_data(pet_id=None, status=None):
+    """Generates a valid pet data dictionary."""
+    name = f"test-pet-{uuid.uuid4().hex[:8]}"
+    photo_urls = [f"http://example.com/photo/{uuid.uuid4().hex[:4]}.jpg"]
+    category = {"id": random.randint(1, 100), "name": f"category-{random.choice(string.ascii_lowercase)}"}
+    tags = [{"id": random.randint(1, 100), "name": f"tag-{random.choice(string.ascii_lowercase)}"}]
+    current_status = status if status else random.choice(["available", "pending", "sold"])
+
+    pet_data = {
+        "name": name,
+        "photoUrls": photo_urls,
+        "category": category,
+        "tags": tags,
+        "status": current_status
+    }
+    if pet_id is not None:
+        pet_data["id"] = pet_id
+    return pet_data
+
+def create_pet(api, pet_data=None):
+    """Helper to create a pet and return its ID and the full response body."""
+    if pet_data is None:
+        pet_data = generate_random_pet_data()
+    response = api.post("/pet", json=pet_data)
+    assert response.status_code == 200
+    validate(instance=response.json(), schema=PET_SCHEMA)
+    return response.json()["id"], response.json()
+
+# --- Tests for /pet ---
+
+class TestPetOperations:
+
+    # --- POST /pet (addPet) ---
+    def test_post_pet_success(self, api):
+        """Test adding a new pet with valid data."""
+        pet_data = generate_random_pet_data()
+        response = api.post("/pet", json=pet_data)
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_SCHEMA)
+
+        created_pet = response.json()
+        assert created_pet["name"] == pet_data["name"]
+        assert created_pet["photoUrls"] == pet_data["photoUrls"]
+        assert "id" in created_pet and isinstance(created_pet["id"], int)
+
+        # Verify pet exists by fetching it
+        get_response = api.get(f"/pet/{created_pet['id']}")
+        assert get_response.status_code == 200
+        validate(instance=get_response.json(), schema=PET_SCHEMA)
+        assert get_response.json()["id"] == created_pet["id"]
+
+    def test_post_pet_invalid_input_missing_name(self, api):
+        """Test adding a pet with missing required 'name' field."""
+        pet_data = generate_random_pet_data()
+        del pet_data["name"]
+        response = api.post("/pet", json=pet_data)
+        assert response.status_code == 400 # Or 422 depending on server implementation
+
+    def test_post_pet_invalid_input_missing_photoUrls(self, api):
+        """Test adding a pet with missing required 'photoUrls' field."""
+        pet_data = generate_random_pet_data()
+        del pet_data["photoUrls"]
+        response = api.post("/pet", json=pet_data)
+        assert response.status_code == 400 # Or 422 depending on server implementation
+
+    def test_post_pet_validation_exception_invalid_status(self, api):
+        """Test adding a pet with an invalid 'status' enum value."""
+        pet_data = generate_random_pet_data()
+        pet_data["status"] = "invalid_status"
+        response = api.post("/pet", json=pet_data)
+        assert response.status_code == 422
+
+    # --- PUT /pet (updatePet) ---
+    def test_put_pet_success(self, api):
+        """Test updating an existing pet with valid data."""
+        pet_id, original_pet = create_pet(api)
+
+        updated_name = f"updated-{original_pet['name']}"
+        updated_status = "sold"
+        updated_pet_data = original_pet.copy()
+        updated_pet_data["name"] = updated_name
+        updated_pet_data["status"] = updated_status
+
+        response = api.put("/pet", json=updated_pet_data)
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_SCHEMA)
+
+        returned_pet = response.json()
+        assert returned_pet["id"] == pet_id
+        assert returned_pet["name"] == updated_name
+        assert returned_pet["status"] == updated_status
+
+        # Verify the update by fetching the pet
+        get_response = api.get(f"/pet/{pet_id}")
+        assert get_response.status_code == 200
+        assert get_response.json()["name"] == updated_name
+        assert get_response.json()["status"] == updated_status
+
+    def test_put_pet_invalid_id_supplied_non_existent(self, api):
+        """Test updating a pet with a valid ID format but non-existent ID."""
+        non_existent_id = 999999999999999999 # A very large ID unlikely to exist
+        pet_data = generate_random_pet_data(pet_id=non_existent_id)
+        response = api.put("/pet", json=pet_data)
+        assert response.status_code == 404 # Pet not found
+
+    def test_put_pet_invalid_id_supplied_malformed(self, api):
+        """Test updating a pet with a malformed ID (e.g., string instead of int)."""
+        pet_data = generate_random_pet_data()
+        pet_data["id"] = "not_an_id" # Malformed ID
+        response = api.put("/pet", json=pet_data)
+        assert response.status_code == 400
+
+    def test_put_pet_validation_exception_invalid_status(self, api):
+        """Test updating a pet with an invalid 'status' enum value."""
+        pet_id, original_pet = create_pet(api)
+        updated_pet_data = original_pet.copy()
+        updated_pet_data["status"] = "invalid_status"
+        response = api.put("/pet", json=updated_pet_data)
+        assert response.status_code == 422
+
+    def test_put_pet_validation_exception_missing_required_field(self, api):
+        """Test updating a pet with missing required 'name' field."""
+        pet_id, original_pet = create_pet(api)
+        updated_pet_data = original_pet.copy()
+        del updated_pet_data["name"]
+        response = api.put("/pet", json=updated_pet_data)
+        assert response.status_code == 422 # Or 400 depending on server implementation
+
+    # --- GET /pet/findByStatus (findPetsByStatus) ---
+    @pytest.mark.parametrize("status", ["available", "pending", "sold"])
+    def test_get_pet_find_by_status_success(self, api, status):
+        """Test finding pets by a valid status."""
+        # Create a pet with the specific status to ensure results
+        pet_id, _ = create_pet(api, generate_random_pet_data(status=status))
+
+        response = api.get(f"/pet/findByStatus?status={status}")
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_ARRAY_SCHEMA)
+
+        # Verify the created pet is in the results
+        found = any(p["id"] == pet_id for p in response.json())
+        assert found, f"Pet with ID {pet_id} not found in results for status {status}"
+
+    def test_get_pet_find_by_status_multiple_success(self, api):
+        """Test finding pets by multiple valid statuses."""
+        status1 = "available"
+        status2 = "pending"
+        pet_id1, _ = create_pet(api, generate_random_pet_data(status=status1))
+        pet_id2, _ = create_pet(api, generate_random_pet_data(status=status2))
+
+        response = api.get(f"/pet/findByStatus?status={status1},{status2}")
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_ARRAY_SCHEMA)
+
+        found1 = any(p["id"] == pet_id1 for p in response.json())
+        found2 = any(p["id"] == pet_id2 for p in response.json())
+        assert found1, f"Pet with ID {pet_id1} not found for statuses {status1},{status2}"
+        assert found2, f"Pet with ID {pet_id2} not found for statuses {status1},{status2}"
+
+    def test_get_pet_find_by_status_invalid_value(self, api):
+        """Test finding pets with an invalid status value."""
+        response = api.get("/pet/findByStatus?status=invalid_status")
+        assert response.status_code == 400
+
+    def test_get_pet_find_by_status_missing_parameter(self, api):
+        """Test finding pets without the required 'status' parameter."""
+        response = api.get("/pet/findByStatus")
+        assert response.status_code == 400
+
+    # --- GET /pet/findByTags (findPetsByTags) ---
+    def test_get_pet_find_by_tags_success(self, api):
+        """Test finding pets by a single valid tag."""
+        tag_name = f"test-tag-{uuid.uuid4().hex[:4]}"
+        pet_data = generate_random_pet_data()
+        pet_data["tags"] = [{"id": random.randint(1, 100), "name": tag_name}]
+        pet_id, _ = create_pet(api, pet_data)
+
+        response = api.get(f"/pet/findByTags?tags={tag_name}")
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_ARRAY_SCHEMA)
+
+        found = any(p["id"] == pet_id for p in response.json())
+        assert found, f"Pet with ID {pet_id} not found in results for tag {tag_name}"
+
+    def test_get_pet_find_by_tags_multiple_success(self, api):
+        """Test finding pets by multiple valid tags."""
+        tag_name1 = f"tag1-{uuid.uuid4().hex[:4]}"
+        tag_name2 = f"tag2-{uuid.uuid4().hex[:4]}"
+
+        pet_data1 = generate_random_pet_data()
+        pet_data1["tags"] = [{"id": random.randint(1, 100), "name": tag_name1}]
+        pet_id1, _ = create_pet(api, pet_data1)
+
+        pet_data2 = generate_random_pet_data()
+        pet_data2["tags"] = [{"id": random.randint(1, 100), "name": tag_name2}]
+        pet_id2, _ = create_pet(api, pet_data2)
+
+        response = api.get(f"/pet/findByTags?tags={tag_name1},{tag_name2}")
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_ARRAY_SCHEMA)
+
+        found1 = any(p["id"] == pet_id1 for p in response.json())
+        found2 = any(p["id"] == pet_id2 for p in response.json())
+        assert found1, f"Pet with ID {pet_id1} not found for tags {tag_name1},{tag_name2}"
+        assert found2, f"Pet with ID {pet_id2} not found for tags {tag_name1},{tag_name2}"
+
+    def test_get_pet_find_by_tags_invalid_value(self, api):
+        """Test finding pets with an invalid tag value (not explicitly defined as invalid in spec, but common)."""
+        # The spec doesn't define invalid tag values, so any string is technically valid.
+        # This test assumes the backend might have some validation or return empty for non-existent tags.
+        response = api.get("/pet/findByTags?tags=nonexistent_tag_12345")
+        assert response.status_code == 200 # Should return 200 with an empty list
+        assert response.json() == []
+
+    def test_get_pet_find_by_tags_missing_parameter(self, api):
+        """Test finding pets without the required 'tags' parameter."""
+        response = api.get("/pet/findByTags")
+        assert response.status_code == 400
+
+    # --- GET /pet/{petId} (getPetById) ---
+    def test_get_pet_by_id_success(self, api):
+        """Test retrieving an existing pet by ID."""
+        pet_id, _ = create_pet(api)
+        response = api.get(f"/pet/{pet_id}")
+
+        assert response.status_code == 200
+        validate(instance=response.json(), schema=PET_SCHEMA)
+        assert response.json()["id"] == pet_id
+
+    def test_get_pet_by_id_invalid_id_supplied(self, api):
+        """Test retrieving a pet with an invalid ID format (e.g., string)."""
+        response = api.get("/pet/invalid_id")
+        assert response.status_code == 400
+
+    def test_get_pet_by_id_not_found(self, api):
+        """Test retrieving a pet with a non-existent ID."""
+        non_existent_id = 999999999999999999 # A very large ID unlikely to exist
+        response = api.get(f"/pet/{non_existent_id}")
+        assert response.status_code == 404
+
+    # --- POST /pet/{petId} (updatePetWithForm) ---
+    def test_post_pet_by_id_update_with_form_success(self, api):
+        """Test updating a pet's name and status using form data."""
+        pet_id, original_pet = create_pet(api)
+
+        new_name = f"form-updated-{original_pet['name']}"
+        new_status = "pending"
+
+        response = api.post(f"/pet/{pet_id}", data={"name": new_name, "status": new_status})
+
+        assert response.status_code == 200
+        # The spec says 200 returns Pet schema, but form updates often return empty or a generic success.
+        # Assuming it returns the updated pet based on the schema definition.
+        validate(instance=response.json(), schema=PET_SCHEMA)
+
+        updated_pet = response.json()
+        assert updated_pet["id"] == pet_id
+        assert updated_pet["name"] == new_name
+        assert updated_pet["status"] == new_status
+
+        # Verify the update by fetching the pet
+        get_response = api.get(f"/pet/{pet_id}")
+        assert get_response.status_code == 200
+        assert get_response.json()["name"] == new_name
+        assert get_response.json()["status"] == new_status
+
+    def test_post_pet_by_id_update_with_form_only_name(self, api):
+        """Test updating only the pet's name using form data."""
+        pet_id, original_pet = create_pet(api)
+        new_name = f"form-name-only-{original_pet['name']}"
+        response = api.post(f"/pet/{pet_id}", data={"name": new_name})
+        assert response.status_code == 200
+        updated_pet = response.json()
+        assert updated_pet["id"] == pet_id
+        assert updated_pet["name"] == new_name
+        assert updated_pet["status"] == original_pet["status"] # Status should remain unchanged
+
+    def test_post_pet_by_id_update_with_form_only_status(self, api):
+        """Test updating only the pet's status using form data."""
+        pet_id, original_pet = create_pet(api)
+        new_status = "sold"
+        response = api.post(f"/pet/{pet_id}", data={"status": new_status})
+        assert response.status_code == 200
+        updated_pet = response.json()
+        assert updated_pet["id"] == pet_id
+        assert updated_pet["name"] == original_pet["name"] # Name should remain unchanged
+        assert updated_pet["status"] == new_status
+
+    def test_post_pet_by_id_update_with_form_invalid_input_non_existent_pet(self, api):
+        """Test updating a non-existent pet using form data."""
+        non_existent_id = 999999999999999999
+        response = api.post(f"/pet/{non_existent_id}", data={"name": "new_name", "status": "available"})
+        assert response.status_code == 400 # The spec says 400 for Invalid input, 404 is not documented for this operation.
+
+    def test_post_pet_by_id_update_with_form_invalid_input_malformed_id(self, api):
+        """Test updating a pet with a malformed ID in the path."""
+        response = api.post("/pet/invalid_id", data={"name": "new_name", "status": "available"})
+        assert response.status_code == 400
+
+    def test_post_pet_by_id_update_with_form_invalid_input_invalid_status(self, api):
+        """Test updating a pet with an invalid status value in form data."""
+        pet_id, _ = create_pet(api)
+        response = api.post(f"/pet/{pet_id}", data={"name": "new_name", "status": "invalid_status"})
+        assert response.status_code == 400
+
+# --- Tests for /store/order/{orderId} ---
+
+class TestStoreOrderOperations:
+
+    # Note: The spec does not provide a way to create an order,
+    # so tests for successful deletion will assume a pre-existing order ID.
+    # For a robust test suite, an 'addOrder' operation would be needed.
+    # Here, we'll use a placeholder ID for success and focus on error cases.
+
+    def test_delete_order_success_placeholder(self, api):
+        """Test deleting an order with a valid ID (placeholder, as no create order op)."""
+        # Assuming an order with ID 1 exists and can be deleted.
+        # In a real scenario, we'd create an order first.
+        order_id_to_delete = 1 # Example ID < 1000 as per spec description
+        response = api.delete(f"/store/order/{order_id_to_delete}")
+        assert response.status_code == 200
+        # The spec says "order deleted" but no content schema, so just status check.
+
+    def test_delete_order_invalid_id_supplied_malformed(self, api):
+        """Test deleting an order with a malformed ID (e.g., string)."""
+        response = api.delete("/store/order/invalid_id")
+        assert response.status_code == 400
+
+    def test_delete_order_invalid_id_supplied_too_large(self, api):
+        """Test deleting an order with an ID >= 1000, which should generate an API error."""
+        order_id_too_large = 1001
+        response = api.delete(f"/store/order/{order_id_too_large}")
+        assert response.status_code == 400 # As per spec description "Anything above 1000... will generate API errors."
+
+    def test_delete_order_not_found(self, api):
+        """Test deleting an order with a non-existent ID (within valid range)."""
+        non_existent_id = 999 # Valid format, but unlikely to exist
+        response = api.delete(f"/store/order/{non_existent_id}")
+        assert response.status_code == 404

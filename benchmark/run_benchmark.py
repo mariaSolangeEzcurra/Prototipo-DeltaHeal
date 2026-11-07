@@ -43,7 +43,7 @@ CSV_FIELDS = [
     "cost_usd", "llm_calls", "heal_iterations", "heal_stop_reason",
     "reasoning_tokens", "llm_truncated_calls",
     "spec_context_chars", "spec_full_chars", "context_reduction", "target_ops",
-    "duration_s", "llm_latency_s", "pytest_duration_s",
+    "duration_s", "llm_latency_s", "pytest_duration_s", "api_smoke_after",
 ]
 
 
@@ -92,6 +92,38 @@ def wait_healthy(url: str | None, timeout: int = 120) -> bool:
                 warned = True
         time.sleep(2)
     return False
+
+
+def smoke_ok(base_url: str, checks: list[dict] | None) -> tuple[bool, str]:
+    """Prueba de humo: cada check debe devolver el código esperado (por defecto 200).
+    Detecta APIs que 'responden' pero están en mal estado (p. ej. 500 por datos corruptos)."""
+    for c in checks or []:
+        url = base_url.rstrip("/") + "/" + c["path"].lstrip("/")
+        try:
+            code = requests.request(c.get("method", "GET"), url, timeout=10).status_code
+        except requests.RequestException as e:
+            return False, f"{c['path']}: {type(e).__name__}"
+        if code != int(c.get("expect", 200)):
+            return False, f"{c.get('method', 'GET')} {c['path']} -> {code} (esperado {c.get('expect', 200)})"
+    return True, "ok"
+
+
+def prepare_api(api: dict, attempts: int = 3) -> tuple[bool, str]:
+    """Resetea la API y espera a que esté sana (health + prueba de humo). Reintenta el reset."""
+    detail = "sin verificar"
+    for i in range(attempts):
+        sh(api.get("reset"))
+        if not wait_healthy(api.get("health")):
+            detail = "no responde"
+            continue
+        t0 = time.time()
+        while time.time() - t0 < 60:
+            ok, detail = smoke_ok(api["base_url"], api.get("smoke"))
+            if ok:
+                return True, "ok"
+            time.sleep(3)
+        print(f"   ⚠ prueba de humo fallida ({detail}); reintentando reset {i + 2}/{attempts}…", flush=True)
+    return False, detail
 
 
 def done_runs(csv_path: Path) -> set[tuple[str, str, int]]:
@@ -156,9 +188,10 @@ def main() -> int:
         for order, (conf, rep) in enumerate(ordered, 1):
             if (api["name"], conf, rep) in done:
                 continue
-            sh(api.get("reset"))
-            if not wait_healthy(api.get("health")):
-                print(f"[{api['name']}] API no saludable; se omite {conf}#{rep}")
+            ok, detail = prepare_api(api)
+            if not ok:
+                print(f"[{api['name']}] API en mal estado ({detail}); se omite {conf}#{rep}. "
+                      "Vuelve a ejecutar luego: la corrida queda pendiente.")
                 continue
             s = Settings.load(
                 None,
@@ -192,6 +225,8 @@ def main() -> int:
                 return 5
             except Exception as e:  # una corrida fallida no detiene el experimento
                 res = {"status": f"crash: {type(e).__name__}: {e}"}
+            # estado de la API al terminar (los propios tests pueden dejarla en mal estado: se registra)
+            res["api_smoke_after"] = smoke_ok(api["base_url"], api.get("smoke"))[1]
             row = {k: res.get(k) for k in CSV_FIELDS}
             row.update(api=api["name"], config=conf, rep=rep, order=order,
                        documented_pairs=(res.get("coverage") or {}).get("documented_pairs"),

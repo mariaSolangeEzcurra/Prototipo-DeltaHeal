@@ -1,0 +1,446 @@
+{
+  "timestamp": "2026-11-07T12:28:02",
+  "mode": "delta_only",
+  "run_id": "delta_only_r1",
+  "model": "gemini-2.5-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /pet",
+      "GET /pet/findByTags",
+      "DELETE /store/order/{orderId}"
+    ],
+    "modified": [
+      "POST /pet",
+      "GET /pet/findByStatus",
+      "GET /pet/{petId}",
+      "POST /pet/{petId}"
+    ],
+    "removed": [],
+    "unchanged_count": 12
+  },
+  "operations_total": 19,
+  "target_operations": [
+    "POST /pet",
+    "PUT /pet",
+    "GET /pet/findByStatus",
+    "GET /pet/findByTags",
+    "GET /pet/{petId}",
+    "POST /pet/{petId}",
+    "DELETE /store/order/{orderId}"
+  ],
+  "context_operations": 7,
+  "spec_context_chars": 10106,
+  "spec_full_chars": 22776,
+  "spec_context_tokens_est": 2526,
+  "spec_full_tokens_est": 5694,
+  "context_reduction": 0.5563,
+  "llm_calls": 1,
+  "prompt_tokens": 2919,
+  "completion_tokens": 6109,
+  "total_tokens": 9028,
+  "generation_tokens": 9028,
+  "repair_tokens": 0,
+  "cost_usd": 0.016148,
+  "llm_latency_s": 27.412,
+  "generated_tests": 32,
+  "executable_tests": 32,
+  "executable_rate": 1.0,
+  "passed": 12,
+  "assertion_failures": 20,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.5263,
+  "reasoning_tokens": 833,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 3.636,
+  "test_cases": [
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_invalid_input_missing_name",
+      "outcome": "assertion",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_invalid_input_missing_photoUrls",
+      "outcome": "assertion",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_validation_exception_invalid_status",
+      "outcome": "assertion",
+      "message": "assert 500 == 422\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_invalid_id_supplied_non_existent",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_invalid_id_supplied_malformed",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_validation_exception_invalid_status",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_validation_exception_missing_required_field",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[available]",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[pending]",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[sold]",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_multiple_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_invalid_value",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_missing_parameter",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_multiple_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_invalid_value",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_missing_parameter",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_by_id_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_by_id_invalid_id_supplied",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_by_id_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_only_name",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_only_status",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_invalid_input_non_existent_pet",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_invalid_input_malformed_id",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_invalid_input_invalid_status",
+      "outcome": "assertion",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_success_placeholder",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_invalid_id_supplied_malformed",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_invalid_id_supplied_too_large",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_not_found",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_invalid_input_missing_name",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_invalid_input_missing_photoUrls",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_validation_exception_invalid_status",
+      "message": "assert 500 == 422\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_validation_exception_invalid_status",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_put_pet_validation_exception_missing_required_field",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[available]",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[pending]",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_success[sold]",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_status_multiple_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_find_by_tags_multiple_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_get_pet_by_id_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_success",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_only_name",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_only_status",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestPetOperations::test_post_pet_by_id_update_with_form_invalid_input_invalid_status",
+      "message": "assert 500 == 200\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_invalid_id_supplied_too_large",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated.TestStoreOrderOperations::test_delete_order_not_found",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 1.0,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 32,
+      "total": 32,
+      "broken": 0,
+      "assertion_failures": 20,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 2919,
+      "completion_tokens": 6109,
+      "latency_s": 27.412038000067696,
+      "cost_usd": 0.0161482,
+      "reasoning_tokens": 833,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.5263,
+    "documented_pairs": 19,
+    "covered_pairs": 10,
+    "operations_hit": 7,
+    "operations_total": 7,
+    "total_requests": 32,
+    "unmatched_requests": 0,
+    "undocumented_observed": {
+      "POST /pet": [
+        500
+      ]
+    },
+    "per_operation": {
+      "POST /pet": {
+        "documented": [
+          "200",
+          "400",
+          "422"
+        ],
+        "observed": [
+          500
+        ],
+        "covered": []
+      },
+      "PUT /pet": {
+        "documented": [
+          "200",
+          "400",
+          "404",
+          "422"
+        ],
+        "observed": [
+          400,
+          404
+        ],
+        "covered": [
+          "400",
+          "404"
+        ]
+      },
+      "GET /pet/findByStatus": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          400
+        ],
+        "covered": [
+          "400"
+        ]
+      },
+      "GET /pet/findByTags": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/{petId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          400,
+          404
+        ],
+        "covered": [
+          "400",
+          "404"
+        ]
+      },
+      "POST /pet/{petId}": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          400
+        ],
+        "covered": [
+          "400"
+        ]
+      },
+      "DELETE /store/order/{orderId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.2222,
+  "duration_s": 31.33,
+  "status": "ok"
+}

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="16" skipped="0" tests="48" time="2.133" timestamp="2026-11-07T12:29:12.919130-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_post_pet_add_new_pet_200" time="0.052" /><testcase classname="test_generated" name="test_post_pet_add_new_pet_400_invalid_input" time="0.013"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:201: in test_post_pet_add_new_pet_400_invalid_input
+    assert response.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_add_new_pet_422_validation_exception" time="0.011"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:208: in test_post_pet_add_new_pet_422_validation_exception
+    assert response.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_pet_update_existing_pet_200" time="0.047" /><testcase classname="test_generated" name="test_put_pet_update_existing_pet_400_invalid_id_supplied" time="0.015" /><testcase classname="test_generated" name="test_put_pet_update_existing_pet_404_pet_not_found" time="0.009" /><testcase classname="test_generated" name="test_put_pet_update_existing_pet_422_validation_exception" time="0.023"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:242: in test_put_pet_update_existing_pet_422_validation_exception
+    assert response.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_pet_find_by_status_200_available" time="0.065" /><testcase classname="test_generated" name="test_get_pet_find_by_status_200_pending_and_sold" time="0.039"><failure message="assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">test_generated.py:261: in test_get_pet_find_by_status_200_pending_and_sold
+    assert response.status_code == 200
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_pet_find_by_status_400_invalid_status_value" time="0.011" /><testcase classname="test_generated" name="test_get_pet_find_by_tags_200" time="0.021" /><testcase classname="test_generated" name="test_get_pet_find_by_tags_400_invalid_tag_value" time="0.009" /><testcase classname="test_generated" name="test_get_pet_by_id_200" time="0.028" /><testcase classname="test_generated" name="test_get_pet_by_id_400_invalid_id_supplied" time="0.011" /><testcase classname="test_generated" name="test_get_pet_by_id_404_pet_not_found" time="0.131" /><testcase classname="test_generated" name="test_post_pet_update_with_form_200" time="0.024"><failure message="Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 665165, 'category': {'id': 367218, 'name': 'Dogs'}, 'name': 'form-updated-befqd', 'photoUrls': ['http://example.com/photo-dgmfa.jpg'], 'tags': [{'id': 286022, 'name': 'tag-bve'}], 'status': 'pending'}">test_generated.py:85: in validate_response_schema
+    validate(instance=response_json, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected)
+E   
+E   Failed validating 'additionalProperties' in schema:
+E       {'type': 'object',
+E        'properties': {'code': {'type': 'integer', 'format': 'int32'},
+E                       'type': {'type': 'string'},
+E                       'message': {'type': 'string'}},
+E        'additionalProperties': False}
+E   
+E   On instance:
+E       {'id': 665165,
+E        'category': {'id': 367218, 'name': 'Dogs'},
+E        'name': 'form-updated-befqd',
+E        'photoUrls': ['http://example.com/photo-dgmfa.jpg'],
+E        'tags': [{'id': 286022, 'name': 'tag-bve'}],
+E        'status': 'pending'}
+
+During handling of the above exception, another exception occurred:
+test_generated.py:330: in test_post_pet_update_with_form_200
+    validate_response_schema(response_json, api_response_schema)
+test_generated.py:87: in validate_response_schema
+    pytest.fail(f"Schema validation failed: {e.message} for data: {response_json}")
+E   Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 665165, 'category': {'id': 367218, 'name': 'Dogs'}, 'name': 'form-updated-befqd', 'photoUrls': ['http://example.com/photo-dgmfa.jpg'], 'tags': [{'id': 286022, 'name': 'tag-bve'}], 'status': 'pending'}</failure></testcase><testcase classname="test_generated" name="test_post_pet_update_with_form_400_invalid_input" time="0.012" /><testcase classname="test_generated" name="test_delete_pet_200" time="0.029" /><testcase classname="test_generated" name="test_delete_pet_400_invalid_pet_value" time="0.011" /><testcase classname="test_generated" name="test_post_pet_upload_image_200" time="0.023"><failure message="Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 777176, 'category': {'id': 774147, 'name': 'Dogs'}, 'name': 'doggie-wfjbk', 'photoUrls': ['http://example.com/photo-hkaof.jpg', '/tmp/inflector8197845682165515341.tmp'], 'tags': [{'id': 295547, 'name': 'tag-ria'}], 'status': 'available'}">test_generated.py:85: in validate_response_schema
+    validate(instance=response_json, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected)
+E   
+E   Failed validating 'additionalProperties' in schema:
+E       {'type': 'object',
+E        'properties': {'code': {'type': 'integer', 'format': 'int32'},
+E                       'type': {'type': 'string'},
+E                       'message': {'type': 'string'}},
+E        'additionalProperties': False}
+E   
+E   On instance:
+E       {'id': 777176,
+E        'category': {'id': 774147, 'name': 'Dogs'},
+E        'name': 'doggie-wfjbk',
+E        'photoUrls': ['http://example.com/photo-hkaof.jpg',
+E                      '/tmp/inflector8197845682165515341.tmp'],
+E        'tags': [{'id': 295547, 'name': 'tag-ria'}],
+E        'status': 'available'}
+
+During handling of the above exception, another exception occurred:
+test_generated.py:374: in test_post_pet_upload_image_200
+    validate_response_schema(response_json, api_response_schema)
+test_generated.py:87: in validate_response_schema
+    pytest.fail(f"Schema validation failed: {e.message} for data: {response_json}")
+E   Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 777176, 'category': {'id': 774147, 'name': 'Dogs'}, 'name': 'doggie-wfjbk', 'photoUrls': ['http://example.com/photo-hkaof.jpg', '/tmp/inflector8197845682165515341.tmp'], 'tags': [{'id': 295547, 'name': 'tag-ria'}], 'status': 'available'}</failure></testcase><testcase classname="test_generated" name="test_post_pet_upload_image_400_no_file_uploaded" time="0.026"><failure message="assert 500 == 400&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:382: in test_post_pet_upload_image_400_no_file_uploaded
+    assert response.status_code == 400
+E   assert 500 == 400
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_upload_image_404_pet_not_found" time="0.010" /><testcase classname="test_generated" name="test_get_store_inventory_200" time="0.009" /><testcase classname="test_generated" name="test_post_store_order_200" time="0.033" /><testcase classname="test_generated" name="test_post_store_order_400_invalid_input" time="0.010" /><testcase classname="test_generated" name="test_post_store_order_422_validation_exception" time="0.010"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:427: in test_post_store_order_422_validation_exception
+    assert response.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_store_order_by_id_200" time="0.035" /><testcase classname="test_generated" name="test_get_store_order_by_id_400_invalid_id_supplied" time="0.010" /><testcase classname="test_generated" name="test_get_store_order_by_id_404_order_not_found" time="0.009" /><testcase classname="test_generated" name="test_delete_store_order_200" time="0.036" /><testcase classname="test_generated" name="test_delete_store_order_400_invalid_id_supplied" time="0.009" /><testcase classname="test_generated" name="test_delete_store_order_404_order_not_found" time="0.010"><failure message="assert 200 == 404&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:468: in test_delete_store_order_404_order_not_found
+    assert response.status_code == 404
+E   assert 200 == 404
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_user_create_user_200" time="0.016" /><testcase classname="test_generated" name="test_post_user_create_user_default_error" time="0.010" /><testcase classname="test_generated" name="test_post_user_create_with_list_200" time="0.019"><failure message="Failed: Schema validation failed: [{'id': 341548, 'username': 'user-yugyo', 'firstName': 'John-ovm', 'lastName': 'Doe-mow', 'email': 'john.doe.wmi@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 533790, 'username': 'user-aatlw', 'firstName': 'John-skr', 'lastName': 'Doe-pnu', 'email': 'john.doe.mjr@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' for data: [{'id': 341548, 'username': 'user-yugyo...&#10;[truncated; full report in element text]">test_generated.py:85: in validate_response_schema
+    validate(instance=response_json, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: [{'id': 341548, 'username': 'user-yugyo', 'firstName': 'John-ovm', 'lastName': 'Doe-mow', 'email': 'john.doe.wmi@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 533790, 'username': 'user-aatlw', 'firstName': 'John-skr', 'lastName': 'Doe-pnu', 'email': 'john.doe.mjr@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'object',
+E        'properties': {'id': {'type': 'integer', 'format': 'int64'},
+E                       'username': {'type': 'string'},
+E                       'firstName': {'type': 'string'},
+E                       'lastName': {'type': 'string'},
+E                       'email': {'type': 'string'},
+E                       'password': {'type': 'string'},
+E                       'phone': {'type': 'string'},
+E                       'userStatus': {'type': 'integer', 'format': 'int32'}},
+E        'additionalProperties': False}
+E   
+E   On instance:
+E       [{'id': 341548,
+E         'username': 'user-yugyo',
+E         'firstName': 'John-ovm',
+E         'lastName': 'Doe-mow',
+E         'email': 'john.doe.wmi@example.com',
+E         'password': 'password123',
+E         'phone': '123-456-7890',
+E         'userStatus': 1},
+E        {'id': 533790,
+E         'username': 'user-aatlw',
+E         'firstName': 'John-skr',
+E         'lastName': 'Doe-pnu',
+E         'email': 'john.doe.mjr@example.com',
+E         'password': 'password123',
+E         'phone': '123-456-7890',
+E         'userStatus': 1}]
+
+During handling of the above exception, another exception occurred:
+test_generated.py:496: in test_post_user_create_with_list_200
+    validate_response_schema(response_json, user_schema)
+test_generated.py:87: in validate_response_schema
+    pytest.fail(f"Schema validation failed: {e.message} for data: {response_json}")
+E   Failed: Schema validation failed: [{'id': 341548, 'username': 'user-yugyo', 'firstName': 'John-ovm', 'lastName': 'Doe-mow', 'email': 'john.doe.wmi@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 533790, 'username': 'user-aatlw', 'firstName': 'John-skr', 'lastName': 'Doe-pnu', 'email': 'john.doe.mjr@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' for data: [{'id': 341548, 'username': 'user-yugyo', 'firstName': 'John-ovm', 'lastName': 'Doe-mow', 'email': 'john.doe.wmi@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 533790, 'username': 'user-aatlw', 'firstName': 'John-skr', 'lastName': 'Doe-pnu', 'email': 'john.doe.mjr@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}]</failure></testcase><testcase classname="test_generated" name="test_post_user_create_with_list_default_error" time="0.011"><failure message="assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:505: in test_post_user_create_with_list_default_error
+    assert response.status_code &gt;= 400
+E   assert 200 &gt;= 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_user_login_200" time="0.047"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+test_generated.py:515: in test_get_user_login_200
+    assert isinstance(response.json(), str)  # Response content is a string token
+                      ^^^^^^^^^^^^^^^
+D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="test_generated" name="test_get_user_login_400_invalid_credentials" time="0.013"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:525: in test_get_user_login_400_invalid_credentials
+    assert response.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_user_logout_200" time="0.014" /><testcase classname="test_generated" name="test_get_user_by_name_200" time="0.043" /><testcase classname="test_generated" name="test_get_user_by_name_400_invalid_username_supplied" time="0.018"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">test_generated.py:544: in test_get_user_by_name_400_invalid_username_supplied
+    assert response.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_user_by_name_404_user_not_found" time="0.013" /><testcase classname="test_generated" name="test_put_user_update_user_200" time="0.026" /><testcase classname="test_generated" name="test_put_user_update_user_400_bad_request" time="0.020" /><testcase classname="test_generated" name="test_put_user_update_user_404_user_not_found" time="0.008" /><testcase classname="test_generated" name="test_delete_user_200" time="0.023" /><testcase classname="test_generated" name="test_delete_user_400_invalid_username_supplied" time="0.008"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">test_generated.py:597: in test_delete_user_400_invalid_username_supplied
+    assert response.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_delete_user_404_user_not_found" time="0.008"><failure message="assert 200 == 404&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:603: in test_delete_user_404_user_not_found
+    assert response.status_code == 404
+E   assert 200 == 404
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase></testsuite></testsuites>

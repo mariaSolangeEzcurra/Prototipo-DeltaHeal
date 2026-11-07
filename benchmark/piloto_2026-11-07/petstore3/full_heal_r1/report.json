@@ -1,0 +1,548 @@
+{
+  "timestamp": "2026-11-07T12:28:39",
+  "mode": "full_heal",
+  "run_id": "full_heal_r1",
+  "model": "gemini-2.5-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /pet",
+      "GET /pet/findByTags",
+      "DELETE /store/order/{orderId}"
+    ],
+    "modified": [
+      "POST /pet",
+      "GET /pet/findByStatus",
+      "GET /pet/{petId}",
+      "POST /pet/{petId}"
+    ],
+    "removed": [],
+    "unchanged_count": 12
+  },
+  "operations_total": 19,
+  "target_operations": [
+    "POST /pet",
+    "PUT /pet",
+    "GET /pet/findByStatus",
+    "GET /pet/findByTags",
+    "GET /pet/{petId}",
+    "POST /pet/{petId}",
+    "DELETE /store/order/{orderId}"
+  ],
+  "context_operations": 19,
+  "spec_context_chars": 22776,
+  "spec_full_chars": 22776,
+  "spec_context_tokens_est": 5694,
+  "spec_full_tokens_est": 5694,
+  "context_reduction": 0.0,
+  "llm_calls": 3,
+  "prompt_tokens": 22562,
+  "completion_tokens": 13145,
+  "total_tokens": 35707,
+  "generation_tokens": 13611,
+  "repair_tokens": 22096,
+  "cost_usd": 0.039631,
+  "llm_latency_s": 55.615,
+  "generated_tests": 48,
+  "executable_tests": 48,
+  "executable_rate": 1.0,
+  "passed": 33,
+  "assertion_failures": 15,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 2,
+  "http_coverage": 0.7895,
+  "reasoning_tokens": 2452,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 4.103,
+  "test_cases": [
+    {
+      "test": "test_generated::test_post_pet_add_new_pet_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_add_new_pet_400_invalid_input",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_add_new_pet_422_validation_exception",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_pet_update_existing_pet_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_update_existing_pet_400_invalid_id_supplied",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_update_existing_pet_404_pet_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_update_existing_pet_422_validation_exception",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_status_200_available",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_status_200_pending_and_sold",
+      "outcome": "assertion",
+      "message": "assert 400 == 200\n +  where 400 = <Response [400]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_status_400_invalid_status_value",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_tags_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_tags_400_invalid_tag_value",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_by_id_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_by_id_400_invalid_id_supplied",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_by_id_404_pet_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_update_with_form_200",
+      "outcome": "assertion",
+      "message": "Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 832287, 'category': {'id': 320161, 'name': 'Dogs'}, 'name': 'form-updated-xgwfe', 'photoUrls': ['http://example.com/photo-gpato.jpg'], 'tags': [{'id': 345763, 'name': 'tag-bzh'}], 'status': 'pending'}"
+    },
+    {
+      "test": "test_generated::test_post_pet_update_with_form_400_invalid_input",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_pet_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_pet_400_invalid_pet_value",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_upload_image_200",
+      "outcome": "assertion",
+      "message": "Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 330298, 'category': {'id': 427423, 'name': 'Dogs'}, 'name': 'doggie-dylsi', 'photoUrls': ['http://example.com/photo-omtpy.jpg', '/tmp/inflector2321104673991919180.tmp'], 'tags': [{'id': 784210, 'name': 'tag-tlk'}], 'status': 'available'}"
+    },
+    {
+      "test": "test_generated::test_post_pet_upload_image_400_no_file_uploaded",
+      "outcome": "assertion",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_upload_image_404_pet_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_inventory_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_400_invalid_input",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_store_order_422_validation_exception",
+      "outcome": "assertion",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_store_order_by_id_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_order_by_id_400_invalid_id_supplied",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_store_order_by_id_404_order_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_400_invalid_id_supplied",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_store_order_404_order_not_found",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_user_create_user_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_user_create_user_default_error",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_user_create_with_list_200",
+      "outcome": "assertion",
+      "message": "Failed: Schema validation failed: [{'id': 328248, 'username': 'user-pnlyu', 'firstName': 'John-obi', 'lastName': 'Doe-nxl', 'email': 'john.doe.qsn@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 466301, 'username': 'user-vkfkg', 'firstName': 'John-tpq', 'lastName': 'Doe-rla', 'email': 'john.doe.bil@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' for data: [{'id': 328248, 'username': 'user-pnlyu"
+    },
+    {
+      "test": "test_generated::test_post_user_create_with_list_default_error",
+      "outcome": "assertion",
+      "message": "assert 200 >= 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_login_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_login_400_invalid_credentials",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_logout_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_by_name_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_by_name_400_invalid_username_supplied",
+      "outcome": "assertion",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_by_name_404_user_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_update_user_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_update_user_400_bad_request",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_update_user_404_user_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_400_invalid_username_supplied",
+      "outcome": "assertion",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_404_user_not_found",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_post_pet_add_new_pet_400_invalid_input",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_add_new_pet_422_validation_exception",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_pet_update_existing_pet_422_validation_exception",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_find_by_status_200_pending_and_sold",
+      "message": "assert 400 == 200\n +  where 400 = <Response [400]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_update_with_form_200",
+      "message": "Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 832287, 'category': {'id': 320161, 'name': 'Dogs'}, 'name': 'form-updated-xgwfe', 'photoUrls': ['http://example.com/photo-gpato.jpg'], 't"
+    },
+    {
+      "test": "test_generated::test_post_pet_upload_image_200",
+      "message": "Failed: Schema validation failed: Additional properties are not allowed ('category', 'id', 'name', 'photoUrls', 'status', 'tags' were unexpected) for data: {'id': 330298, 'category': {'id': 427423, 'name': 'Dogs'}, 'name': 'doggie-dylsi', 'photoUrls': ['http://example.com/photo-omtpy.jpg', '/tmp/inf"
+    },
+    {
+      "test": "test_generated::test_post_pet_upload_image_400_no_file_uploaded",
+      "message": "assert 500 == 400\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_store_order_422_validation_exception",
+      "message": "assert 200 == 422\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_store_order_404_order_not_found",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_user_create_with_list_200",
+      "message": "Failed: Schema validation failed: [{'id': 328248, 'username': 'user-pnlyu', 'firstName': 'John-obi', 'lastName': 'Doe-nxl', 'email': 'john.doe.qsn@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 466301, 'username': 'user-vkfkg', 'firstName': 'John-tpq', 'la"
+    },
+    {
+      "test": "test_generated::test_post_user_create_with_list_default_error",
+      "message": "assert 200 >= 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_login_400_invalid_credentials",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_user_by_name_400_invalid_username_supplied",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_400_invalid_username_supplied",
+      "message": "assert 404 == 400\n +  where 404 = <Response [404]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_user_404_user_not_found",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 0.9792,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 47,
+      "total": 48,
+      "broken": 1,
+      "assertion_failures": 15,
+      "collection_error": false,
+      "action": "repair_patch"
+    },
+    {
+      "index": 1,
+      "executable": 47,
+      "total": 48,
+      "broken": 1,
+      "assertion_failures": 15,
+      "collection_error": false,
+      "action": "repair_patch"
+    },
+    {
+      "index": 2,
+      "executable": 48,
+      "total": 48,
+      "broken": 0,
+      "assertion_failures": 15,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 5920,
+      "completion_tokens": 7691,
+      "latency_s": 31.581465699942783,
+      "cost_usd": 0.0210035,
+      "reasoning_tokens": 834,
+      "truncated": false
+    },
+    {
+      "phase": "repair",
+      "prompt_tokens": 8474,
+      "completion_tokens": 2488,
+      "latency_s": 10.296221500029787,
+      "cost_usd": 0.008762200000000001,
+      "reasoning_tokens": 598,
+      "truncated": false
+    },
+    {
+      "phase": "repair",
+      "prompt_tokens": 8168,
+      "completion_tokens": 2966,
+      "latency_s": 13.737528800033033,
+      "cost_usd": 0.0098654,
+      "reasoning_tokens": 1020,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.7895,
+    "documented_pairs": 19,
+    "covered_pairs": 15,
+    "operations_hit": 7,
+    "operations_total": 7,
+    "total_requests": 73,
+    "unmatched_requests": 2,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /pet": {
+        "documented": [
+          "200",
+          "400",
+          "422"
+        ],
+        "observed": [
+          200
+        ],
+        "covered": [
+          "200"
+        ]
+      },
+      "PUT /pet": {
+        "documented": [
+          "200",
+          "400",
+          "404",
+          "422"
+        ],
+        "observed": [
+          200,
+          400,
+          404
+        ],
+        "covered": [
+          "200",
+          "400",
+          "404"
+        ]
+      },
+      "GET /pet/findByStatus": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/findByTags": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/{petId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400,
+          404
+        ],
+        "covered": [
+          "200",
+          "400",
+          "404"
+        ]
+      },
+      "POST /pet/{petId}": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "DELETE /store/order/{orderId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.7778,
+  "duration_s": 68.467,
+  "status": "ok"
+}

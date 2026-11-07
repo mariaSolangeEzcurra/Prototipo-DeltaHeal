@@ -150,7 +150,7 @@ def build(results_dir: Path, out: Path) -> Path:
         ("Errores código", 9), ("Pares cubiertos", 9), ("Pares documentados", 10), ("Cobertura HTTP", 10),
         ("Tokens entrada", 10), ("Tokens salida", 10), ("Tokens totales", 10), ("Tokens generación", 10),
         ("Tokens reparación", 10), ("Costo equiv. (USD)", 11), ("Llamadas LLM", 8), ("Iteraciones reparación", 9),
-        ("Respuestas cortadas", 9), ("Reducción contexto", 10), ("Duración (s)", 10), ("Carpeta de evidencia", 40),
+        ("Respuestas cortadas", 9), ("Reducción contexto", 10), ("Duración (s)", 10), ("API sana al terminar", 14), ("Carpeta de evidencia", 40),
     ]
     headers = [c[0] for c in cols]
     L = {h: get_column_letter(i) for i, h in enumerate(headers, 1)}
@@ -171,7 +171,7 @@ def build(results_dir: Path, out: Path) -> Path:
             _num(row["generation_tokens"]) or 0, _num(row["repair_tokens"]) or 0,
             _num(row["cost_usd"]) or 0, _num(row["llm_calls"]) or 0, _num(row["heal_iterations"]) or 0,
             _num(row.get("llm_truncated_calls")) or 0, _num(row["context_reduction"]),
-            _num(row["duration_s"]), str(r["dir"].relative_to(ROOT)) if r["dir"].is_relative_to(ROOT) else str(r["dir"]),
+            _num(row["duration_s"]), row.get("api_smoke_after") or "—", str(r["dir"].relative_to(ROOT)) if r["dir"].is_relative_to(ROOT) else str(r["dir"]),
         ])
     _table(wc, headers, rows, [c[1] for c in cols])
     last = len(rows) + 1

@@ -1,0 +1,1101 @@
+### SYSTEM
+Eres un ingeniero de QA experto en testing de APIs REST con Python y Pytest.
+Generas pruebas de regresión ejecutables a partir de contratos OpenAPI.
+
+Reglas estrictas del código que produces:
+1. Devuelve UN único bloque ```python``` con un archivo Pytest completo; nada de texto fuera del bloque.
+2. Usa SOLO la fixture `api` (ya provista por conftest; NO la definas). `api` es un requests.Session
+   con base URL: llama `api.get("/ruta")`, `api.post("/ruta", json=...)`, etc. con rutas relativas.
+3. Librerías permitidas: pytest, requests, json, uuid, random, string, datetime, re y jsonschema.
+4. Cada test debe ser independiente: si necesita un recurso existente, créalo primero en el propio test
+   (o en una fixture local) y usa el id devuelto. No dependas del orden de ejecución.
+5. Cubre para cada operación el mayor número posible de códigos de respuesta DOCUMENTADOS
+   (casos exitosos, 4xx por datos inválidos, recursos inexistentes, etc.).
+6. Verifica el código de estado y, cuando la respuesta tenga esquema, los campos requeridos y sus tipos.
+7. No uses time.sleep, no hagas llamadas a hosts externos, no leas variables de entorno.
+8. Nombres de test descriptivos: test_<metodo>_<recurso>_<escenario>.
+
+Ahora actúas como reparador: recibes un archivo Pytest que falló al ejecutarse y los errores capturados.
+Corrige SOLO los defectos del código de prueba (errores de sintaxis, imports, nombres, fixtures,
+construcción de payloads, rutas mal formadas, parseo de JSON, etc.).
+No modifiques tests que ya pasan. No elimines tests salvo que sean imposibles de corregir.
+NUNCA cambies una aserción para que acepte un comportamiento que contradice la especificación:
+esas fallas pueden ser regresiones reales de la API.
+Recibes SOLO la cabecera del módulo (imports, helpers, fixtures) y las funciones de test que
+fallaron. Devuelve en un único bloque ```python``` ÚNICAMENTE las definiciones corregidas
+(con el MISMO nombre) y, si hace falta, imports o helpers nuevos o corregidos.
+NO repitas los tests que no te envié ni el resto del archivo.
+
+
+### USER
+Iteración de reparación 1/3.
+
+<openapi_spec>
+openapi: 3.0.4
+info:
+  title: Swagger Petstore - OpenAPI 3.0
+  description: 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
+
+    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we''ve switched to the design
+    first approach!
+
+    You can now help us improve the API whether it''s by making changes to the definition itself or to the code.
+
+    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+
+
+    Some useful links:
+
+    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
+
+    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)'
+  termsOfService: https://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.30-SNAPSHOT
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+- url: https://petstore3.swagger.io/api/v3
+tags:
+- name: pet
+  description: Everything about your Pets
+  externalDocs:
+    description: Find out more
+    url: https://swagger.io
+- name: store
+  description: Access to Petstore orders
+  externalDocs:
+    description: Find out more about our store
+    url: https://swagger.io
+- name: user
+  description: Operations about user
+paths:
+  /pet:
+    put:
+      tags:
+      - pet
+      summary: Update an existing pet.
+      description: Update an existing pet by Id.
+      operationId: updatePet
+      requestBody:
+        description: Update an existent pet in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Pet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pet'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '422':
+          description: Validation exception
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+    post:
+      tags:
+      - pet
+      summary: Add a new pet to the store.
+      description: Add a new pet to the store.
+      operationId: addPet
+      requestBody:
+        description: Create a new pet in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Pet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pet'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /pet/findByStatus:
+    get:
+      tags:
+      - pet
+      summary: Finds Pets by status.
+      description: Multiple status values can be provided with comma separated strings.
+      operationId: findPetsByStatus
+      parameters:
+      - name: status
+        in: query
+        description: Status values that need to be considered for filter
+        required: true
+        explode: true
+        schema:
+          type: string
+          default: available
+          enum:
+          - available
+          - pending
+          - sold
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid status value
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /pet/findByTags:
+    get:
+      tags:
+      - pet
+      summary: Finds Pets by tags.
+      description: Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
+      operationId: findPetsByTags
+      parameters:
+      - name: tags
+        in: query
+        description: Tags to filter by
+        required: true
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid tag value
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /pet/{petId}:
+    get:
+      tags:
+      - pet
+      summary: Find pet by ID.
+      description: Returns a single pet.
+      operationId: getPetById
+      parameters:
+      - name: petId
+        in: path
+        description: ID of pet to return
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        default:
+          description: Unexpected error
+      security:
+      - api_key: []
+      - petstore_auth:
+        - write:pets
+        - read:pets
+    post:
+      tags:
+      - pet
+      summary: Updates a pet in the store with form data.
+      description: Updates a pet resource based on the form data.
+      operationId: updatePetWithForm
+      parameters:
+      - name: petId
+        in: path
+        description: ID of pet that needs to be updated
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: name
+        in: query
+        description: Name of pet that needs to be updated
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Status of pet that needs to be updated
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid input
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+    delete:
+      tags:
+      - pet
+      summary: Deletes a pet.
+      description: Delete a pet.
+      operationId: deletePet
+      parameters:
+      - name: api_key
+        in: header
+        description: ''
+        required: false
+        schema:
+          type: string
+      - name: petId
+        in: path
+        description: Pet id to delete
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Pet deleted
+        '400':
+          description: Invalid pet value
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /pet/{petId}/uploadImage:
+    post:
+      tags:
+      - pet
+      summary: Uploads an image.
+      description: Upload image of the pet.
+      operationId: uploadFile
+      parameters:
+      - name: petId
+        in: path
+        description: ID of pet to update
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: additionalMetadata
+        in: query
+        description: Additional Metadata
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: No file uploaded
+        '404':
+          description: Pet not found
+        default:
+          description: Unexpected error
+      security:
+      - petstore_auth:
+        - write:pets
+        - read:pets
+  /store/inventory:
+    get:
+      tags:
+      - store
+      summary: Returns pet inventories by status.
+      description: Returns a map of status codes to quantities.
+      operationId: getInventory
+      x-swagger-router-controller: OrderController
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int32
+        default:
+          description: Unexpected error
+      security:
+      - api_key: []
+  /store/order:
+    post:
+      tags:
+      - store
+      summary: Place an order for a pet.
+      description: Place a new order in the store.
+      x-swagger-router-controller: OrderController
+      operationId: placeOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+        default:
+          description: Unexpected error
+  /store/order/{orderId}:
+    get:
+      tags:
+      - store
+      summary: Find purchase order by ID.
+      x-swagger-router-controller: OrderController
+      description: For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.
+      operationId: getOrderById
+      parameters:
+      - name: orderId
+        in: path
+        description: ID of order that needs to be fetched
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Order not found
+        default:
+          description: Unexpected error
+    delete:
+      tags:
+      - store
+      summary: Delete purchase order by identifier.
+      description: For valid response try integer IDs with value < 1000. Anything above 1000 or non-integers will generate
+        API errors.
+      x-swagger-router-controller: OrderController
+      operationId: deleteOrder
+      parameters:
+      - name: orderId
+        in: path
+        description: ID of the order that needs to be deleted
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: order deleted
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Order not found
+        default:
+          description: Unexpected error
+  /user:
+    post:
+      tags:
+      - user
+      summary: Create user.
+      description: This can only be done by the logged in user.
+      x-swagger-router-controller: UserController
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: Unexpected error
+  /user/createWithList:
+    post:
+      tags:
+      - user
+      summary: Creates list of users with given input array.
+      description: Creates list of users with given input array.
+      x-swagger-router-controller: UserController
+      operationId: createUsersWithListInput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: Unexpected error
+  /user/login:
+    get:
+      tags:
+      - user
+      summary: Logs user into the system.
+      description: Log into the system.
+      operationId: loginUser
+      parameters:
+      - name: username
+        in: query
+        description: The user name for login
+        required: false
+        schema:
+          type: string
+      - name: password
+        in: query
+        description: The password for login in clear text
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+        '400':
+          description: Invalid username/password supplied
+        default:
+          description: Unexpected error
+  /user/logout:
+    get:
+      tags:
+      - user
+      summary: Logs out current logged in user session.
+      description: Log user out of the system.
+      operationId: logoutUser
+      parameters: []
+      responses:
+        '200':
+          description: successful operation
+        default:
+          description: Unexpected error
+  /user/{username}:
+    get:
+      tags:
+      - user
+      summary: Get user by user name.
+      description: Get user detail based on username.
+      operationId: getUserByName
+      parameters:
+      - name: username
+        in: path
+        description: The name that needs to be fetched. Use user1 for testing
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+        default:
+          description: Unexpected error
+    put:
+      tags:
+      - user
+      summary: Update user resource.
+      description: This can only be done by the logged in user.
+      x-swagger-router-controller: UserController
+      operationId: updateUser
+      parameters:
+      - name: username
+        in: path
+        description: name that need to be deleted
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Update an existent user in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: bad request
+        '404':
+          description: user not found
+        default:
+          description: Unexpected error
+    delete:
+      tags:
+      - user
+      summary: Delete user resource.
+      description: This can only be done by the logged in user.
+      operationId: deleteUser
+      parameters:
+      - name: username
+        in: path
+        description: The name that needs to be deleted
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User deleted
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+        default:
+          description: Unexpected error
+components:
+  schemas:
+    Order:
+      x-swagger-router-model: io.swagger.petstore.model.Order
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        petId:
+          type: integer
+          format: int64
+          example: 198772
+        quantity:
+          type: integer
+          format: int32
+          example: 7
+        shipDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          description: Order Status
+          example: approved
+          enum:
+          - placed
+          - approved
+          - delivered
+        complete:
+          type: boolean
+      xml:
+        name: order
+    Category:
+      x-swagger-router-model: io.swagger.petstore.model.Category
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Dogs
+      xml:
+        name: category
+    User:
+      x-swagger-router-model: io.swagger.petstore.model.User
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: James
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          example: '12345'
+        phone:
+          type: string
+          example: '12345'
+        userStatus:
+          type: integer
+          description: User Status
+          format: int32
+          example: 1
+      xml:
+        name: user
+    Tag:
+      x-swagger-router-model: io.swagger.petstore.model.Tag
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      xml:
+        name: tag
+    Pet:
+      x-swagger-router-model: io.swagger.petstore.model.Pet
+      required:
+      - name
+      - photoUrls
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: doggie
+        category:
+          $ref: '#/components/schemas/Category'
+        photoUrls:
+          type: array
+          xml:
+            wrapped: true
+          items:
+            type: string
+            xml:
+              name: photoUrl
+        tags:
+          type: array
+          xml:
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/Tag'
+        status:
+          type: string
+          description: pet status in the store
+          enum:
+          - available
+          - pending
+          - sold
+      xml:
+        name: pet
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: '##default'
+  requestBodies:
+    Pet:
+      description: Pet object that needs to be added to the store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pet'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/Pet'
+    UserArray:
+      description: List of user object
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
+
+</openapi_spec>
+
+<module_header>
+import pytest
+
+import requests
+
+import json
+
+import uuid
+
+import random
+
+import string
+
+from datetime import datetime, timedelta
+
+from jsonschema import validate, ValidationError
+
+pet_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "name": {"type": "string"},
+        "category": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "format": "int64"},
+                "name": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+        "photoUrls": {"type": "array", "items": {"type": "string"}},
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer", "format": "int64"},
+                    "name": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        "status": {"type": "string", "enum": ["available", "pending", "sold"]},
+    },
+    "required": ["name", "photoUrls"],
+    "additionalProperties": False,
+}
+
+order_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "petId": {"type": "integer", "format": "int64"},
+        "quantity": {"type": "integer", "format": "int32"},
+        "shipDate": {"type": "string", "format": "date-time"},
+        "status": {"type": "string", "enum": ["placed", "approved", "delivered"]},
+        "complete": {"type": "boolean"},
+    },
+    "additionalProperties": False,
+}
+
+user_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "username": {"type": "string"},
+        "firstName": {"type": "string"},
+        "lastName": {"type": "string"},
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "phone": {"type": "string"},
+        "userStatus": {"type": "integer", "format": "int32"},
+    },
+    "additionalProperties": False,
+}
+
+api_response_schema = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "integer", "format": "int32"},
+        "type": {"type": "string"},
+        "message": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+def validate_response_schema(response_json, schema):
+    """Helper to validate a JSON response against a given schema."""
+    try:
+        validate(instance=response_json, schema=schema)
+    except ValidationError as e:
+        pytest.fail(f"Schema validation failed: {e.message} for data: {response_json}")
+
+def generate_random_string(length=10):
+    return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+def generate_random_id():
+    return random.randint(100000, 999999)
+
+def generate_pet_data(pet_id=None, status="available"):
+    return {
+        "id": pet_id if pet_id is not None else generate_random_id(),
+        "name": f"doggie-{generate_random_string(5)}",
+        "category": {"id": generate_random_id(), "name": "Dogs"},
+        "photoUrls": [f"http://example.com/photo-{generate_random_string(5)}.jpg"],
+        "tags": [{"id": generate_random_id(), "name": f"tag-{generate_random_string(3)}"}],
+        "status": status,
+    }
+
+def generate_user_data(username=None):
+    user_id = generate_random_id()
+    return {
+        "id": user_id,
+        "username": username if username else f"user-{generate_random_string(5)}",
+        "firstName": f"John-{generate_random_string(3)}",
+        "lastName": f"Doe-{generate_random_string(3)}",
+        "email": f"john.doe.{generate_random_string(3)}@example.com",
+        "password": "password123",
+        "phone": "123-456-7890",
+        "userStatus": 1,
+    }
+
+def generate_order_data(order_id=None, pet_id=None, status="placed"):
+    return {
+        "id": order_id if order_id is not None else generate_random_id(),
+        "petId": pet_id if pet_id is not None else generate_random_id(),
+        "quantity": random.randint(1, 10),
+        "shipDate": (datetime.now() + timedelta(days=1)).isoformat(timespec="seconds") + "Z",
+        "status": status,
+        "complete": False,
+    }
+
+@pytest.fixture
+def create_pet(api):
+    """Fixture to create a pet and return its ID."""
+
+    def _create_pet(status="available"):
+        pet_data = generate_pet_data(status=status)
+        response = api.post("/pet", json=pet_data)
+        assert response.status_code == 200
+        created_pet = response.json()
+        validate_response_schema(created_pet, pet_schema)
+        return created_pet
+
+    yield _create_pet
+
+@pytest.fixture
+def create_user(api):
+    """Fixture to create a user and return its username."""
+
+    def _create_user(username=None):
+        user_data = generate_user_data(username)
+        response = api.post("/user", json=user_data)
+        assert response.status_code == 200
+        created_user = response.json()
+        validate_response_schema(created_user, user_schema)
+        return created_user
+
+    yield _create_user
+
+@pytest.fixture
+def create_order(api, create_pet):
+    """Fixture to create an order and return its ID."""
+
+    def _create_order(order_id=None, pet_id=None, status="placed"):
+        if pet_id is None:
+            pet = create_pet()
+            pet_id = pet["id"]
+        order_data = generate_order_data(order_id=order_id, pet_id=pet_id, status=status)
+        response = api.post("/store/order", json=order_data)
+        assert response.status_code == 200
+        created_order = response.json()
+        validate_response_schema(created_order, order_schema)
+        return created_order
+
+    yield _create_order
+</module_header>
+
+<failing_tests>
+def test_get_user_login_200(api, create_user):
+    user_data = generate_user_data()
+    api.post("/user", json=user_data)  # Create user first
+    response = api.get(
+        "/user/login", params={"username": user_data["username"], "password": user_data["password"]}
+    )
+    assert response.status_code == 200
+    assert isinstance(response.json(), str)  # Response content is a string token
+    assert "X-Rate-Limit" in response.headers
+    assert "X-Expires-After" in response.headers
+    # Check header types
+    assert isinstance(int(response.headers["X-Rate-Limit"]), int)
+    datetime.fromisoformat(response.headers["X-Expires-After"].replace("Z", "+00:00"))
+</failing_tests>
+
+<pytest_errors>
+## test_generated::test_get_user_login_200 [runtime_error]
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+test_generated.py:515: in test_get_user_login_200
+    assert isinstance(response.json(), str)  # Response content is a string token
+                      ^^^^^^^^^^^^^^^
+D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+</pytest_errors>
+

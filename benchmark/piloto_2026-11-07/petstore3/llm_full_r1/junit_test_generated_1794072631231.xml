@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="17" skipped="0" tests="46" time="3.395" timestamp="2026-11-07T12:30:33.359462-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_post_pet_success" time="0.051" /><testcase classname="test_generated" name="test_post_pet_invalid_input_400" time="0.012"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:180: in test_post_pet_invalid_input_400
+    assert resp.status_code == 400 # Or 422 depending on server implementation
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_validation_exception_422" time="0.011"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:186: in test_post_pet_validation_exception_422
+    assert resp.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_pet_success" time="0.034" /><testcase classname="test_generated" name="test_put_pet_invalid_id_400" time="0.017" /><testcase classname="test_generated" name="test_put_pet_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_put_pet_validation_exception_422" time="0.028"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:212: in test_put_pet_validation_exception_422
+    assert resp.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_pet_findByStatus_success" time="0.137"><failure message="Failed: Schema validation failed: 'name' is a required property in deque([])">test_generated.py:122: in validate_schema
+    validate(instance=data, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'name' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'required': ['name', 'photoUrls'],
+E        'properties': {'id': {'type': 'integer', 'format': 'int64'},
+E                       'name': {'type': 'string'},
+E                       'category': {'type': 'object',
+E                                    'properties': {'id': {'type': 'integer',
+E                                                          'format': 'int64'},
+E                                                   'name': {'type': 'string'}}},
+E                       'photoUrls': {'type': 'array',
+E                                     'items': {'type': 'string'}},
+E                       'tags': {'type': 'array',
+E                                'items': {'type': 'object',
+E                                          'properties': {'id': {'type': 'integer',
+E                                                                'format': 'int64'},
+E                                                         'name': {'type': 'string'}}}},
+E                       'status': {'type': 'string',
+E                                  'enum': ['available', 'pending', 'sold']}}}
+E   
+E   On instance:
+E       {'id': 265580,
+E        'category': {'id': 4, 'name': 'category-gzfka'},
+E        'photoUrls': ['http://example.com/photo/wtxoj.jpg'],
+E        'tags': [{'id': 1, 'name': 'tag-pef'}],
+E        'status': 'available'}
+
+During handling of the above exception, another exception occurred:
+test_generated.py:237: in test_get_pet_findByStatus_success
+    validate_schema(pet, PET_SCHEMA)
+test_generated.py:124: in validate_schema
+    pytest.fail(f"Schema validation failed: {e.message} in {e.path}")
+E   Failed: Schema validation failed: 'name' is a required property in deque([])</failure></testcase><testcase classname="test_generated" name="test_get_pet_findByStatus_invalid_status_400" time="0.011" /><testcase classname="test_generated" name="test_get_pet_findByTags_success" time="0.042"><failure message="assert False&#10; +  where False = any(&lt;generator object test_get_pet_findByTags_success.&lt;locals&gt;.&lt;genexpr&gt; at 0x00000237FABEB760&gt;)">test_generated.py:317: in test_get_pet_findByTags_success
+    assert any(p["id"] == pet_id_1 for p in resp.json())
+E   assert False
+E    +  where False = any(&lt;generator object test_get_pet_findByTags_success.&lt;locals&gt;.&lt;genexpr&gt; at 0x00000237FABEB760&gt;)</failure></testcase><testcase classname="test_generated" name="test_get_pet_findByTags_invalid_tag_400" time="0.009" /><testcase classname="test_generated" name="test_get_pet_byId_success" time="0.032" /><testcase classname="test_generated" name="test_get_pet_byId_invalid_id_400" time="0.010" /><testcase classname="test_generated" name="test_get_pet_byId_not_found_404" time="0.037" /><testcase classname="test_generated" name="test_post_pet_byId_updateWithForm_success" time="0.036" /><testcase classname="test_generated" name="test_post_pet_byId_updateWithForm_invalid_input_400" time="0.027"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:368: in test_post_pet_byId_updateWithForm_invalid_input_400
+    assert resp.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_delete_pet_success" time="0.020" /><testcase classname="test_generated" name="test_delete_pet_invalid_pet_value_400" time="0.017" /><testcase classname="test_generated" name="test_delete_pet_not_found_404" time="0.010"><failure message="assert 200 == 404&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:389: in test_delete_pet_not_found_404
+    assert resp.status_code == 404
+E   assert 200 == 404
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_byId_uploadImage_success" time="0.035"><failure message="KeyError: 'message'">test_generated.py:399: in test_post_pet_byId_uploadImage_success
+    assert resp.json()["message"] == f"additionalMetadata: {metadata}" # Assuming server echoes metadata
+           ^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'message'</failure></testcase><testcase classname="test_generated" name="test_post_pet_byId_uploadImage_no_file_400" time="0.033"><failure message="assert 500 == 400&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:405: in test_post_pet_byId_uploadImage_no_file_400
+    assert resp.status_code == 400
+E   assert 500 == 400
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_byId_uploadImage_pet_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_get_store_inventory_success" time="0.009" /><testcase classname="test_generated" name="test_post_store_order_success" time="0.043" /><testcase classname="test_generated" name="test_post_store_order_invalid_input_400" time="0.010" /><testcase classname="test_generated" name="test_post_store_order_validation_exception_422" time="0.009"><failure message="assert 200 == 422&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:443: in test_post_store_order_validation_exception_422
+    assert resp.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_store_order_byId_success" time="0.043" /><testcase classname="test_generated" name="test_get_store_order_byId_invalid_id_400" time="0.011" /><testcase classname="test_generated" name="test_get_store_order_byId_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_delete_store_order_success" time="0.034" /><testcase classname="test_generated" name="test_delete_store_order_invalid_id_400" time="0.013" /><testcase classname="test_generated" name="test_delete_store_order_not_found_404" time="0.007"><failure message="assert 200 in [400, 404]&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:492: in test_delete_store_order_not_found_404
+    assert resp.status_code in [400, 404] # Could be 400 if it considers it "invalid" due to size, or 404 if not found.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 200 in [400, 404]
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_user_success" time="0.020" /><testcase classname="test_generated" name="test_post_user_createWithList_success" time="0.025"><failure message="Failed: Schema validation failed: [{'id': 199146, 'username': 'user_zacro', 'firstName': 'John_lsg', 'lastName': 'Doe_tym', 'email': 'user_zacro@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 198162, 'username': 'user_gskxj', 'firstName': 'John_tfj', 'lastName': 'Doe_xah', 'email': 'user_gskxj@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' in deque([])">test_generated.py:122: in validate_schema
+    validate(instance=data, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: [{'id': 199146, 'username': 'user_zacro', 'firstName': 'John_lsg', 'lastName': 'Doe_tym', 'email': 'user_zacro@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 198162, 'username': 'user_gskxj', 'firstName': 'John_tfj', 'lastName': 'Doe_xah', 'email': 'user_gskxj@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'object',
+E        'properties': {'id': {'type': 'integer', 'format': 'int64'},
+E                       'username': {'type': 'string'},
+E                       'firstName': {'type': 'string'},
+E                       'lastName': {'type': 'string'},
+E                       'email': {'type': 'string'},
+E                       'password': {'type': 'string'},
+E                       'phone': {'type': 'string'},
+E                       'userStatus': {'type': 'integer', 'format': 'int32'}}}
+E   
+E   On instance:
+E       [{'id': 199146,
+E         'username': 'user_zacro',
+E         'firstName': 'John_lsg',
+E         'lastName': 'Doe_tym',
+E         'email': 'user_zacro@example.com',
+E         'password': 'password123',
+E         'phone': '123-456-7890',
+E         'userStatus': 1},
+E        {'id': 198162,
+E         'username': 'user_gskxj',
+E         'firstName': 'John_tfj',
+E         'lastName': 'Doe_xah',
+E         'email': 'user_gskxj@example.com',
+E         'password': 'password123',
+E         'phone': '123-456-7890',
+E         'userStatus': 1}]
+
+During handling of the above exception, another exception occurred:
+test_generated.py:513: in test_post_user_createWithList_success
+    validate_schema(resp.json(), USER_SCHEMA)
+test_generated.py:124: in validate_schema
+    pytest.fail(f"Schema validation failed: {e.message} in {e.path}")
+E   Failed: Schema validation failed: [{'id': 199146, 'username': 'user_zacro', 'firstName': 'John_lsg', 'lastName': 'Doe_tym', 'email': 'user_zacro@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}, {'id': 198162, 'username': 'user_gskxj', 'firstName': 'John_tfj', 'lastName': 'Doe_xah', 'email': 'user_gskxj@example.com', 'password': 'password123', 'phone': '123-456-7890', 'userStatus': 1}] is not of type 'object' in deque([])</failure></testcase><testcase classname="test_generated" name="test_get_user_login_success" time="0.034"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\LENOVO\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+test_generated.py:521: in test_get_user_login_success
+    assert isinstance(resp.json(), str) # Response is a string token
+                      ^^^^^^^^^^^
+D:\Tareas\env_rsu\Lib\site-packages\requests\models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="test_generated" name="test_get_user_login_invalid_credentials_400" time="0.008"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:533: in test_get_user_login_invalid_credentials_400
+    assert resp.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_user_logout_success" time="0.008" /><testcase classname="test_generated" name="test_get_user_byName_success" time="0.027" /><testcase classname="test_generated" name="test_get_user_byName_invalid_username_400" time="0.009"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">test_generated.py:552: in test_get_user_byName_invalid_username_400
+    assert resp.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_user_byName_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_put_user_success" time="0.034" /><testcase classname="test_generated" name="test_put_user_bad_request_400" time="0.030" /><testcase classname="test_generated" name="test_put_user_not_found_404" time="0.010" /><testcase classname="test_generated" name="test_delete_user_success" time="0.019" /><testcase classname="test_generated" name="test_delete_user_invalid_username_400" time="0.009"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:601: in test_delete_user_invalid_username_400
+    assert resp.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_delete_user_not_found_404" time="0.009"><failure message="assert 200 == 404&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:606: in test_delete_user_not_found_404
+    assert resp.status_code == 404
+E   assert 200 == 404
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase></testsuite></testsuites>

@@ -17,6 +17,8 @@ apis:
     spec: examples/demo_api/openapi_v2.yaml
     base_url: http://127.0.0.1:8000
     health: http://127.0.0.1:8000/pets
+    smoke:
+      - {method: GET, path: /pets, expect: 200}
     scenario:
       remove_operations: ["PATCH /pets/{petId}"]
       remove_properties: {PetIn: [age]}

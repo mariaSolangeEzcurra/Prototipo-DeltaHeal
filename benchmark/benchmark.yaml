@@ -37,9 +37,11 @@ output_dir: benchmark/results
 #   base_url:  URL base de la API corriendo.
 #   scenario:  cómo se construye la versión BASE (el "commit anterior"): se quitan
 #              operaciones y/o propiedades para simular que el commit las agregó.
-#   start / reset / stop: comandos de shell (opcionales). `reset` se ejecuta antes de
-#              cada corrida para partir de un estado limpio de datos.
+#   start / reset / stop: comandos de shell, uno o una lista (opcionales). `reset` se ejecuta
+#              antes de cada corrida para partir de un estado limpio de datos.
 #   health:    URL que debe responder < 500 antes de cada corrida.
+#   smoke:     llamadas que deben devolver el código esperado antes de cada corrida (prueba de
+#              humo). Si fallan, se repite el reset; así no se mide una API en mal estado.
 apis:
   - name: petstore3
     # Swagger Petstore v3 (Apache-2.0). docker run -p 8080:8080 swaggerapi/petstore3:unstable
@@ -51,8 +53,13 @@ apis:
     start:                                        # borra un contenedor viejo y levanta uno nuevo
       - docker rm -f petstore3
       - docker run -d --rm --name petstore3 -p 8080:8080 swaggerapi/petstore3:unstable
-    reset: docker restart petstore3
+    reset:                                        # contenedor NUEVO en cada corrida = datos limpios
+      - docker rm -f petstore3
+      - docker run -d --rm --name petstore3 -p 8080:8080 swaggerapi/petstore3:unstable
     stop: docker stop petstore3
+    smoke:                                        # antes de cada corrida estas llamadas deben dar 200
+      - {method: GET, path: "/pet/findByStatus?status=available", expect: 200}
+      - {method: GET, path: /store/inventory, expect: 200}
     scenario:
       remove_operations: ["PUT /pet", "GET /pet/findByTags", "DELETE /store/order/{orderId}"]
       remove_properties: {Pet: [tags]}

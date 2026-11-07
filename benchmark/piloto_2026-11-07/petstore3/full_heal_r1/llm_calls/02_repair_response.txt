@@ -1,0 +1,185 @@
+```python
+import pytest
+import requests
+import json
+import uuid
+import random
+import string
+from datetime import datetime, timedelta
+from jsonschema import validate, ValidationError
+
+pet_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "name": {"type": "string"},
+        "category": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "format": "int64"},
+                "name": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+        "photoUrls": {"type": "array", "items": {"type": "string"}},
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer", "format": "int64"},
+                    "name": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        "status": {"type": "string", "enum": ["available", "pending", "sold"]},
+    },
+    "required": ["name", "photoUrls"],
+    "additionalProperties": False,
+}
+
+order_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "petId": {"type": "integer", "format": "int64"},
+        "quantity": {"type": "integer", "format": "int32"},
+        "shipDate": {"type": "string", "format": "date-time"},
+        "status": {"type": "string", "enum": ["placed", "approved", "delivered"]},
+        "complete": {"type": "boolean"},
+    },
+    "additionalProperties": False,
+}
+
+user_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer", "format": "int64"},
+        "username": {"type": "string"},
+        "firstName": {"type": "string"},
+        "lastName": {"type": "string"},
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "phone": {"type": "string"},
+        "userStatus": {"type": "integer", "format": "int32"},
+    },
+    "additionalProperties": False,
+}
+
+api_response_schema = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "integer", "format": "int32"},
+        "type": {"type": "string"},
+        "message": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+def validate_response_schema(response_json, schema):
+    """Helper to validate a JSON response against a given schema."""
+    try:
+        validate(instance=response_json, schema=schema)
+    except ValidationError as e:
+        pytest.fail(f"Schema validation failed: {e.message} for data: {response_json}")
+
+def generate_random_string(length=10):
+    return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+def generate_random_id():
+    return random.randint(100000, 999999)
+
+def generate_pet_data(pet_id=None, status="available"):
+    return {
+        "id": pet_id if pet_id is not None else generate_random_id(),
+        "name": f"doggie-{generate_random_string(5)}",
+        "category": {"id": generate_random_id(), "name": "Dogs"},
+        "photoUrls": [f"http://example.com/photo-{generate_random_string(5)}.jpg"],
+        "tags": [{"id": generate_random_id(), "name": f"tag-{generate_random_string(3)}"}],
+        "status": status,
+    }
+
+def generate_user_data(username=None):
+    user_id = generate_random_id()
+    return {
+        "id": user_id,
+        "username": username if username else f"user-{generate_random_string(5)}",
+        "firstName": f"John-{generate_random_string(3)}",
+        "lastName": f"Doe-{generate_random_string(3)}",
+        "email": f"john.doe.{generate_random_string(3)}@example.com",
+        "password": "password123",
+        "phone": "123-456-7890",
+        "userStatus": 1,
+    }
+
+def generate_order_data(order_id=None, pet_id=None, status="placed"):
+    return {
+        "id": order_id if order_id is not None else generate_random_id(),
+        "petId": pet_id if pet_id is not None else generate_random_id(),
+        "quantity": random.randint(1, 10),
+        "shipDate": (datetime.now() + timedelta(days=1)).isoformat(timespec="seconds") + "Z",
+        "status": status,
+        "complete": False,
+    }
+
+@pytest.fixture
+def create_pet(api):
+    """Fixture to create a pet and return its ID."""
+
+    def _create_pet(status="available"):
+        pet_data = generate_pet_data(status=status)
+        response = api.post("/pet", json=pet_data)
+        assert response.status_code == 200
+        created_pet = response.json()
+        validate_response_schema(created_pet, pet_schema)
+        return created_pet
+
+    yield _create_pet
+
+@pytest.fixture
+def create_user(api):
+    """Fixture to create a user and return its username."""
+
+    def _create_user(username=None):
+        user_data = generate_user_data(username)
+        response = api.post("/user", json=user_data)
+        assert response.status_code == 200
+        created_user = response.json()
+        validate_response_schema(created_user, user_schema)
+        return created_user
+
+    yield _create_user
+
+@pytest.fixture
+def create_order(api, create_pet):
+    """Fixture to create an order and return its ID."""
+
+    def _create_order(order_id=None, pet_id=None, status="placed"):
+        if pet_id is None:
+            pet = create_pet()
+            pet_id = pet["id"]
+        order_data = generate_order_data(order_id=order_id, pet_id=pet_id, status=status)
+        response = api.post("/store/order", json=order_data)
+        assert response.status_code == 200
+        created_order = response.json()
+        validate_response_schema(created_order, order_schema)
+        return created_order
+
+    yield _create_order
+
+def test_get_user_login_200(api, create_user):
+    user_data = generate_user_data()
+    api.post("/user", json=user_data)  # Create user first
+    response = api.get(
+        "/user/login", params={"username": user_data["username"], "password": user_data["password"]}
+    )
+    assert response.status_code == 200
+    # The spec indicates the response content is a plain string, not JSON.
+    assert isinstance(response.text, str)
+    assert "X-Rate-Limit" in response.headers
+    assert "X-Expires-After" in response.headers
+    # Check header types
+    assert isinstance(int(response.headers["X-Rate-Limit"]), int)
+    datetime.fromisoformat(response.headers["X-Expires-After"].replace("Z", "+00:00"))
+```
