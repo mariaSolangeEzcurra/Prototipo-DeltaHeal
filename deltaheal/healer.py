@@ -25,6 +25,7 @@ from typing import Any
 
 from . import prompts
 from .codegen import extract_code, static_check
+from .evidence import StepLog, run_summary
 from .llm import LLMClient, LLMResponse
 from .patcher import failing_toplevel_names, merge_patch, split_for_patch
 from .runner import RunResult, format_assertions_for_llm, format_errors_for_llm, run_pytest
@@ -110,7 +111,9 @@ def _total_tests(run: RunResult, static_count: int) -> int:
 def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: str,
                       workdir: Path, base_url: str, max_iterations: int = 3,
                       policy: str = "errors", test_name: str = "test_generated.py",
-                      pytest_timeout: int = 60, repair_mode: str = "patch") -> HealingResult:
+                      pytest_timeout: int = 60, repair_mode: str = "patch",
+                      log: StepLog | None = None) -> HealingResult:
+    log = log or StepLog(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
     test_file = workdir / test_name
 
@@ -119,6 +122,10 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
     ledger.add("generate", resp)
     _save_call(workdir, ledger, "generate", prompts.SYSTEM_GENERATE, user, resp)
     code = extract_code(resp.text)
+    log.add("Generación de pruebas con el LLM",
+            f"{resp.prompt_tokens:,} tokens de entrada + {resp.completion_tokens:,} de salida; "
+            f"{static_check(code).test_count} funciones de test; respuesta cortada: {'sí' if resp.truncated else 'no'}",
+            workdir / "llm_calls" / f"{len(ledger.calls):02d}_generate_prompt.txt")
 
     iterations: list[Iteration] = []
     best: tuple[int, str, RunResult, Path, int] | None = None
@@ -131,6 +138,9 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
         http_log = workdir / f"http_iter{i}.jsonl"
         http_log.unlink(missing_ok=True)
         run = run_pytest(test_file, workdir, base_url, http_log, timeout_per_test=pytest_timeout)
+        log.add(f"Ejecución de pruebas (iteración {i})",
+                ("" if st.ok else f"código con error de sintaxis: {st.error}; ") + run_summary(run),
+                workdir / f"{test_file.stem}.iter{i}.py")
         total = _total_tests(run, st.test_count)
         fails = run.count("assertion")
 
@@ -142,6 +152,7 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
             iterations.append(Iteration(i, run.executed, total, len(run.broken), fails,
                                         bool(run.collection_error), "stop_api_unreachable"))
             stopped = "api_unreachable"
+            log.add("Bucle detenido", "la API no responde: no se gastan tokens reparando")
             break
 
         needs = (not st.ok) or run.has_code_defects or (policy == "all" and fails > 0)
@@ -149,10 +160,14 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
             iterations.append(Iteration(i, run.executed, total, len(run.broken), fails,
                                         bool(run.collection_error), "done"))
             stopped = "clean"
+            log.add("Bucle finalizado", "no quedan errores en el código de prueba"
+                    + (f" ({fails} fallas de aserción se reportan como posibles regresiones, no se reparan)" if fails else ""))
             break
         if i == max_iterations:
             iterations.append(Iteration(i, run.executed, total, len(run.broken), fails,
                                         bool(run.collection_error), "give_up"))
+            log.add("Bucle finalizado", f"se alcanzó el máximo de iteraciones ({max_iterations})"
+                    if max_iterations else "configuración sin self-healing: el código se ejecuta tal como lo generó el LLM")
             break
 
         errors = st.error + "\n\n" if not st.ok else ""
@@ -185,10 +200,17 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
             new_code, action = extract_code(resp.text), "repair_full"
         iterations.append(Iteration(i, run.executed, total, len(run.broken), fails,
                                     bool(run.collection_error), action))
+        log.add(f"Reparación con el LLM (iteración {i + 1})",
+                f"modo={'parcial: solo tests que fallaron' if action.startswith('repair_patch') else 'archivo completo'}"
+                f"{' (parche inválido, se usará reparación completa)' if action == 'repair_patch_failed' else ''}; "
+                f"{len(run.broken)} tests con error enviados; {resp.prompt_tokens:,} + {resp.completion_tokens:,} tokens",
+                workdir / "llm_calls" / f"{len(ledger.calls):02d}_repair_prompt.txt")
         code = new_code
 
     assert best is not None
     executed, best_code, best_run, best_log, best_total = best
+    log.add("Selección de la versión final", f"se conserva la versión con más tests ejecutables "
+            f"({executed}/{best_total})", test_file)
     if best_code != code or best_log != http_log:
         test_file.write_text(best_code, encoding="utf-8")
     final_log = workdir / "http_final.jsonl"

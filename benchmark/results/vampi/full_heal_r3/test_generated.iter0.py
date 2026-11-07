@@ -1,0 +1,554 @@
+import uuid
+import pytest
+import requests
+from jsonschema import validate
+
+
+def generate_unique_str(prefix="test"):
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
+
+
+# --- Tests for /createdb ---
+
+
+def test_get_createdb_success(api):
+    response = api.get("/createdb")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert "message" in data
+
+
+# --- Tests for / ---
+
+
+def test_get_home_success(api):
+    response = api.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "help": {"type": "string"},
+            "vulnerable": {"type": "number"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+# --- Tests for /users/v1 ---
+
+
+def test_get_users_v1_success(api):
+    response = api.get("/users/v1")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "users": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "email": {"type": "string"},
+                        "username": {"type": "string"}
+                    }
+                }
+            }
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert isinstance(data.get("users"), list)
+
+
+# --- Tests for /users/v1/_debug ---
+
+
+def test_get_users_v1_debug_success(api):
+    response = api.get("/users/v1/_debug")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "users": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "admin": {"type": "boolean"},
+                        "email": {"type": "string"},
+                        "password": {"type": "string"},
+                        "username": {"type": "string"}
+                    }
+                }
+            }
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert isinstance(data.get("users"), list)
+
+
+# --- Tests for /users/v1/register ---
+
+
+def test_post_users_v1_register_success(api):
+    username = generate_unique_str("user")
+    email = f"{username}@example.com"
+    payload = {
+        "username": username,
+        "password": "validPassword123",
+        "email": email
+    }
+    response = api.post("/users/v1/register", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "success"
+
+
+def test_post_users_v1_register_duplicate_fail_400(api):
+    # Registering an already existing user (name1)
+    payload = {
+        "username": "name1",
+        "password": "pass1NewPassword",
+        "email": "name1_dup@example.com"
+    }
+    response = api.post("/users/v1/register", json=payload)
+    assert response.status_code == 400
+
+
+# --- Tests for /users/v1/login ---
+
+
+def test_post_users_v1_login_success(api):
+    payload = {
+        "username": "name1",
+        "password": "pass1"
+    }
+    response = api.post("/users/v1/login", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "auth_token": {"type": "string"},
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "success"
+    assert "auth_token" in data
+
+
+def test_post_users_v1_login_invalid_password_fail_400(api):
+    payload = {
+        "username": "name1",
+        "password": "wrongPasswordXYZ"
+    }
+    response = api.post("/users/v1/login", json=payload)
+    assert response.status_code == 400
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+# --- Tests for /me ---
+
+
+def test_get_me_success(api):
+    response = api.get("/me")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "data": {
+                "type": "object",
+                "properties": {
+                    "admin": {"type": "boolean"},
+                    "email": {"type": "string"},
+                    "username": {"type": "string"}
+                }
+            },
+            "status": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "success"
+    assert "data" in data
+
+
+def test_get_me_unauthorized_401(base_url):
+    response = requests.get(f"{base_url}/me")
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string"},
+            "message": {
+                "type": "string",
+                "enum": [
+                    "Signature expired. Please log in again.",
+                    "Invalid token. Please log in again."
+                ]
+            }
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+# --- Tests for /users/v1/{username} (GET) ---
+
+
+def test_get_user_by_username_success(api):
+    response = api.get("/users/v1/name1")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "username": {"type": "string"},
+            "email": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("username") == "name1"
+
+
+def test_get_user_by_username_not_found_404(api):
+    non_existent_username = generate_unique_str("nouser")
+    response = api.get(f"/users/v1/{non_existent_username}")
+    assert response.status_code == 404
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+# --- Tests for /users/v1/{username} (DELETE) ---
+
+
+def test_delete_user_by_username_success_as_admin(api):
+    temp_user = generate_unique_str("del_user")
+    api.post("/users/v1/register", json={
+        "username": temp_user,
+        "password": "password123",
+        "email": f"{temp_user}@example.com"
+    })
+
+    response = api.delete(f"/users/v1/{temp_user}")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "success"
+
+
+def test_delete_user_by_username_unauthorized_401(base_url):
+    response = requests.delete(f"{base_url}/users/v1/name1")
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+def test_delete_user_by_username_not_found_404(api):
+    non_existent_username = generate_unique_str("nouser")
+    response = api.delete(f"/users/v1/{non_existent_username}")
+    assert response.status_code == 404
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+# --- Tests for /users/v1/{username}/email (PUT) ---
+
+
+def test_put_user_email_success_204(api):
+    username = generate_unique_str("user_email")
+    api.post("/users/v1/register", json={
+        "username": username,
+        "password": "password123",
+        "email": f"{username}@example.com"
+    })
+
+    new_email = f"updated_{username}@example.com"
+    response = api.put(f"/users/v1/{username}/email", json={"email": new_email})
+    assert response.status_code == 204
+
+
+def test_put_user_email_invalid_400(api):
+    response = api.put("/users/v1/name1/email", json={"email": "invalid-email-format"})
+    assert response.status_code == 400
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+def test_put_user_email_unauthorized_401(base_url):
+    response = requests.put(
+        f"{base_url}/users/v1/name1/email",
+        json={"email": "unauth@example.com"}
+    )
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+# --- Tests for /users/v1/{username}/password (PUT) ---
+
+
+def test_put_user_password_success_204(api):
+    username = generate_unique_str("user_pwd")
+    api.post("/users/v1/register", json={
+        "username": username,
+        "password": "password123",
+        "email": f"{username}@example.com"
+    })
+
+    response = api.put(f"/users/v1/{username}/password", json={"password": "newSecurePassword123"})
+    assert response.status_code == 204
+
+
+def test_put_user_password_malformed_400(api):
+    response = api.put("/users/v1/name1/password", json={"invalid_field": "somevalue"})
+    assert response.status_code == 400
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+def test_put_user_password_unauthorized_401(base_url):
+    response = requests.put(
+        f"{base_url}/users/v1/name1/password",
+        json={"password": "anyPassword"}
+    )
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+# --- Tests for /books/v1 (GET) ---
+
+
+def test_get_all_books_success(api):
+    response = api.get("/books/v1")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "Books": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "book_title": {"type": "string"},
+                        "user": {"type": "string"}
+                    }
+                }
+            }
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert isinstance(data.get("Books"), list)
+
+
+# --- Tests for /books/v1 (POST) ---
+
+
+def test_post_book_success(api):
+    unique_title = generate_unique_str("bookTitle")
+    payload = {
+        "book_title": unique_title,
+        "secret": "topSecretContent"
+    }
+    response = api.post("/books/v1", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "success"
+
+
+def test_post_book_duplicate_fail_400(api):
+    unique_title = generate_unique_str("bookTitle")
+    payload = {
+        "book_title": unique_title,
+        "secret": "topSecretContent"
+    }
+    api.post("/books/v1", json=payload)
+    duplicate_response = api.post("/books/v1", json=payload)
+
+    assert duplicate_response.status_code == 400
+    data = duplicate_response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"
+
+
+def test_post_book_unauthorized_401(base_url):
+    unique_title = generate_unique_str("bookTitle")
+    payload = {
+        "book_title": unique_title,
+        "secret": "someSecret"
+    }
+    response = requests.post(f"{base_url}/books/v1", json=payload)
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+# --- Tests for /books/v1/{book_title} (GET) ---
+
+
+def test_get_book_by_title_success(api):
+    unique_title = generate_unique_str("bookTitle")
+    api.post("/books/v1", json={
+        "book_title": unique_title,
+        "secret": "secretForTitle"
+    })
+
+    response = api.get(f"/books/v1/{unique_title}")
+    assert response.status_code == 200
+    data = response.json()
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "book_title": {"type": "string"},
+                "owner": {"type": "string"},
+                "secret": {"type": "string"}
+            }
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert any(item.get("book_title") == unique_title for item in data)
+
+
+def test_get_book_by_title_unauthorized_401(base_url):
+    response = requests.get(f"{base_url}/books/v1/bookTitle1")
+    assert response.status_code == 401
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+
+
+def test_get_book_by_title_not_found_404(api):
+    non_existent_book = generate_unique_str("nonExistentBook")
+    response = api.get(f"/books/v1/{non_existent_book}")
+    assert response.status_code == 404
+    data = response.json()
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"}
+        }
+    }
+    validate(instance=data, schema=schema)
+    assert data.get("status") == "fail"

@@ -1,0 +1,14 @@
+```python
+def test_get_pet_por_id_exitoso(api):
+    # Crear mascota primero para garantizar existencia
+    payload = _generar_payload_pet()
+    res_crear = api.post("/pet", json=payload)
+    assert res_crear.status_code == 200
+    pet_id = res_crear.json()["id"]
+
+    res_get = api.get(f"/pet/{pet_id}")
+    assert res_get.status_code == 200
+    body = res_get.json()
+    validate(instance=body, schema=PET_SCHEMA)
+    assert body["id"] == pet_id
+```

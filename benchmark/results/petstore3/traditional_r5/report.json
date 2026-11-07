@@ -1,0 +1,342 @@
+{
+  "timestamp": "2026-11-07T18:03:02",
+  "mode": "traditional",
+  "run_id": "traditional_r5",
+  "model": null,
+  "provider": null,
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /pet",
+      "GET /pet/findByTags",
+      "DELETE /store/order/{orderId}"
+    ],
+    "modified": [
+      "POST /pet",
+      "GET /pet/findByStatus",
+      "GET /pet/{petId}",
+      "POST /pet/{petId}"
+    ],
+    "removed": [],
+    "unchanged_count": 12
+  },
+  "operations_total": 19,
+  "target_operations": [
+    "POST /pet",
+    "PUT /pet",
+    "GET /pet/findByStatus",
+    "GET /pet/findByTags",
+    "GET /pet/{petId}",
+    "POST /pet/{petId}",
+    "DELETE /store/order/{orderId}"
+  ],
+  "context_operations": 7,
+  "spec_context_chars": 10106,
+  "spec_full_chars": 22776,
+  "spec_context_tokens_est": 2526,
+  "spec_full_tokens_est": 5694,
+  "context_reduction": 0.5563,
+  "llm_calls": 0,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "total_tokens": 0,
+  "generation_tokens": 0,
+  "repair_tokens": 0,
+  "cost_usd": 0.0,
+  "llm_latency_s": 0.0,
+  "generated_tests": 7,
+  "executable_tests": 7,
+  "executable_rate": 1.0,
+  "passed": 1,
+  "assertion_failures": 6,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.6842,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 16.202,
+  "test_cases": [
+    {
+      "test": "test_schemathesis::test_api[PUT /pet]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /pet]",
+      "outcome": "assertion",
+      "message": "AssertionError: 3 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\n  FailureGroup: Schemathesis found 3 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures', 'FailureGroup: Schemathesis found 3 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/findByStatus]",
+      "outcome": "assertion",
+      "message": "AssertionError: 2 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/findByTags]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/{petId}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /pet/{petId}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[DELETE /store/order/{orderId}]",
+      "outcome": "passed",
+      "message": ""
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_schemathesis::test_api[PUT /pet]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /pet]",
+      "message": "AssertionError: 3 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\n  FailureGroup: Schemathesis found 3 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis "
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/findByStatus]",
+      "message": "AssertionError: 2 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/findByTags]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /pet/{petId}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /pet/{petId}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    }
+  ],
+  "coverage": {
+    "http_coverage": 0.6842,
+    "documented_pairs": 19,
+    "covered_pairs": 13,
+    "operations_hit": 7,
+    "operations_total": 7,
+    "total_requests": 175,
+    "unmatched_requests": 0,
+    "undocumented_observed": {
+      "POST /pet": [
+        500
+      ],
+      "PUT /pet": [
+        500
+      ],
+      "GET /pet/findByTags": [
+        500
+      ],
+      "POST /pet/{petId}": [
+        404
+      ]
+    },
+    "per_operation": {
+      "POST /pet": {
+        "documented": [
+          "200",
+          "400",
+          "422"
+        ],
+        "observed": [
+          200,
+          400,
+          500
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "PUT /pet": {
+        "documented": [
+          "200",
+          "400",
+          "404",
+          "422"
+        ],
+        "observed": [
+          400,
+          404,
+          500
+        ],
+        "covered": [
+          "400",
+          "404"
+        ]
+      },
+      "GET /pet/findByStatus": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/findByTags": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          400,
+          500
+        ],
+        "covered": [
+          "400"
+        ]
+      },
+      "GET /pet/{petId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400,
+          404
+        ],
+        "covered": [
+          "200",
+          "400",
+          "404"
+        ]
+      },
+      "POST /pet/{petId}": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          400,
+          404
+        ],
+        "covered": [
+          "400"
+        ]
+      },
+      "DELETE /store/order/{orderId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.2889,
+  "duration_s": 16.584,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T18:02:56",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:02:57",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f petstore3  -> código 0. petstore3",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:02:57",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name petstore3 -p 8080:8080 swaggerapi/petstore3:unstable  -> código 0. 9f46620208764eef73c8589614f7aa040031ecf06e07744d7dc98433a29e35be",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /pet/findByStatus?status=available, GET /store/inventory respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=traditional; modelo=sin LLM; delta=sí; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\petstore3\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\petstore3\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Análisis delta",
+      "detalle": "3 nuevas, 4 modificadas, 0 eliminadas, 12 sin cambios. Nuevas: PUT /pet, GET /pet/findByTags, DELETE /store/order/{orderId}. Modificadas: POST /pet, GET /pet/findByStatus, GET /pet/{petId}, POST /pet/{petId}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:8080/api/v3",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 7 de 19 operaciones; 10,106 caracteres (completa: 22,776)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:03:02",
+      "paso": "Generación de casos (Schemathesis, sin IA)",
+      "detalle": "7 operaciones; 25 ejemplos por operación, datos válidos e inválidos",
+      "archivo": "test_schemathesis.py"
+    },
+    {
+      "hora": "2026-11-07T18:03:18",
+      "paso": "Ejecución de pruebas (Pytest)",
+      "detalle": "7 tests ejecutados, 1 pasan, 6 fallan por aserción, 0 con error de código (exit=1, 16.2s)",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:03:18",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "13/19 pares (operación, código) cubiertos = 68.4%; 175 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:03:18",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=0; duración=16.584 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T18:03:18",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

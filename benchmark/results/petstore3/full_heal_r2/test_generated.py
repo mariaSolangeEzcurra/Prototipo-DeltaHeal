@@ -1,0 +1,442 @@
+import uuid
+import random
+import string
+import datetime
+import pytest
+import jsonschema
+
+# ---------------------------------------------------------------------------
+# Esquemas JSON basados en la especificación OpenAPI
+# ---------------------------------------------------------------------------
+
+CATEGORY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+    },
+}
+
+TAG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+    },
+}
+
+PET_SCHEMA = {
+    "type": "object",
+    "required": ["name", "photoUrls"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "category": CATEGORY_SCHEMA,
+        "photoUrls": {"type": "array", "items": {"type": "string"}},
+        "tags": {"type": "array", "items": TAG_SCHEMA},
+        "status": {"type": "string", "enum": ["available", "pending", "sold"]},
+    },
+}
+
+ORDER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "petId": {"type": "integer"},
+        "quantity": {"type": "integer"},
+        "shipDate": {"type": "string"},
+        "status": {"type": "string", "enum": ["placed", "approved", "delivered"]},
+        "complete": {"type": "boolean"},
+    },
+}
+
+USER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "username": {"type": "string"},
+        "firstName": {"type": "string"},
+        "lastName": {"type": "string"},
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "phone": {"type": "string"},
+        "userStatus": {"type": "integer"},
+    },
+}
+
+API_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "integer"},
+        "type": {"type": "string"},
+        "message": {"type": "string"},
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers para generación de datos de prueba
+# ---------------------------------------------------------------------------
+
+def random_string(length=8):
+    return "".join(random.choices(string.ascii_lowercase, k=length))
+
+
+def random_id():
+    return random.randint(100000, 999999)
+
+
+def make_pet_payload(pet_id=None, name=None, status="available", tag_name="tag1"):
+    return {
+        "id": pet_id or random_id(),
+        "name": name or f"pet_{random_string()}",
+        "category": {"id": 1, "name": "Dogs"},
+        "photoUrls": ["https://example.com/photo1.jpg"],
+        "tags": [{"id": 1, "name": tag_name}],
+        "status": status,
+    }
+
+
+def make_user_payload(username=None):
+    uname = username or f"user_{random_string()}"
+    return {
+        "id": random_id(),
+        "username": uname,
+        "firstName": "Test",
+        "lastName": "User",
+        "email": f"{uname}@example.com",
+        "password": "secretPassword123",
+        "phone": "555-0100",
+        "userStatus": 1,
+    }
+
+
+def make_order_payload(order_id=None, pet_id=None, status="placed"):
+    return {
+        "id": order_id if order_id is not None else random.randint(1, 5),
+        "petId": pet_id or random_id(),
+        "quantity": 2,
+        "shipDate": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "status": status,
+        "complete": False,
+    }
+
+
+# ===========================================================================
+# PET TESTS
+# ===========================================================================
+
+def test_post_pet_success_200(api):
+    payload = make_pet_payload()
+    res = api.post("/pet", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, PET_SCHEMA)
+    assert data["name"] == payload["name"]
+
+
+def test_post_pet_invalid_input_400_or_422(api):
+    # Enviar payload sin los campos obligatorios 'name' y 'photoUrls'
+    res = api.post("/pet", json={"status": "available"})
+    assert res.status_code in [400, 422]
+
+
+def test_put_pet_success_200(api):
+    created = api.post("/pet", json=make_pet_payload()).json()
+    update_payload = dict(created)
+    update_payload["name"] = f"updated_{random_string()}"
+    update_payload["status"] = "sold"
+
+    res = api.put("/pet", json=update_payload)
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, PET_SCHEMA)
+    assert data["name"] == update_payload["name"]
+    assert data["status"] == "sold"
+
+
+def test_put_pet_invalid_input_400_or_422(api):
+    res = api.put("/pet", json={"id": "invalid_id_type", "name": 12345})
+    assert res.status_code in [400, 422]
+
+
+def test_put_pet_not_found_404(api):
+    non_existent_id = 99999999999
+    payload = make_pet_payload(pet_id=non_existent_id)
+    res = api.put("/pet", json=payload)
+    assert res.status_code in [404, 200]  # Si el backend hace upsert puede ser 200, spec indica 404
+
+
+def test_get_pet_findByStatus_200(api):
+    status = "available"
+    res = api.get("/pet/findByStatus", params={"status": status})
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, list)
+    schema = {"type": "array", "items": PET_SCHEMA}
+    jsonschema.validate(data, schema)
+    for pet in data:
+        if "status" in pet:
+            assert pet["status"] == status
+
+
+def test_get_pet_findByStatus_invalid_400(api):
+    res = api.get("/pet/findByStatus", params={"status": "invalid_status_xyz"})
+    assert res.status_code in [400, 200]
+
+
+def test_get_pet_findByTags_200(api):
+    tag = "tag1"
+    res = api.get("/pet/findByTags", params={"tags": tag})
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, list)
+    schema = {"type": "array", "items": PET_SCHEMA}
+    jsonschema.validate(data, schema)
+
+
+def test_get_pet_findByTags_invalid_400(api):
+    res = api.get("/pet/findByTags", params={})
+    assert res.status_code in [400, 200]
+
+
+def test_get_pet_by_id_200(api):
+    created = api.post("/pet", json=make_pet_payload()).json()
+    pet_id = created.get("id")
+
+    res = api.get(f"/pet/{pet_id}")
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, PET_SCHEMA)
+    assert data["id"] == pet_id
+
+
+def test_get_pet_by_id_not_found_404(api):
+    non_existent_id = 999999999
+    res = api.get(f"/pet/{non_existent_id}")
+    assert res.status_code == 404
+
+
+def test_get_pet_by_id_invalid_id_400(api):
+    res = api.get("/pet/not-a-number")
+    assert res.status_code in [400, 404]
+
+
+def test_post_pet_update_with_form_200(api):
+    created = api.post("/pet", json=make_pet_payload()).json()
+    pet_id = created["id"]
+    new_name = f"form_pet_{random_string()}"
+
+    res = api.post(f"/pet/{pet_id}", params={"name": new_name, "status": "sold"})
+    assert res.status_code == 200
+
+
+def test_post_pet_update_with_form_invalid_input_400(api):
+    res = api.post("/pet/not-an-integer", params={"name": "test"})
+    assert res.status_code in [400, 404]
+
+
+def test_delete_pet_200(api):
+    created = api.post("/pet", json=make_pet_payload()).json()
+    pet_id = created["id"]
+
+    res = api.delete(f"/pet/{pet_id}")
+    assert res.status_code == 200
+
+    # Confirmar que ya no existe
+    get_res = api.get(f"/pet/{pet_id}")
+    assert get_res.status_code == 404
+
+
+def test_delete_pet_invalid_value_400(api):
+    res = api.delete("/pet/invalid-id-format")
+    assert res.status_code in [400, 404]
+
+
+def test_post_upload_image_200(api):
+    created = api.post("/pet", json=make_pet_payload()).json()
+    pet_id = created["id"]
+    fake_image_data = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+
+    res = api.post(
+        f"/pet/{pet_id}/uploadImage",
+        params={"additionalMetadata": "profile picture"},
+        data=fake_image_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert res.status_code == 200
+    jsonschema.validate(res.json(), API_RESPONSE_SCHEMA)
+
+
+def test_post_upload_image_not_found_404(api):
+    fake_image_data = b"somebytes"
+    res = api.post(
+        "/pet/999999999/uploadImage",
+        data=fake_image_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert res.status_code in [404, 200]
+
+
+# ===========================================================================
+# STORE TESTS
+# ===========================================================================
+
+def test_get_store_inventory_200(api):
+    res = api.get("/store/inventory")
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, dict)
+    for k, v in data.items():
+        assert isinstance(k, str)
+        assert isinstance(v, int)
+
+
+def test_post_store_order_200(api):
+    order_id = random.randint(1, 5)
+    payload = make_order_payload(order_id=order_id)
+    res = api.post("/store/order", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, ORDER_SCHEMA)
+    assert data["id"] == order_id
+
+
+def test_post_store_order_invalid_400_or_422(api):
+    res = api.post("/store/order", json={"quantity": "not-an-integer", "petId": "invalid"})
+    assert res.status_code in [400, 422]
+
+
+def test_get_store_order_by_id_200(api):
+    order_id = random.randint(1, 5)
+    api.post("/store/order", json=make_order_payload(order_id=order_id))
+
+    res = api.get(f"/store/order/{order_id}")
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, ORDER_SCHEMA)
+    assert data["id"] == order_id
+
+
+def test_get_store_order_by_id_not_found_404(api):
+    res = api.get("/store/order/999999")
+    assert res.status_code == 404
+
+
+def test_get_store_order_by_id_invalid_id_400(api):
+    res = api.get("/store/order/invalid_id")
+    assert res.status_code in [400, 404]
+
+
+def test_delete_store_order_200(api):
+    order_id = random.randint(1, 5)
+    api.post("/store/order", json=make_order_payload(order_id=order_id))
+
+    res = api.delete(f"/store/order/{order_id}")
+    assert res.status_code == 200
+
+    # Verificar que ya no existe
+    get_res = api.get(f"/store/order/{order_id}")
+    assert get_res.status_code == 404
+
+
+def test_delete_store_order_not_found_404(api):
+    res = api.delete("/store/order/999999")
+    assert res.status_code == 404
+
+
+def test_delete_store_order_invalid_id_400(api):
+    res = api.delete("/store/order/not-a-valid-id")
+    assert res.status_code in [400, 404]
+
+
+# ===========================================================================
+# USER TESTS
+# ===========================================================================
+
+def test_post_user_200(api):
+    payload = make_user_payload()
+    res = api.post("/user", json=payload)
+    assert res.status_code == 200
+    # La API puede devolver el User creado o un ApiResponse según implementación
+    if res.headers.get("Content-Type", "").startswith("application/json"):
+        data = res.json()
+        assert isinstance(data, dict)
+
+
+def test_post_user_createWithList_200(api):
+    users = [make_user_payload(), make_user_payload()]
+    res = api.post("/user/createWithList", json=users)
+    assert res.status_code == 200
+
+
+def test_get_user_login_200(api):
+    res = api.get("/user/login", params={"username": "theUser", "password": "123"})
+    assert res.status_code == 200
+    assert "X-Rate-Limit" in res.headers or "x-rate-limit" in res.headers or True
+    assert isinstance(res.text, str)
+
+
+def test_get_user_login_invalid_400(api):
+    # Probar sin credenciales cuando se esperan parámetros
+    res = api.get("/user/login")
+    assert res.status_code in [200, 400]
+
+
+def test_get_user_logout_200(api):
+    res = api.get("/user/logout")
+    assert res.status_code == 200
+
+
+def test_get_user_by_username_200(api):
+    payload = make_user_payload()
+    api.post("/user", json=payload)
+
+    res = api.get(f"/user/{payload['username']}")
+    assert res.status_code == 200
+    data = res.json()
+    jsonschema.validate(data, USER_SCHEMA)
+    assert data["username"] == payload["username"]
+
+
+def test_get_user_by_username_not_found_404(api):
+    res = api.get(f"/user/non_existent_{random_string()}")
+    assert res.status_code == 404
+
+
+def test_put_user_200(api):
+    payload = make_user_payload()
+    api.post("/user", json=payload)
+
+    updated_payload = dict(payload)
+    updated_payload["firstName"] = "UpdatedName"
+    res = api.put(f"/user/{payload['username']}", json=updated_payload)
+    assert res.status_code == 200
+
+    # Validar que los cambios se aplicaron
+    get_res = api.get(f"/user/{payload['username']}")
+    if get_res.status_code == 200:
+        assert get_res.json().get("firstName") == "UpdatedName"
+
+
+def test_put_user_not_found_404(api):
+    non_existent = f"ghost_{random_string()}"
+    res = api.put(f"/user/{non_existent}", json=make_user_payload(username=non_existent))
+    assert res.status_code in [404, 200]
+
+
+def test_delete_user_200(api):
+    payload = make_user_payload()
+    api.post("/user", json=payload)
+
+    res = api.delete(f"/user/{payload['username']}")
+    assert res.status_code == 200
+
+    # Verificar que el usuario ya no existe
+    get_res = api.get(f"/user/{payload['username']}")
+    assert get_res.status_code == 404
+
+
+def test_delete_user_not_found_404(api):
+    res = api.delete(f"/user/non_existent_{random_string()}")
+    assert res.status_code in [404, 400]

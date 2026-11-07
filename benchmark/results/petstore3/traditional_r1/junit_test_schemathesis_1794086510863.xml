@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="7" time="25.842" timestamp="2026-11-07T16:22:01.372626-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_schemathesis" name="test_api[PUT /pet]" time="15.077"><failure message="AssertionError: 1 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 1 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure']</failure></testcase><testcase classname="test_schemathesis" name="test_api[POST /pet]" time="1.695"><failure message="AssertionError: 3 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;  FailureGroup: Schemathesis found 2 distinct failures&#10;  FailureGroup: Schemathesis found 3 distinct failures&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures', 'FailureGroup: Schemathesis found 3 distinct failures']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 3 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E     FailureGroup: Schemathesis found 2 distinct failures
+E     FailureGroup: Schemathesis found 3 distinct failures
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures', 'FailureGroup: Schemathesis found 3 distinct failures']</failure></testcase><testcase classname="test_schemathesis" name="test_api[GET /pet/findByStatus]" time="0.996"><failure message="AssertionError: 1 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 1 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure']</failure></testcase><testcase classname="test_schemathesis" name="test_api[GET /pet/findByTags]" time="1.002"><failure message="AssertionError: 1 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 1 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure']</failure></testcase><testcase classname="test_schemathesis" name="test_api[GET /pet/{petId}]" time="1.122"><failure message="AssertionError: 1 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 1 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure']</failure></testcase><testcase classname="test_schemathesis" name="test_api[POST /pet/{petId}]" time="0.639"><failure message="AssertionError: 1 violaciones distintas:&#10;  FailureGroup: Schemathesis found 1 distinct failure&#10;assert not ['FailureGroup: Schemathesis found 1 distinct failure']">test_schemathesis.py:57: in test_api
+    assert not unique, f"{len(unique)} violaciones distintas:\n" + "\n".join(unique[:10])
+E   AssertionError: 1 violaciones distintas:
+E     FailureGroup: Schemathesis found 1 distinct failure
+E   assert not ['FailureGroup: Schemathesis found 1 distinct failure']</failure></testcase><testcase classname="test_schemathesis" name="test_api[DELETE /store/order/{orderId}]" time="0.734" /></testsuite></testsuites>

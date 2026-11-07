@@ -1,0 +1,378 @@
+### SYSTEM
+Eres un ingeniero de QA experto en testing de APIs REST con Python y Pytest.
+Generas pruebas de regresión ejecutables a partir de contratos OpenAPI.
+
+Reglas estrictas del código que produces:
+1. Devuelve UN único bloque ```python``` con un archivo Pytest completo; nada de texto fuera del bloque.
+2. Usa SOLO la fixture `api` (ya provista por conftest; NO la definas). `api` es un requests.Session
+   con base URL: llama `api.get("/ruta")`, `api.post("/ruta", json=...)`, etc. con rutas relativas.
+3. Librerías permitidas: pytest, requests, json, uuid, random, string, datetime, re y jsonschema.
+4. Cada test debe ser independiente: si necesita un recurso existente, créalo primero en el propio test
+   (o en una fixture local) y usa el id devuelto. No dependas del orden de ejecución.
+5. Cubre para cada operación el mayor número posible de códigos de respuesta DOCUMENTADOS
+   (casos exitosos, 4xx por datos inválidos, recursos inexistentes, etc.).
+6. Verifica el código de estado y, cuando la respuesta tenga esquema, los campos requeridos y sus tipos.
+7. No uses time.sleep, no hagas llamadas a hosts externos, no leas variables de entorno.
+8. Nombres de test descriptivos: test_<metodo>_<recurso>_<escenario>.
+
+
+### USER
+Genera pruebas de regresión Pytest para las operaciones de la siguiente especificación OpenAPI.
+La especificación contiene SOLO las operaciones que cambiaron en este commit (nuevas o modificadas) y los componentes que usan. Genera pruebas para todas ellas.
+Entorno: la fixture `api` YA está autenticada (incluye el header de autorización); no hagas login para usarla. Para probar respuestas sin autenticación (401/403) crea una sesión sin credenciales: `requests.get(base_url + ruta)`, usando la fixture `base_url`.
+Datos del entorno de pruebas: Superusuario: admin@example.com con contraseña changethis (la fixture api ya está autenticada con él). Al crear usuarios usa correos únicos (p. ej. con uuid) y contraseñas de 8 o más caracteres. No elimines ni modifiques al superusuario.
+<openapi_spec>
+openapi: 3.1.0
+info:
+  title: Full Stack FastAPI Project
+  version: 0.1.0
+paths:
+  /api/v1/users/:
+    get:
+      tags:
+      - users
+      summary: Read Users
+      description: Retrieve users.
+      operationId: users-read_users
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersPublic'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/users/me/password:
+    patch:
+      tags:
+      - users
+      summary: Update Password Me
+      description: Update own password.
+      operationId: users-update_password_me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePassword'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+  /api/v1/items/:
+    post:
+      tags:
+      - items
+      summary: Create Item
+      description: Create new item.
+      operationId: items-create_item
+      security:
+      - OAuth2PasswordBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemPublic'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/items/{id}:
+    put:
+      tags:
+      - items
+      summary: Update Item
+      description: Update an item.
+      operationId: items-update_item
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemPublic'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - items
+      summary: Delete Item
+      description: Delete an item.
+      operationId: items-delete_item
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ItemCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        description:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - title
+      title: ItemCreate
+    ItemPublic:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        description:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Description
+        id:
+          type: string
+          format: uuid
+          title: Id
+        owner_id:
+          type: string
+          format: uuid
+          title: Owner Id
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+      type: object
+      required:
+      - title
+      - id
+      - owner_id
+      title: ItemPublic
+    ItemUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+            maxLength: 255
+            minLength: 1
+          - type: 'null'
+          title: Title
+        description:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Description
+      type: object
+      title: ItemUpdate
+    Message:
+      properties:
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - message
+      title: Message
+    UpdatePassword:
+      properties:
+        current_password:
+          type: string
+          maxLength: 128
+          minLength: 8
+          title: Current Password
+        new_password:
+          type: string
+          maxLength: 128
+          minLength: 8
+          title: New Password
+      type: object
+      required:
+      - current_password
+      - new_password
+      title: UpdatePassword
+    UserPublic:
+      properties:
+        email:
+          type: string
+          maxLength: 255
+          format: email
+          title: Email
+        is_active:
+          type: boolean
+          title: Is Active
+          default: true
+        is_superuser:
+          type: boolean
+          title: Is Superuser
+          default: false
+        full_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Full Name
+        id:
+          type: string
+          format: uuid
+          title: Id
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+      type: object
+      required:
+      - email
+      - id
+      title: UserPublic
+    UsersPublic:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/UserPublic'
+          type: array
+          title: Data
+        count:
+          type: integer
+          title: Count
+      type: object
+      required:
+      - data
+      - count
+      title: UsersPublic
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    OAuth2PasswordBearer:
+      type: oauth2
+      flows:
+        password:
+          scopes: {}
+          tokenUrl: /api/v1/login/access-token
+
+</openapi_spec>
+

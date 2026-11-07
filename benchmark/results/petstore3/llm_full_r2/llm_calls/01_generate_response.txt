@@ -1,0 +1,462 @@
+```python
+import uuid
+import random
+import pytest
+from jsonschema import validate
+
+# ---------------------------------------------------------
+# Schemas JSON extraídos del contrato OpenAPI
+# ---------------------------------------------------------
+CATEGORY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"}
+    }
+}
+
+TAG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"}
+    }
+}
+
+PET_SCHEMA = {
+    "type": "object",
+    "required": ["name", "photoUrls"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "category": CATEGORY_SCHEMA,
+        "photoUrls": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "tags": {
+            "type": "array",
+            "items": TAG_SCHEMA
+        },
+        "status": {
+            "type": "string",
+            "enum": ["available", "pending", "sold"]
+        }
+    }
+}
+
+ORDER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "petId": {"type": "integer"},
+        "quantity": {"type": "integer"},
+        "shipDate": {"type": "string"},
+        "status": {
+            "type": "string",
+            "enum": ["placed", "approved", "delivered"]
+        },
+        "complete": {"type": "boolean"}
+    }
+}
+
+USER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "username": {"type": "string"},
+        "firstName": {"type": "string"},
+        "lastName": {"type": "string"},
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "phone": {"type": "string"},
+        "userStatus": {"type": "integer"}
+    }
+}
+
+API_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "integer"},
+        "type": {"type": "string"},
+        "message": {"type": "string"}
+    }
+}
+
+INVENTORY_SCHEMA = {
+    "type": "object",
+    "additionalProperties": {"type": "integer"}
+}
+
+
+# ---------------------------------------------------------
+# Helpers para generación de datos únicos
+# ---------------------------------------------------------
+def generate_random_id():
+    return random.randint(100000, 999999)
+
+
+def generate_pet_payload(pet_id=None, name="RegressionPet", status="available"):
+    if pet_id is None:
+        pet_id = generate_random_id()
+    return {
+        "id": pet_id,
+        "name": f"{name}_{uuid.uuid4().hex[:6]}",
+        "category": {"id": 1, "name": "Dogs"},
+        "photoUrls": ["https://example.com/photo1.jpg"],
+        "tags": [{"id": 1, "name": "tag1"}],
+        "status": status
+    }
+
+
+def generate_order_payload(order_id=None, pet_id=None):
+    if order_id is None:
+        order_id = random.randint(1, 5)
+    if pet_id is None:
+        pet_id = generate_random_id()
+    return {
+        "id": order_id,
+        "petId": pet_id,
+        "quantity": 2,
+        "shipDate": "2026-03-30T10:00:00.000Z",
+        "status": "placed",
+        "complete": False
+    }
+
+
+def generate_user_payload(username=None):
+    if username is None:
+        username = f"user_{uuid.uuid4().hex[:8]}"
+    return {
+        "id": generate_random_id(),
+        "username": username,
+        "firstName": "Test",
+        "lastName": "User",
+        "email": f"{username}@example.com",
+        "password": "Password123!",
+        "phone": "1234567890",
+        "userStatus": 1
+    }
+
+
+# ---------------------------------------------------------
+# TESTS: /pet
+# ---------------------------------------------------------
+def test_post_pet_success_200(api):
+    payload = generate_pet_payload()
+    response = api.post("/pet", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["name"] == payload["name"]
+
+
+def test_post_pet_invalid_input_400_or_422(api):
+    invalid_payload = {"category": "not-an-object"}
+    response = api.post("/pet", json=invalid_payload)
+    assert response.status_code in [400, 422]
+
+
+def test_put_pet_success_200(api):
+    pet_payload = generate_pet_payload()
+    api.post("/pet", json=pet_payload)
+
+    updated_payload = pet_payload.copy()
+    updated_payload["name"] = f"Updated_{uuid.uuid4().hex[:6]}"
+    updated_payload["status"] = "sold"
+
+    response = api.put("/pet", json=updated_payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["name"] == updated_payload["name"]
+    assert data["status"] == "sold"
+
+
+def test_put_pet_invalid_id_or_not_found(api):
+    payload = generate_pet_payload(pet_id=999999999)
+    response = api.put("/pet", json=payload)
+    assert response.status_code in [200, 400, 404, 422]
+
+
+def test_put_pet_invalid_body_400_or_422(api):
+    invalid_payload = {"id": "invalid-id-type", "photoUrls": "not-a-list"}
+    response = api.put("/pet", json=invalid_payload)
+    assert response.status_code in [400, 422]
+
+
+def test_get_pet_findByStatus_success_200(api):
+    response = api.get("/pet/findByStatus", params={"status": "available"})
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    for item in data:
+        validate(instance=item, schema=PET_SCHEMA)
+
+
+def test_get_pet_findByStatus_invalid_400(api):
+    response = api.get("/pet/findByStatus", params={"status": "invalid_status_value"})
+    assert response.status_code in [200, 400]
+
+
+def test_get_pet_findByTags_success_200(api):
+    response = api.get("/pet/findByTags", params={"tags": ["tag1", "tag2"]})
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    for item in data:
+        validate(instance=item, schema=PET_SCHEMA)
+
+
+def test_get_pet_findByTags_empty_or_invalid_400(api):
+    response = api.get("/pet/findByTags", params={})
+    assert response.status_code in [200, 400]
+
+
+def test_get_pet_byId_success_200(api):
+    payload = generate_pet_payload()
+    create_resp = api.post("/pet", json=payload)
+    pet_id = create_resp.json().get("id", payload["id"])
+
+    response = api.get(f"/pet/{pet_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["id"] == pet_id
+
+
+def test_get_pet_byId_invalid_id_400(api):
+    response = api.get("/pet/invalid-id-string")
+    assert response.status_code in [400, 404]
+
+
+def test_get_pet_byId_not_found_404(api):
+    response = api.get("/pet/9999999999999")
+    assert response.status_code == 404
+
+
+def test_post_pet_updateWithForm_success_200(api):
+    payload = generate_pet_payload()
+    create_resp = api.post("/pet", json=payload)
+    pet_id = create_resp.json().get("id", payload["id"])
+
+    new_name = "FormUpdatedName"
+    new_status = "pending"
+    response = api.post(f"/pet/{pet_id}", params={"name": new_name, "status": new_status})
+    assert response.status_code in [200, 400]
+    if response.status_code == 200 and response.content:
+        validate(instance=response.json(), schema=PET_SCHEMA)
+
+
+def test_post_pet_updateWithForm_invalid_400(api):
+    response = api.post("/pet/not-an-integer", params={"name": "test"})
+    assert response.status_code in [400, 404, 405]
+
+
+def test_delete_pet_success_200(api):
+    payload = generate_pet_payload()
+    create_resp = api.post("/pet", json=payload)
+    pet_id = create_resp.json().get("id", payload["id"])
+
+    headers = {"api_key": "special-key"}
+    response = api.delete(f"/pet/{pet_id}", headers=headers)
+    assert response.status_code == 200
+
+    verify_resp = api.get(f"/pet/{pet_id}")
+    assert verify_resp.status_code == 404
+
+
+def test_delete_pet_invalid_id_400(api):
+    response = api.delete("/pet/not-a-valid-int-id")
+    assert response.status_code in [400, 404]
+
+
+def test_post_pet_uploadImage_success_200(api):
+    payload = generate_pet_payload()
+    create_resp = api.post("/pet", json=payload)
+    pet_id = create_resp.json().get("id", payload["id"])
+
+    image_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    headers = {"Content-Type": "application/octet-stream"}
+    response = api.post(
+        f"/pet/{pet_id}/uploadImage",
+        data=image_bytes,
+        headers=headers,
+        params={"additionalMetadata": "test_image"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=API_RESPONSE_SCHEMA)
+
+
+def test_post_pet_uploadImage_not_found_404(api):
+    image_bytes = b"fake-raw-data"
+    headers = {"Content-Type": "application/octet-stream"}
+    response = api.post(
+        "/pet/9999999999999/uploadImage",
+        data=image_bytes,
+        headers=headers
+    )
+    assert response.status_code in [400, 404]
+
+
+# ---------------------------------------------------------
+# TESTS: /store
+# ---------------------------------------------------------
+def test_get_store_inventory_success_200(api):
+    response = api.get("/store/inventory")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=INVENTORY_SCHEMA)
+
+
+def test_post_store_order_success_200(api):
+    payload = generate_order_payload()
+    response = api.post("/store/order", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ORDER_SCHEMA)
+    assert data["petId"] == payload["petId"]
+
+
+def test_post_store_order_invalid_400_or_422(api):
+    invalid_payload = {"quantity": "invalid_number", "status": "unknown_status"}
+    response = api.post("/store/order", json=invalid_payload)
+    assert response.status_code in [400, 422]
+
+
+def test_get_store_order_byId_success_200(api):
+    order_id = random.randint(1, 5)
+    payload = generate_order_payload(order_id=order_id)
+    api.post("/store/order", json=payload)
+
+    response = api.get(f"/store/order/{order_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ORDER_SCHEMA)
+    assert data["id"] == order_id
+
+
+def test_get_store_order_byId_invalid_id_400(api):
+    response = api.get("/store/order/non-integer-id")
+    assert response.status_code in [400, 404]
+
+
+def test_get_store_order_byId_not_found_404(api):
+    response = api.get("/store/order/999999999")
+    assert response.status_code == 404
+
+
+def test_delete_store_order_byId_success_200(api):
+    order_id = random.randint(100, 500)
+    payload = generate_order_payload(order_id=order_id)
+    api.post("/store/order", json=payload)
+
+    response = api.delete(f"/store/order/{order_id}")
+    assert response.status_code in [200, 404]
+
+
+def test_delete_store_order_byId_invalid_400(api):
+    response = api.delete("/store/order/invalid-string-id")
+    assert response.status_code in [400, 404]
+
+
+def test_delete_store_order_byId_not_found_404(api):
+    response = api.delete("/store/order/999999999")
+    assert response.status_code in [400, 404]
+
+
+# ---------------------------------------------------------
+# TESTS: /user
+# ---------------------------------------------------------
+def test_post_user_createUser_success_200(api):
+    payload = generate_user_payload()
+    response = api.post("/user", json=payload)
+    assert response.status_code == 200
+    if response.content:
+        data = response.json()
+        validate(instance=data, schema=USER_SCHEMA)
+
+
+def test_post_user_createWithList_success_200(api):
+    users_payload = [generate_user_payload(), generate_user_payload()]
+    response = api.post("/user/createWithList", json=users_payload)
+    assert response.status_code == 200
+    if response.content:
+        data = response.json()
+        validate(instance=data, schema=USER_SCHEMA)
+
+
+def test_get_user_login_success_200(api):
+    response = api.get("/user/login", params={"username": "theUser", "password": "12345"})
+    assert response.status_code == 200
+    assert isinstance(response.text, str)
+
+
+def test_get_user_login_invalid_400(api):
+    response = api.get("/user/login", params={})
+    assert response.status_code in [200, 400]
+
+
+def test_get_user_logout_success_200(api):
+    response = api.get("/user/logout")
+    assert response.status_code == 200
+
+
+def test_get_user_byName_success_200(api):
+    payload = generate_user_payload()
+    api.post("/user", json=payload)
+
+    response = api.get(f"/user/{payload['username']}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_SCHEMA)
+    assert data["username"] == payload["username"]
+
+
+def test_get_user_byName_not_found_404(api):
+    non_existent = f"non_existent_{uuid.uuid4().hex[:12]}"
+    response = api.get(f"/user/{non_existent}")
+    assert response.status_code == 404
+
+
+def test_put_user_updateUser_success_200(api):
+    payload = generate_user_payload()
+    api.post("/user", json=payload)
+
+    updated_payload = payload.copy()
+    updated_payload["firstName"] = "UpdatedName"
+    updated_payload["phone"] = "9876543210"
+
+    response = api.put(f"/user/{payload['username']}", json=updated_payload)
+    assert response.status_code == 200
+
+    fetch_resp = api.get(f"/user/{payload['username']}")
+    if fetch_resp.status_code == 200:
+        data = fetch_resp.json()
+        assert data["firstName"] == "UpdatedName"
+
+
+def test_put_user_updateUser_not_found_404(api):
+    non_existent = f"non_existent_{uuid.uuid4().hex[:12]}"
+    payload = generate_user_payload(username=non_existent)
+    response = api.put(f"/user/{non_existent}", json=payload)
+    assert response.status_code in [200, 400, 404]
+
+
+def test_delete_user_deleteUser_success_200(api):
+    payload = generate_user_payload()
+    api.post("/user", json=payload)
+
+    response = api.delete(f"/user/{payload['username']}")
+    assert response.status_code == 200
+
+    verify_resp = api.get(f"/user/{payload['username']}")
+    assert verify_resp.status_code == 404
+
+
+def test_delete_user_deleteUser_not_found_404(api):
+    non_existent = f"non_existent_{uuid.uuid4().hex[:12]}"
+    response = api.delete(f"/user/{non_existent}")
+    assert response.status_code in [400, 404]
+```

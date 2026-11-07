@@ -44,20 +44,32 @@ for _res in schema.get_all_operations():
         pass
 
 
+def _auth_headers():
+    # Misma autenticación que reciben las pruebas del LLM (variable DELTAHEAL_AUTH_HEADER).
+    raw = os.environ.get("DELTAHEAL_AUTH_HEADER", "")
+    if ":" not in raw:
+        return {{}}
+    k, v = raw.split(":", 1)
+    return {{k.strip(): v.strip()}}
+
+
 @pytest.mark.parametrize("operation", OPERATIONS, ids=lambda op: op.label)
 def test_api(operation):
     base_url = os.environ["API_BASE_URL"]
+    headers = _auth_headers()
     violations = []
 
     @given(case=_strategy(operation))
     @settings(max_examples={max_examples}, deadline=None, database=None,
               suppress_health_check=list(HealthCheck))
     def explore(case):
-        response = case.call(base_url=base_url)
+        response = case.call(base_url=base_url, headers=headers)
         try:
             case.validate_response(response)
-        except Exception as exc:  # violación de checks de Schemathesis
-            violations.append(f"{{type(exc).__name__}}: {{str(exc)[:400]}}")
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as exc:  # FailureGroup de Schemathesis NO hereda de Exception
+            violations.append(f"{{type(exc).__name__}}: {{str(exc).splitlines()[0][:300]}}")
 
     explore()
     unique = sorted(set(violations))

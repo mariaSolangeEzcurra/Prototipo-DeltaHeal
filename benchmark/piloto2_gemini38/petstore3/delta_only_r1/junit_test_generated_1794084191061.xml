@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="20" time="0.956" timestamp="2026-11-07T15:43:12.962965-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_post_pet_success_200" time="0.037" /><testcase classname="test_generated" name="test_post_pet_missing_required_fields_400_or_422" time="0.016"><failure message="assert 500 in (400, 422)&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:86: in test_post_pet_missing_required_fields_400_or_422
+    assert response.status_code in (400, 422)
+E   assert 500 in (400, 422)
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_pet_invalid_status_enum_400_or_422" time="0.011"><failure message="assert 200 in (400, 422)&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:93: in test_post_pet_invalid_status_enum_400_or_422
+    assert response.status_code in (400, 422)
+E   assert 200 in (400, 422)
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_pet_success_200" time="0.021" /><testcase classname="test_generated" name="test_put_pet_invalid_id_400" time="0.017" /><testcase classname="test_generated" name="test_put_pet_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_put_pet_validation_exception_422" time="0.008"><failure message="assert 404 in (400, 422)&#10; +  where 404 = &lt;Response [404]&gt;.status_code">test_generated.py:138: in test_put_pet_validation_exception_422
+    assert response.status_code in (400, 422)
+E   assert 404 in (400, 422)
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_pet_by_id_success_200" time="0.019" /><testcase classname="test_generated" name="test_get_pet_by_id_invalid_id_format_400" time="0.009" /><testcase classname="test_generated" name="test_get_pet_by_id_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_post_pet_update_with_form_success_200" time="0.020" /><testcase classname="test_generated" name="test_post_pet_update_with_form_invalid_input_400" time="0.012" /><testcase classname="test_generated" name="test_get_pet_find_by_status_success_200[available]" time="0.022" /><testcase classname="test_generated" name="test_get_pet_find_by_status_success_200[pending]" time="0.021" /><testcase classname="test_generated" name="test_get_pet_find_by_status_success_200[sold]" time="0.018" /><testcase classname="test_generated" name="test_get_pet_find_by_status_invalid_value_400" time="0.011" /><testcase classname="test_generated" name="test_get_pet_find_by_tags_success_200" time="0.018" /><testcase classname="test_generated" name="test_get_pet_find_by_tags_multiple_tags_success_200" time="0.014"><failure message="jsonschema.exceptions.ValidationError: 'unknown_status' is not one of ['available', 'pending', 'sold']&#10;&#10;Failed validating 'enum' in schema['items']['properties']['status']:&#10;    {'type': 'string', 'enum': ['available', 'pending', 'sold']}&#10;&#10;On instance[10]['status']:&#10;    'unknown_status'">test_generated.py:239: in test_get_pet_find_by_tags_multiple_tags_success_200
+    validate(instance=data, schema=PET_LIST_SCHEMA)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'unknown_status' is not one of ['available', 'pending', 'sold']
+E   
+E   Failed validating 'enum' in schema['items']['properties']['status']:
+E       {'type': 'string', 'enum': ['available', 'pending', 'sold']}
+E   
+E   On instance[10]['status']:
+E       'unknown_status'</failure></testcase><testcase classname="test_generated" name="test_delete_store_order_invalid_id_400" time="0.012" /><testcase classname="test_generated" name="test_delete_store_order_not_found_404" time="0.008"><failure message="assert 200 in (400, 404)&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:256: in test_delete_store_order_not_found_404
+    assert response.status_code in (400, 404)
+E   assert 200 in (400, 404)
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase></testsuite></testsuites>

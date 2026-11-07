@@ -1,0 +1,271 @@
+{
+  "timestamp": "2026-11-07T18:08:29",
+  "mode": "traditional",
+  "run_id": "traditional_r1",
+  "model": null,
+  "provider": null,
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "POST /books/v1",
+      "PUT /users/v1/{username}/password"
+    ],
+    "modified": [
+      "GET /books/v1/{book_title}",
+      "DELETE /users/v1/{username}"
+    ],
+    "removed": [],
+    "unchanged_count": 10
+  },
+  "operations_total": 14,
+  "target_operations": [
+    "POST /books/v1",
+    "GET /books/v1/{book_title}",
+    "DELETE /users/v1/{username}",
+    "PUT /users/v1/{username}/password"
+  ],
+  "context_operations": 4,
+  "spec_context_chars": 7866,
+  "spec_full_chars": 19692,
+  "spec_context_tokens_est": 1966,
+  "spec_full_tokens_est": 4923,
+  "context_reduction": 0.6005,
+  "llm_calls": 0,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "total_tokens": 0,
+  "generation_tokens": 0,
+  "repair_tokens": 0,
+  "cost_usd": 0.0,
+  "llm_latency_s": 0.0,
+  "generated_tests": 4,
+  "executable_tests": 4,
+  "executable_rate": 1.0,
+  "passed": 0,
+  "assertion_failures": 4,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.8333,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 9.789,
+  "test_cases": [
+    {
+      "test": "test_schemathesis::test_api[DELETE /users/v1/{username}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PUT /users/v1/{username}/password]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /books/v1]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /books/v1/{book_title}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_schemathesis::test_api[DELETE /users/v1/{username}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PUT /users/v1/{username}/password]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /books/v1]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[GET /books/v1/{book_title}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    }
+  ],
+  "coverage": {
+    "http_coverage": 0.8333,
+    "documented_pairs": 12,
+    "covered_pairs": 10,
+    "operations_hit": 4,
+    "operations_total": 4,
+    "total_requests": 116,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /books/v1": {
+        "documented": [
+          "200",
+          "400",
+          "401"
+        ],
+        "observed": [
+          200,
+          400,
+          401
+        ],
+        "covered": [
+          "200",
+          "400",
+          "401"
+        ]
+      },
+      "GET /books/v1/{book_title}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          401,
+          404
+        ],
+        "covered": [
+          "401",
+          "404"
+        ]
+      },
+      "DELETE /users/v1/{username}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          401,
+          404
+        ],
+        "covered": [
+          "401",
+          "404"
+        ]
+      },
+      "PUT /users/v1/{username}/password": {
+        "documented": [
+          "204",
+          "400",
+          "401"
+        ],
+        "observed": [
+          204,
+          400,
+          401
+        ],
+        "covered": [
+          "204",
+          "400",
+          "401"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.3571,
+  "duration_s": 10.212,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T18:08:25",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:26",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f vampi  -> código 0. vampi",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:27",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name vampi -p 5000:5000 -e vulnerable=0 -e tokentimetolive=3600 deltaheal/vampi:f16052d  -> código 0. 7c4ca6ee4d32dd3307dd624d56c46d6cb3d0168e9068f6058f25af10728e72da",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Preparación de datos",
+      "detalle": "GET /createdb -> 200",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /users/v1, GET /books/v1 respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin' -> HTTP 200; token obtenido (147 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=traditional; modelo=sin LLM; delta=sí; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 2 modificadas, 0 eliminadas, 10 sin cambios. Nuevas: POST /books/v1, PUT /users/v1/{username}/password. Modificadas: GET /books/v1/{book_title}, DELETE /users/v1/{username}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:5000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 4 de 14 operaciones; 7,866 caracteres (completa: 19,692)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:08:29",
+      "paso": "Generación de casos (Schemathesis, sin IA)",
+      "detalle": "4 operaciones; 25 ejemplos por operación, datos válidos e inválidos",
+      "archivo": "test_schemathesis.py"
+    },
+    {
+      "hora": "2026-11-07T18:08:39",
+      "paso": "Ejecución de pruebas (Pytest)",
+      "detalle": "4 tests ejecutados, 0 pasan, 4 fallan por aserción, 0 con error de código (exit=1, 9.8s)",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:08:39",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "10/12 pares (operación, código) cubiertos = 83.3%; 116 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:08:39",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=0; duración=10.212 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T18:08:39",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+api,config,rep,order,status,model,generated_tests,executable_tests,executable_rate,executable_rate_before_heal,passed,assertion_failures,runtime_errors,connection_errors,collection_error,http_coverage,http_coverage_all_ops,documented_pairs,covered_pairs,prompt_tokens,completion_tokens,total_tokens,generation_tokens,repair_tokens,cost_usd,llm_calls,heal_iterations,heal_stop_reason,reasoning_tokens,llm_truncated_calls,spec_context_chars,spec_full_chars,context_reduction,target_ops,duration_s,llm_latency_s,pytest_duration_s,api_smoke_after
+vampi,traditional,1,1,ok,,4,4,1.0,,0,4,0,0,False,0.9167,0.3929,12,11,0,0,0,0,0,0.0,0,0,,,,7866,19692,0.6005,4,33.104,0.0,31.576,GET /books/v1 -> 500 (esperado 200)
+vampi,deltaheal,1,2,ok,gemini-3.8-flash,12,12,1.0,1.0,7,5,0,0,False,1.0,0.4643,12,12,2102,2418,4520,4520,0,0.010644,1,0,clean,0,0,7866,19692,0.6005,4,166.739,160.833,3.876,ok
+vampi,delta_only,1,3,ok,gemini-3.8-flash,12,12,1.0,1.0,7,5,0,0,False,1.0,0.4643,12,12,2102,2501,4603,4603,0,0.010955,1,0,clean,0,0,7866,19692,0.6005,4,74.271,71.306,2.721,ok
+vampi,full_heal,1,4,ok,gemini-3.8-flash,28,28,1.0,1.0,19,9,0,0,False,1.0,0.9286,12,12,4444,4111,8555,8555,0,0.018749,1,0,clean,0,0,19692,19692,0.0,4,217.914,214.18,3.419,ok
+vampi,llm_full,1,5,ok,gemini-3.8-flash,28,28,1.0,1.0,18,10,0,0,False,1.0,0.8929,12,12,4444,4447,8891,8891,0,0.020009,1,0,clean,0,0,19692,19692,0.0,4,49.96,46.17,3.552,ok
+petstore3,traditional,1,1,ok,,7,7,1.0,,1,6,0,0,False,0.7368,0.3111,19,14,0,0,0,0,0,0.0,0,0,,,,10106,22776,0.5563,7,19.451,0.0,18.405,ok
+petstore3,deltaheal,1,2,ok,gemini-3.8-flash,20,20,1.0,1.0,18,2,0,0,False,0.8421,0.3556,19,16,2919,2595,5514,5514,0,0.011921,1,0,clean,0,0,10106,22776,0.5563,7,67.264,62.324,3.064,ok
+petstore3,delta_only,1,3,ok,gemini-3.8-flash,20,20,1.0,1.0,15,5,0,0,False,0.7368,0.3111,19,14,2919,2619,5538,5538,0,0.012011,1,0,clean,0,0,10106,22776,0.5563,7,127.858,123.349,2.987,ok
+petstore3,full_heal,1,4,ok,gemini-3.8-flash,36,36,1.0,1.0,32,4,0,0,False,0.6842,0.7111,19,13,5920,4828,10748,10748,0,0.022545,1,0,clean,0,0,22776,22776,0.0,7,243.069,239.643,3.109,ok
+petstore3,llm_full,1,5,ok,gemini-3.8-flash,37,37,1.0,1.0,33,4,0,0,False,0.7368,0.7333,19,14,5920,5112,11032,11032,0,0.02361,1,0,clean,0,0,22776,22776,0.0,7,277.268,271.877,3.421,ok
+fastapi_template,full_heal,1,1,ok,gemini-3.8-flash,41,40,0.9756,0.9756,39,1,0,1,False,0.9,0.8333,10,9,6664,4690,11354,11354,0,0.022586,1,0,clean,0,0,25117,25117,0.0,5,300.55,283.746,14.396,ok
+fastapi_template,delta_only,1,2,ok,gemini-3.8-flash,14,14,1.0,1.0,14,0,0,0,False,0.9,0.2143,10,9,2560,2246,4806,4806,0,0.010342,1,0,clean,0,0,8217,25117,0.6729,5,49.197,42.573,5.721,ok
+fastapi_template,deltaheal,1,3,ok,gemini-3.8-flash,17,17,1.0,1.0,17,0,0,0,False,0.9,0.2143,10,9,2560,2536,5096,5096,0,0.01143,1,0,clean,0,0,8217,25117,0.6729,5,268.907,250.833,16.925,ok
+fastapi_template,llm_full,1,4,ok,gemini-3.8-flash,45,44,0.9778,0.9778,42,2,0,1,False,0.9,0.8333,10,9,6664,5386,12050,12050,0,0.025195,1,0,clean,0,0,25117,25117,0.0,5,154.924,147.06,7.037,ok
+fastapi_template,traditional,1,5,ok,,5,5,1.0,,0,5,0,0,False,0.7,0.1667,10,7,0,0,0,0,0,0.0,0,0,,,,8217,25117,0.6729,5,16.941,0.0,16.299,ok

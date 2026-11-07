@@ -1,0 +1,52 @@
+## 🧪 DeltaHeal — reporte de regresión (`delta_only`)
+
+| Métrica | Valor |
+|---|---|
+| Operaciones nuevas / modificadas / eliminadas | 2 / 2 / 0 |
+| Reducción de contexto enviado al LLM | 60.1% |
+| Tests generados | 12 |
+| Tasa de tests ejecutables | 100.0% (antes de reparar: 100.0%) |
+| Pasan / fallas de aserción / errores | 7 / 5 / 0 |
+| Cobertura de respuestas HTTP (ops objetivo) | 100.0% |
+| Iteraciones de self-healing | 0 |
+| Tokens (entrada + salida) | 2102 + 2464 = 4566 |
+| Costo estimado | $0.0108 |
+| Respuestas del LLM cortadas por límite de salida | 0 |
+| Duración total | 81.912 s |
+
+<details><summary>Operaciones analizadas</summary>
+
+- 🆕 `POST /books/v1`
+- 🆕 `PUT /users/v1/{username}/password`
+- ✏️ `GET /books/v1/{book_title}`
+- ✏️ `DELETE /users/v1/{username}`
+
+</details>
+
+### ⚠️ Posibles regresiones (fallas de aserción)
+
+- `test_generated::test_delete_user_unauthorized`: jsonschema.exceptions.ValidationError: 'message' is a required property
+
+Failed validating 'required' in schema:
+    {'type': 'object',
+     'properties': {'status': {'type': 'string', 'enum': ['fail'
+- `test_generated::test_put_user_password_unauthorized`: jsonschema.exceptions.ValidationError: 'message' is a required property
+
+Failed validating 'required' in schema:
+    {'type': 'object',
+     'properties': {'status': {'type': 'string', 'enum': ['fail'
+- `test_generated::test_post_books_unauthorized`: jsonschema.exceptions.ValidationError: 'message' is a required property
+
+Failed validating 'required' in schema:
+    {'type': 'object',
+     'properties': {'status': {'type': 'string', 'enum': ['fail'
+- `test_generated::test_get_book_by_title_success`: jsonschema.exceptions.ValidationError: {'book_title': 'bookTitle_30ea68f4', 'owner': 'admin', 'secret': 'secretContent123'} is not of type 'array'
+
+Failed validating 'type' in schema:
+    {'type': 'ar
+- `test_generated::test_get_book_by_title_unauthorized`: jsonschema.exceptions.ValidationError: 'message' is a required property
+
+Failed validating 'required' in schema:
+    {'type': 'object',
+     'properties': {'status': {'type': 'string', 'enum': ['fail'
+

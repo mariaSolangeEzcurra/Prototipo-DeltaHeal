@@ -1,0 +1,24 @@
+```python
+def test_get_user_login_success(api):
+    response = api.get(
+        "/user/login",
+        params={"username": "theUser", "password": "password123"},
+        headers={"Accept": "application/json"},
+    )
+    assert response.status_code == 200
+    assert "X-Rate-Limit" in response.headers or "x-rate-limit" in response.headers
+    assert "X-Expires-After" in response.headers or "x-expires-after" in response.headers
+
+    # El schema documenta un tipo string; la respuesta puede venir como texto plano o JSON serializado
+    content_type = response.headers.get("Content-Type", "")
+    if "application/json" in content_type:
+        try:
+            data = response.json()
+        except Exception:
+            data = response.text
+    else:
+        data = response.text
+
+    assert isinstance(data, str)
+    assert len(data) > 0
+```

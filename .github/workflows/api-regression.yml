@@ -17,7 +17,7 @@ env:
   SPEC_PATH: examples/demo_api/openapi_v2.yaml
   API_BASE_URL: http://localhost:8000
   DELTAHEAL_PROVIDER: ${{ vars.DELTAHEAL_PROVIDER || 'gemini' }}
-  DELTAHEAL_MODEL: ${{ vars.DELTAHEAL_MODEL || 'gemini-2.5-flash' }}
+  DELTAHEAL_MODEL: ${{ vars.DELTAHEAL_MODEL || 'gemini-3.8-flash' }}
 
 jobs:
   regression:

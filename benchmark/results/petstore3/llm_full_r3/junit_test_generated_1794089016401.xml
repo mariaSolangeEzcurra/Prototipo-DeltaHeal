@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="40" time="1.221" timestamp="2026-11-07T17:03:39.208734-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_post_pet_success" time="0.049" /><testcase classname="test_generated" name="test_post_pet_invalid_input" time="0.019"><failure message="assert 500 in (400, 422)&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:123: in test_post_pet_invalid_input
+    assert res.status_code in (400, 422)
+E   assert 500 in (400, 422)
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_pet_success" time="0.023" /><testcase classname="test_generated" name="test_put_pet_invalid_id" time="0.019" /><testcase classname="test_generated" name="test_put_pet_not_found" time="0.010" /><testcase classname="test_generated" name="test_get_pet_findByStatus_success[available]" time="0.042" /><testcase classname="test_generated" name="test_get_pet_findByStatus_success[pending]" time="0.017" /><testcase classname="test_generated" name="test_get_pet_findByStatus_success[sold]" time="0.018" /><testcase classname="test_generated" name="test_get_pet_findByStatus_invalid_status" time="0.010" /><testcase classname="test_generated" name="test_get_pet_findByTags_success" time="0.021" /><testcase classname="test_generated" name="test_get_pet_findByTags_invalid" time="0.009" /><testcase classname="test_generated" name="test_get_pet_by_id_success" time="0.021" /><testcase classname="test_generated" name="test_get_pet_by_id_not_found" time="0.008" /><testcase classname="test_generated" name="test_get_pet_by_id_invalid_id" time="0.010" /><testcase classname="test_generated" name="test_post_pet_update_with_form_success" time="0.015" /><testcase classname="test_generated" name="test_post_pet_update_with_form_invalid_input" time="0.011" /><testcase classname="test_generated" name="test_delete_pet_success" time="0.020" /><testcase classname="test_generated" name="test_delete_pet_invalid_id" time="0.010" /><testcase classname="test_generated" name="test_post_pet_upload_image_success" time="0.042" /><testcase classname="test_generated" name="test_post_pet_upload_image_pet_not_found" time="0.011" /><testcase classname="test_generated" name="test_get_store_inventory_success" time="0.008" /><testcase classname="test_generated" name="test_post_store_order_success" time="0.015" /><testcase classname="test_generated" name="test_post_store_order_invalid" time="0.011" /><testcase classname="test_generated" name="test_get_store_order_by_id_success" time="0.017" /><testcase classname="test_generated" name="test_get_store_order_not_found" time="0.007" /><testcase classname="test_generated" name="test_get_store_order_invalid_id" time="0.012" /><testcase classname="test_generated" name="test_delete_store_order_success" time="0.015" /><testcase classname="test_generated" name="test_delete_store_order_not_found" time="0.008" /><testcase classname="test_generated" name="test_delete_store_order_invalid_id" time="0.010" /><testcase classname="test_generated" name="test_post_user_success" time="0.015" /><testcase classname="test_generated" name="test_post_user_create_with_list_success" time="0.024"><failure message="jsonschema.exceptions.ValidationError: [{'id': 58514, 'username': 'user_rdugqodvze', 'firstName': 'John', 'lastName': 'Doe', 'email': 'jhlqzyff@example.com', 'password': 'secretPassword123', 'phone': '1234567890', 'userStatus': 1}, {'id': 67093, 'username': 'user_hdcrarfxrf', 'firstName': 'John', 'lastName': 'Doe', 'email': 'jdvhfudo@example.com', 'password': 'secretPassword123', 'phone': '1234567890', 'userStatus': 1}] is not of type 'object'&#10;&#10;Failed validating 'type' in schema:&#10;[+27 more lines; full report in element text]">test_generated.py:417: in test_post_user_create_with_list_success
+    validate(instance=data, schema=USER_SCHEMA)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: [{'id': 58514, 'username': 'user_rdugqodvze', 'firstName': 'John', 'lastName': 'Doe', 'email': 'jhlqzyff@example.com', 'password': 'secretPassword123', 'phone': '1234567890', 'userStatus': 1}, {'id': 67093, 'username': 'user_hdcrarfxrf', 'firstName': 'John', 'lastName': 'Doe', 'email': 'jdvhfudo@example.com', 'password': 'secretPassword123', 'phone': '1234567890', 'userStatus': 1}] is not of type 'object'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'object',
+E        'properties': {'id': {'type': 'integer'},
+E                       'username': {'type': 'string'},
+E                       'firstName': {'type': 'string'},
+E                       'lastName': {'type': 'string'},
+E                       'email': {'type': 'string'},
+E                       'password': {'type': 'string'},
+E                       'phone': {'type': 'string'},
+E                       'userStatus': {'type': 'integer'}}}
+E   
+E   On instance:
+E       [{'id': 58514,
+E         'username': 'user_rdugqodvze',
+E         'firstName': 'John',
+E         'lastName': 'Doe',
+E         'email': 'jhlqzyff@example.com',
+E         'password': 'secretPassword123',
+E         'phone': '1234567890',
+E         'userStatus': 1},
+E        {'id': 67093,
+E         'username': 'user_hdcrarfxrf',
+E         'firstName': 'John',
+E         'lastName': 'Doe',
+E         'email': 'jdvhfudo@example.com',
+E         'password': 'secretPassword123',
+E         'phone': '1234567890',
+E         'userStatus': 1}]</failure></testcase><testcase classname="test_generated" name="test_get_user_login_success" time="0.020" /><testcase classname="test_generated" name="test_get_user_login_invalid" time="0.009" /><testcase classname="test_generated" name="test_get_user_logout_success" time="0.008" /><testcase classname="test_generated" name="test_get_user_by_username_success" time="0.016" /><testcase classname="test_generated" name="test_get_user_by_username_not_found" time="0.008" /><testcase classname="test_generated" name="test_put_user_success" time="0.019" /><testcase classname="test_generated" name="test_put_user_not_found" time="0.009" /><testcase classname="test_generated" name="test_delete_user_success" time="0.025" /><testcase classname="test_generated" name="test_delete_user_not_found" time="0.009" /></testsuite></testsuites>

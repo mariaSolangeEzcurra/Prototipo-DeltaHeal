@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
             if a.cmd == "models":
                 print("\n".join(client.list_models()))
             else:
+                print(f"Consultando a {s.provider} ({s.model})… la primera respuesta puede tardar hasta 1 minuto.",
+                      flush=True)
                 r = client.complete("Responde solo con la palabra OK.", "¿Funcionas?")
                 print(f"Proveedor: {s.provider} · modelo: {s.model}\nRespuesta: {r.text.strip()[:80]}\n"
                       f"Tokens: {r.prompt_tokens} + {r.completion_tokens} · latencia {r.latency_s:.1f}s\n✅ Conexión correcta")

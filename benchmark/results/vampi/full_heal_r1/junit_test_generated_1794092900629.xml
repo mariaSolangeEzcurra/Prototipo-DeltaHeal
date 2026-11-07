@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="28" time="1.955" timestamp="2026-11-07T18:08:23.123387-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_get_createdb_success" time="0.194" /><testcase classname="test_generated" name="test_get_home_success" time="0.010" /><testcase classname="test_generated" name="test_get_users_v1_success" time="0.011" /><testcase classname="test_generated" name="test_get_users_v1_debug_success" time="0.011" /><testcase classname="test_generated" name="test_post_users_v1_register_success" time="0.034" /><testcase classname="test_generated" name="test_post_users_v1_register_duplicate_username_400" time="0.078"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:120: in test_post_users_v1_register_duplicate_username_400
+    assert res2.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_users_v1_login_success" time="0.277" /><testcase classname="test_generated" name="test_post_users_v1_login_invalid_password_400" time="0.021"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:143: in test_post_users_v1_login_invalid_password_400
+    assert response.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_me_success" time="0.012" /><testcase classname="test_generated" name="test_get_me_unauthorized_401" time="0.008"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string'},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:189: in test_get_me_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string'},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase><testcase classname="test_generated" name="test_get_user_by_username_success" time="0.011" /><testcase classname="test_generated" name="test_get_user_by_username_not_found_404" time="0.010" /><testcase classname="test_generated" name="test_delete_user_by_username_success" time="0.084" /><testcase classname="test_generated" name="test_delete_user_by_username_not_found_404" time="0.011" /><testcase classname="test_generated" name="test_delete_user_by_username_unauthorized_401" time="0.009"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:271: in test_delete_user_by_username_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase><testcase classname="test_generated" name="test_put_user_email_success_204" time="0.047"><failure message="assert 400 == 204&#10; +  where 400 = &lt;Response [400]&gt;.status_code">test_generated.py:287: in test_put_user_email_success_204
+    assert response.status_code == 204
+E   assert 400 == 204
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_user_email_invalid_email_400" time="0.043" /><testcase classname="test_generated" name="test_put_user_email_unauthorized_401" time="0.010"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:326: in test_put_user_email_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase><testcase classname="test_generated" name="test_put_user_password_success_204" time="0.074" /><testcase classname="test_generated" name="test_put_user_password_invalid_data_400" time="0.045" /><testcase classname="test_generated" name="test_put_user_password_unauthorized_401" time="0.009"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:382: in test_put_user_password_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase><testcase classname="test_generated" name="test_get_books_v1_success" time="0.012" /><testcase classname="test_generated" name="test_post_books_v1_success" time="0.035" /><testcase classname="test_generated" name="test_post_books_v1_duplicate_400" time="0.048"><failure message="jsonschema.exceptions.ValidationError: 'status' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {}">test_generated.py:440: in test_post_books_v1_duplicate_400
+    validate(instance=response.json() if (response := res2) else {}, schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'status' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {}</failure></testcase><testcase classname="test_generated" name="test_post_books_v1_unauthorized_401" time="0.010"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:455: in test_post_books_v1_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase><testcase classname="test_generated" name="test_get_book_by_title_success" time="0.049"><failure message="jsonschema.exceptions.ValidationError: {'book_title': 'book_admin_d7fabaa3', 'owner': 'admin', 'secret': 'adminSecret'} is not of type 'array'&#10;&#10;Failed validating 'type' in schema:&#10;    {'type': 'array',&#10;     'items': {'type': 'object',&#10;               'properties': {'book_title': {'type': 'string'},&#10;                              'owner': {'type': 'string'},&#10;                              'secret': {'type': 'string'}}}}&#10;&#10;On instance:&#10;    {'book_title': 'book_admin_d7fabaa3',&#10;     'owner': 'admin',&#10;[+1 more line; full report in element text]">test_generated.py:479: in test_get_book_by_title_success
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: {'book_title': 'book_admin_d7fabaa3', 'owner': 'admin', 'secret': 'adminSecret'} is not of type 'array'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'array',
+E        'items': {'type': 'object',
+E                  'properties': {'book_title': {'type': 'string'},
+E                                 'owner': {'type': 'string'},
+E                                 'secret': {'type': 'string'}}}}
+E   
+E   On instance:
+E       {'book_title': 'book_admin_d7fabaa3',
+E        'owner': 'admin',
+E        'secret': 'adminSecret'}</failure></testcase><testcase classname="test_generated" name="test_get_book_by_title_not_found_404" time="0.013" /><testcase classname="test_generated" name="test_get_book_by_title_unauthorized_401" time="0.010"><failure message="jsonschema.exceptions.ValidationError: 'message' is a required property&#10;&#10;Failed validating 'required' in schema:&#10;    {'type': 'object',&#10;     'properties': {'status': {'type': 'string', 'enum': ['fail']},&#10;                    'message': {'type': 'string'}},&#10;     'required': ['status', 'message']}&#10;&#10;On instance:&#10;    {'detail': 'No authorization token provided',&#10;     'status': 401,&#10;     'title': 'Unauthorized',&#10;     'type': 'about:blank'}">test_generated.py:508: in test_get_book_by_title_unauthorized_401
+    validate(instance=response.json(), schema=schema)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'message' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'type': 'object',
+E        'properties': {'status': {'type': 'string', 'enum': ['fail']},
+E                       'message': {'type': 'string'}},
+E        'required': ['status', 'message']}
+E   
+E   On instance:
+E       {'detail': 'No authorization token provided',
+E        'status': 401,
+E        'title': 'Unauthorized',
+E        'type': 'about:blank'}</failure></testcase></testsuite></testsuites>

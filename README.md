@@ -181,13 +181,43 @@ Como las APIs reales no traen un "commit con cambios", se simula un **escenario 
 especificación vigente es la versión nueva, y la versión "anterior" se obtiene quitándole los
 endpoints/campos listados en `scenario` (`remove_operations`, `remove_properties`).
 
-### 6.2 APIs
-- **petstore3** (Swagger Petstore v3): ya configurada; Docker la levanta sola.
-- **api2**, **api3**: completar en `benchmark.yaml` con dos APIs de código abierto (archivo
-  OpenAPI en `benchmark/specs/`, URL, comandos Docker y escenario). Mientras estén vacías se omiten.
+### 6.2 APIs del experimento
+
+| API | Complejidad | Operaciones | Autenticación | Cambio simulado (operaciones objetivo) | Reducción de contexto |
+|---|---|---|---|---|---|
+| **Swagger Petstore v3** | baja | 19 | no | 3 endpoints nuevos + campo `tags` agregado al esquema `Pet` (7 ops) | 56 % |
+| **VAmPI** | media | 14 | JWT (`admin`) | 2 endpoints nuevos + 2 respuestas 401 documentadas (4 ops) | 60 % |
+| **Full Stack FastAPI Template** | alta (FastAPI + PostgreSQL) | 23 | JWT (superusuario) | 2 endpoints nuevos, 1 campo, 1 parámetro y 1 respuesta (5 ops) | 67 % |
+
+- **Petstore** se usa en varios estudios de la revisión [4], [12], [14] y tiene un bug documentado (ver piloto).
+- **VAmPI** aparece en Pasca et al. [11]; se ejecuta en modo seguro (`vulnerable=0`).
+- **FastAPI Template** tiene base de datos real, validaciones y roles; su base se recrea en cada corrida.
+
+Las versiones están **fijadas en un commit** (`benchmark/setup_apis.py`) y sus contratos OpenAPI
+(`benchmark/specs/`) se extrajeron de esos mismos commits.
+
+**Cómo se simula el cambio.** La versión *nueva* del contrato es la API tal como se ejecuta, así
+que todo lo que se detecta como cambio existe de verdad en la aplicación. La versión *anterior*
+se obtiene deshaciendo cambios con estas reglas (sección `scenario` de cada API):
+`remove_operations` (endpoints nuevos), `remove_properties` (campos nuevos), `remove_required`
+(campos que pasaron a ser obligatorios), `remove_parameters` (parámetros nuevos) y
+`remove_responses` (respuestas HTTP documentadas).
+
+**Autenticación.** Antes de cada corrida el script inicia sesión (`auth` en `benchmark.yaml`) y usa
+el mismo token para **A, B y C**. Las pruebas del LLM lo reciben a través de la fixture `api`, y
+Schemathesis como header. El prompt de B y C incluye la misma nota de entorno (`context_note`).
+
+**Estado limpio verificado.** Antes de cada corrida la API se recrea desde cero (contenedor o base
+de datos nueva), se pueblan sus datos (`setup`) y se ejecuta una **prueba de humo** (`smoke`). Si
+falla, se reintenta, y si sigue fallando no se ejecuta la corrida ni se gasta cuota.
 
 ### 6.3 Ejecutar
-Con Docker Desktop abierto:
+Con Docker Desktop abierto, **una sola vez**, prepara las APIs (descarga el código fijado y
+construye las imágenes; la primera vez tarda varios minutos):
+```powershell
+python benchmark/setup_apis.py
+```
+Luego:
 ```powershell
 # prueba corta: 1 repetición, solo Petstore
 python benchmark/run_benchmark.py --apis petstore3 --reps 1
@@ -218,7 +248,7 @@ Holm, δ de Cliff como tamaño del efecto y Friedman con bloques API × repetici
 
 ## 7. Evidencia en Excel
 
-Se genera sola al terminar (o detenerse) el experimento. También puedes generarla a mano:
+Se genera sola al terminar (o detenerse) el experimento: un Excel **general** (`evidencia_experimento.xlsx`, las 3 APIs) y **uno por API** (`evidencia_<api>.xlsx`). También puedes generarlos a mano:
 ```powershell
 python benchmark/export_evidence.py
 ```
@@ -227,7 +257,11 @@ python benchmark/export_evidence.py
 |---|---|
 | **Leeme** | descripción, modelo usado y de dónde sale cada dato |
 | **Resumen** | promedios por configuración y reducción de tokens C vs. B (fórmulas) |
-| **Corridas** | una fila por corrida: fecha, API, configuración, tests, tasa ejecutable, cobertura, tokens, costo, iteraciones, carpeta de evidencia |
+| **Condiciones** | modelo y parámetros del LLM, versiones de software, commits de las APIs y escenarios de cambio |
+| **Corridas** | una fila por corrida: fecha, API, configuración, tests, tasa ejecutable, cobertura, tokens, costo, iteraciones, estado de la API al terminar, carpeta de evidencia |
+| **Pasos** | **bitácora con hora de cada paso de cada corrida, para A, B y C**: reinicio de la API, preparación de datos, prueba de humo, login, carga de especificaciones, análisis delta, contexto enviado, generación (Schemathesis o LLM), cada ejecución de Pytest, cada reparación, versión final, cobertura y estado final |
+| **Codigo_generado** | el archivo de pruebas final de cada corrida (Schemathesis en A, LLM en B y C) |
+| **Trafico_HTTP** | cada petición HTTP real enviada a la API, con el test que la envió y el código de respuesta |
 | **Llamadas_LLM** | cada llamada al LLM: fase (generación/reparación), tokens, latencia, si se cortó, archivos |
 | **Prompts** | el **texto exacto** de cada prompt enviado y de cada respuesta recibida |
 | **Casos_de_prueba** | resultado final de cada test generado |
@@ -360,7 +394,10 @@ tests/                     pruebas del propio prototipo (32)
 | `⏸ Se agotó la cuota diaria` | normal en el nivel gratuito: vuelve a ejecutar el mismo comando al día siguiente |
 | `No hay ninguna API respondiendo…` | levanta la API (uvicorn o Docker) antes de ejecutar; no se gasta cuota |
 | `esperando que la API responda…` (se queda ahí) | Docker Desktop no está abierto |
-| `container name ... already in use` | se resuelve solo; si persiste: `docker rm -f petstore3` |
+| `container name ... already in use` | se resuelve solo; si persiste: `docker rm -f petstore3` (o `vampi`) |
+| `falta benchmark/apis/...` | ejecuta una vez `python benchmark/setup_apis.py` |
+| `port is already allocated` | otro programa usa el puerto 8080 (Petstore), 5000 (VAmPI) u 8000 (FastAPI); ciérralo |
+| `no se pudo iniciar sesión` | la API no terminó de arrancar; vuelve a ejecutar el benchmark (la corrida quedó pendiente) |
 | "Respuestas cortadas" > 0 en el reporte | el modelo agotó su presupuesto de salida; sube `max_tokens` en `benchmark.yaml` |
 
 ---

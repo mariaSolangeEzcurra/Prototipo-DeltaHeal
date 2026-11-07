@@ -1,0 +1,292 @@
+import random
+import uuid
+import pytest
+from jsonschema import validate
+
+# ---------------------------------------------------------------------------
+# Schemas JSON Schema según componentes del contrato OpenAPI
+# ---------------------------------------------------------------------------
+
+CATEGORY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+    },
+}
+
+TAG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+    },
+}
+
+PET_SCHEMA = {
+    "type": "object",
+    "required": ["name", "photoUrls"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "category": CATEGORY_SCHEMA,
+        "photoUrls": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "tags": {
+            "type": "array",
+            "items": TAG_SCHEMA,
+        },
+        "status": {
+            "type": "string",
+            "enum": ["available", "pending", "sold"],
+        },
+    },
+}
+
+PET_LIST_SCHEMA = {
+    "type": "array",
+    "items": PET_SCHEMA,
+}
+
+
+def _generar_payload_pet(pet_id=None, name=None, status="available", tag_name=None):
+    """Auxiliar para generar datos válidos de Pet."""
+    uid = random.randint(100_000, 999_999)
+    pet_data = {
+        "id": pet_id if pet_id is not None else uid,
+        "name": name or f"pet_{uuid.uuid4().hex[:6]}",
+        "category": {"id": 1, "name": "Dogs"},
+        "photoUrls": [f"https://example.com/photos/{uid}.jpg"],
+        "tags": [{"id": 1, "name": tag_name or f"tag_{uuid.uuid4().hex[:4]}"}],
+        "status": status,
+    }
+    return pet_data
+
+
+# ---------------------------------------------------------------------------
+# Operación: POST /pet (addPet)
+# ---------------------------------------------------------------------------
+
+def test_post_pet_exitoso(api):
+    payload = _generar_payload_pet(status="available")
+    res = api.post("/pet", json=payload)
+
+    assert res.status_code == 200
+    body = res.json()
+    validate(instance=body, schema=PET_SCHEMA)
+    assert body["name"] == payload["name"]
+    assert body["status"] == payload["status"]
+
+
+def test_post_pet_invalido_faltan_campos_requeridos(api):
+    # 'name' y 'photoUrls' son campos requeridos por el contrato
+    payload_invalido = {"status": "available"}
+    res = api.post("/pet", json=payload_invalido)
+
+    assert res.status_code in [400, 422]
+
+
+def test_post_pet_cuerpo_malformado(api):
+    res = api.post(
+        "/pet",
+        data="esto no es un json valido",
+        headers={"Content-Type": "application/json"},
+    )
+    assert res.status_code in [400, 422]
+
+
+# ---------------------------------------------------------------------------
+# Operación: PUT /pet (updatePet)
+# ---------------------------------------------------------------------------
+
+def test_put_pet_exitoso(api):
+    # 1. Crear mascota previa
+    crear_payload = _generar_payload_pet(status="available")
+    res_crear = api.post("/pet", json=crear_payload)
+    assert res_crear.status_code == 200
+    pet_creada = res_crear.json()
+    pet_id = pet_creada["id"]
+
+    # 2. Actualizar mascota
+    update_payload = _generar_payload_pet(
+        pet_id=pet_id,
+        name=f"updated_{uuid.uuid4().hex[:6]}",
+        status="sold",
+    )
+    res_put = api.put("/pet", json=update_payload)
+
+    assert res_put.status_code == 200
+    body = res_put.json()
+    validate(instance=body, schema=PET_SCHEMA)
+    assert body["id"] == pet_id
+    assert body["name"] == update_payload["name"]
+    assert body["status"] == "sold"
+
+
+def test_put_pet_no_encontrado(api):
+    # Usar un ID inexistente de rango muy alto
+    pet_id_inexistente = random.randint(900_000_000, 999_999_999)
+    payload = _generar_payload_pet(pet_id=pet_id_inexistente)
+
+    res = api.put("/pet", json=payload)
+    # Puede ser 404 si el backend valida existencia, o 200 si hace upsert
+    assert res.status_code in [404, 400, 200]
+
+
+def test_put_pet_id_invalido(api):
+    # ID con formato de tipo incorrecto (string en lugar de int64)
+    payload_invalido = {
+        "id": "este_id_no_es_un_entero",
+        "name": "InvalidPet",
+        "photoUrls": ["https://example.com/photo.jpg"],
+    }
+    res = api.put("/pet", json=payload_invalido)
+    assert res.status_code in [400, 422]
+
+
+def test_put_pet_validacion_fallida_sin_campos_obligatorios(api):
+    # Se omiten 'name' y 'photoUrls'
+    payload = {"id": 12345}
+    res = api.put("/pet", json=payload)
+    assert res.status_code in [400, 422]
+
+
+# ---------------------------------------------------------------------------
+# Operación: GET /pet/{petId} (getPetById)
+# ---------------------------------------------------------------------------
+
+def test_get_pet_por_id_exitoso(api):
+    # Crear mascota primero para garantizar existencia
+    payload = _generar_payload_pet()
+    res_crear = api.post("/pet", json=payload)
+    assert res_crear.status_code == 200
+    pet_id = res_crear.json()["id"]
+
+    res_get = api.get(f"/pet/{pet_id}")
+    assert res_get.status_code == 200
+    body = res_get.json()
+    validate(instance=body, schema=PET_SCHEMA)
+    assert body["id"] == pet_id
+
+
+def test_get_pet_por_id_no_encontrado(api):
+    pet_id_inexistente = 999_999_999_999
+    res = api.get(f"/pet/{pet_id_inexistente}")
+    assert res.status_code == 404
+
+
+def test_get_pet_por_id_invalido(api):
+    # Se envía un string en vez de un entero en el path
+    res = api.get("/pet/id_invalido_texto")
+    assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Operación: POST /pet/{petId} (updatePetWithForm)
+# ---------------------------------------------------------------------------
+
+def test_post_pet_actualizar_con_form_exitoso(api):
+    # Crear mascota inicial
+    payload = _generar_payload_pet(status="available")
+    res_crear = api.post("/pet", json=payload)
+    assert res_crear.status_code == 200
+    pet_id = res_crear.json()["id"]
+
+    nuevo_nombre = f"form_renamed_{uuid.uuid4().hex[:4]}"
+    nuevo_status = "pending"
+
+    res_update = api.post(
+        f"/pet/{pet_id}",
+        params={"name": nuevo_nombre, "status": nuevo_status},
+    )
+
+    assert res_update.status_code == 200
+    body = res_update.json()
+    validate(instance=body, schema=PET_SCHEMA)
+    assert body["id"] == pet_id
+    assert body["name"] == nuevo_nombre
+    assert body["status"] == nuevo_status
+
+
+def test_post_pet_actualizar_con_form_id_invalido(api):
+    res = api.post("/pet/id_no_numerico", params={"name": "test"})
+    assert res.status_code in [400, 404]
+
+
+# ---------------------------------------------------------------------------
+# Operación: GET /pet/findByStatus (findPetsByStatus)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("status", ["available", "pending", "sold"])
+def test_get_pet_buscar_por_status_valido(api, status):
+    # Sembrar una mascota con el status a consultar
+    payload = _generar_payload_pet(status=status)
+    res_crear = api.post("/pet", json=payload)
+    assert res_crear.status_code == 200
+
+    res = api.get("/pet/findByStatus", params={"status": status})
+    assert res.status_code == 200
+    body = res.json()
+    validate(instance=body, schema=PET_LIST_SCHEMA)
+    assert isinstance(body, list)
+    # Todas las mascotas devueltas deben coincidir con el status solicitado si el backend filtra estrictamente
+    assert all(pet.get("status") == status for pet in body if "status" in pet)
+
+
+def test_get_pet_buscar_por_status_invalido(api):
+    res = api.get("/pet/findByStatus", params={"status": "estado_que_no_existe_xyz"})
+    assert res.status_code in [400, 200]
+    # Si la API opta por responder 200 en vez de 400, la lista debe ser válida según el esquema
+    if res.status_code == 200:
+        validate(instance=res.json(), schema=PET_LIST_SCHEMA)
+
+
+# ---------------------------------------------------------------------------
+# Operación: GET /pet/findByTags (findPetsByTags)
+# ---------------------------------------------------------------------------
+
+def test_get_pet_buscar_por_tags_exitoso(api):
+    tag_unico = f"tag_{uuid.uuid4().hex[:8]}"
+    payload = _generar_payload_pet(tag_name=tag_unico)
+    res_crear = api.post("/pet", json=payload)
+    assert res_crear.status_code == 200
+
+    res = api.get("/pet/findByTags", params={"tags": tag_unico})
+    assert res.status_code == 200
+    body = res.json()
+    validate(instance=body, schema=PET_LIST_SCHEMA)
+    assert isinstance(body, list)
+
+
+def test_get_pet_buscar_por_tags_multiples(api):
+    tag1 = f"tag_{uuid.uuid4().hex[:6]}"
+    tag2 = f"tag_{uuid.uuid4().hex[:6]}"
+    res = api.get("/pet/findByTags", params={"tags": f"{tag1},{tag2}"})
+    assert res.status_code == 200
+    body = res.json()
+    validate(instance=body, schema=PET_LIST_SCHEMA)
+
+
+def test_get_pet_buscar_por_tags_sin_parametro_o_vacio(api):
+    # El parámetro 'tags' es required según el contrato
+    res = api.get("/pet/findByTags")
+    assert res.status_code in [400, 200]
+
+
+# ---------------------------------------------------------------------------
+# Operación: DELETE /store/order/{orderId} (deleteOrder)
+# ---------------------------------------------------------------------------
+
+def test_delete_order_id_invalido(api):
+    # La especificación declara que no-enteros deben retornar 400
+    res = api.delete("/store/order/orden_invalida_string")
+    assert res.status_code == 400
+
+
+def test_delete_order_no_encontrado(api):
+    # La descripción indica que IDs válidos para prueba son < 1000.
+    # Un ID no existente pero entero debe retornar 404 o 400 según el controller
+    res = api.delete("/store/order/999999")
+    assert res.status_code in [404, 400]

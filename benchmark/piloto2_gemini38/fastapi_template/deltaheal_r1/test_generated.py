@@ -1,0 +1,261 @@
+import uuid
+import pytest
+import requests
+from jsonschema import validate
+
+USER_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["email", "id"],
+    "properties": {
+        "email": {"type": "string", "maxLength": 255},
+        "is_active": {"type": "boolean"},
+        "is_superuser": {"type": "boolean"},
+        "full_name": {"type": ["string", "null"], "maxLength": 255},
+        "id": {"type": "string"},
+        "created_at": {"type": ["string", "null"]},
+    },
+}
+
+USERS_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["data", "count"],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": USER_PUBLIC_SCHEMA,
+        },
+        "count": {"type": "integer"},
+    },
+}
+
+ITEM_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["title", "id", "owner_id"],
+    "properties": {
+        "title": {"type": "string", "maxLength": 255, "minLength": 1},
+        "description": {"type": ["string", "null"], "maxLength": 255},
+        "id": {"type": "string"},
+        "owner_id": {"type": "string"},
+        "created_at": {"type": ["string", "null"]},
+    },
+}
+
+MESSAGE_SCHEMA = {
+    "type": "object",
+    "required": ["message"],
+    "properties": {
+        "message": {"type": "string"},
+    },
+}
+
+HTTP_VALIDATION_ERROR_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "detail": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["loc", "msg", "type"],
+                "properties": {
+                    "loc": {"type": "array"},
+                    "msg": {"type": "string"},
+                    "type": {"type": "string"},
+                    "input": {},
+                    "ctx": {"type": "object"},
+                },
+            },
+        }
+    },
+}
+
+
+# --- Tests for GET /api/v1/users/ ---
+
+
+def test_get_users_default_success(api):
+    response = api.get("/api/v1/users/")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USERS_PUBLIC_SCHEMA)
+    assert isinstance(data["data"], list)
+    assert isinstance(data["count"], int)
+    assert data["count"] >= len(data["data"])
+
+
+def test_get_users_with_pagination(api):
+    response = api.get("/api/v1/users/", params={"skip": 0, "limit": 5})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USERS_PUBLIC_SCHEMA)
+    assert len(data["data"]) <= 5
+
+
+def test_get_users_invalid_params_validation_error(api):
+    response = api.get("/api/v1/users/", params={"skip": "invalid_int"})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+    assert "detail" in data
+
+
+# --- Tests for PATCH /api/v1/users/me/password ---
+
+
+def test_patch_users_me_password_validation_error_missing_fields(api):
+    response = api.patch("/api/v1/users/me/password", json={})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_validation_error_short_password(api):
+    payload = {
+        "current_password": "short",
+        "new_password": "short",
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_validation_error_exceeds_max_length(api):
+    payload = {
+        "current_password": "a" * 129,
+        "new_password": "b" * 129,
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Tests for POST /api/v1/items/ ---
+
+
+def test_post_items_success_minimal(api):
+    item_title = f"Item {uuid.uuid4()}"
+    payload = {"title": item_title}
+    response = api.post("/api/v1/items/", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["title"] == item_title
+    assert data["description"] is None
+    assert "id" in data
+    assert "owner_id" in data
+
+
+def test_post_items_success_full(api):
+    item_title = f"Item {uuid.uuid4()}"
+    item_desc = "Test description content"
+    payload = {"title": item_title, "description": item_desc}
+    response = api.post("/api/v1/items/", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["title"] == item_title
+    assert data["description"] == item_desc
+
+
+def test_post_items_validation_error_missing_title(api):
+    response = api.post("/api/v1/items/", json={"description": "No title provided"})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_items_validation_error_empty_title(api):
+    response = api.post("/api/v1/items/", json={"title": ""})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_items_validation_error_title_too_long(api):
+    response = api.post("/api/v1/items/", json={"title": "a" * 256})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Tests for PUT /api/v1/items/{id} ---
+
+
+def test_put_item_success(api):
+    create_resp = api.post(
+        "/api/v1/items/",
+        json={"title": f"Original {uuid.uuid4()}", "description": "Original Desc"},
+    )
+    assert create_resp.status_code == 200
+    item_id = create_resp.json()["id"]
+
+    updated_title = f"Updated {uuid.uuid4()}"
+    updated_desc = "Updated Desc"
+    put_resp = api.put(
+        f"/api/v1/items/{item_id}",
+        json={"title": updated_title, "description": updated_desc},
+    )
+    assert put_resp.status_code == 200
+    data = put_resp.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["id"] == item_id
+    assert data["title"] == updated_title
+    assert data["description"] == updated_desc
+
+
+def test_put_item_validation_error_invalid_uuid(api):
+    response = api.put(
+        "/api/v1/items/not-a-valid-uuid",
+        json={"title": "New Title"},
+    )
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_put_item_validation_error_empty_title(api):
+    random_uuid = str(uuid.uuid4())
+    response = api.put(
+        f"/api/v1/items/{random_uuid}",
+        json={"title": ""},
+    )
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_put_item_validation_error_field_too_long(api):
+    random_uuid = str(uuid.uuid4())
+    response = api.put(
+        f"/api/v1/items/{random_uuid}",
+        json={"description": "a" * 256},
+    )
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Tests for DELETE /api/v1/items/{id} ---
+
+
+def test_delete_item_success(api):
+    create_resp = api.post(
+        "/api/v1/items/",
+        json={"title": f"To Delete {uuid.uuid4()}"},
+    )
+    assert create_resp.status_code == 200
+    item_id = create_resp.json()["id"]
+
+    delete_resp = api.delete(f"/api/v1/items/{item_id}")
+    assert delete_resp.status_code == 200
+    data = delete_resp.json()
+    validate(instance=data, schema=MESSAGE_SCHEMA)
+    assert isinstance(data["message"], str)
+
+
+def test_delete_item_validation_error_invalid_uuid(api):
+    response = api.delete("/api/v1/items/invalid-uuid-format")
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=HTTP_VALIDATION_ERROR_SCHEMA)

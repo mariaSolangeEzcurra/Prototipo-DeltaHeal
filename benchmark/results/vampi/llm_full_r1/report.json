@@ -1,0 +1,245 @@
+{
+  "timestamp": "2026-11-07T18:08:43",
+  "mode": "llm_full",
+  "run_id": "llm_full_r1",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "POST /books/v1",
+      "PUT /users/v1/{username}/password"
+    ],
+    "modified": [
+      "GET /books/v1/{book_title}",
+      "DELETE /users/v1/{username}"
+    ],
+    "removed": [],
+    "unchanged_count": 10
+  },
+  "operations_total": 14,
+  "target_operations": [
+    "POST /books/v1",
+    "GET /books/v1/{book_title}",
+    "DELETE /users/v1/{username}",
+    "PUT /users/v1/{username}/password"
+  ],
+  "context_operations": 14,
+  "spec_context_chars": 19692,
+  "spec_full_chars": 19692,
+  "spec_context_tokens_est": 4923,
+  "spec_full_tokens_est": 4923,
+  "context_reduction": 0.0,
+  "llm_calls": 1,
+  "prompt_tokens": 4444,
+  "completion_tokens": 4351,
+  "total_tokens": 8795,
+  "generation_tokens": 8795,
+  "repair_tokens": 0,
+  "cost_usd": 0.019649,
+  "llm_latency_s": 84.799,
+  "generated_tests": 28,
+  "executable_tests": 0,
+  "executable_rate": 0.0,
+  "passed": 0,
+  "assertion_failures": 0,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.0,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": true,
+  "pytest_exit_code": 2,
+  "pytest_duration_s": 3.306,
+  "test_cases": [],
+  "possible_regressions": [],
+  "repair_mode": "patch",
+  "heal_stop_reason": "max_iterations",
+  "executable_rate_before_heal": 0.0,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 0,
+      "total": 28,
+      "broken": 0,
+      "assertion_failures": 0,
+      "collection_error": true,
+      "action": "give_up"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 4444,
+      "completion_tokens": 4351,
+      "latency_s": 84.79870000015944,
+      "cost_usd": 0.01964925,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": false,
+  "coverage": {
+    "http_coverage": 0.0,
+    "documented_pairs": 12,
+    "covered_pairs": 0,
+    "operations_hit": 0,
+    "operations_total": 4,
+    "total_requests": 0,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /books/v1": {
+        "documented": [
+          "200",
+          "400",
+          "401"
+        ],
+        "observed": [],
+        "covered": []
+      },
+      "GET /books/v1/{book_title}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [],
+        "covered": []
+      },
+      "DELETE /users/v1/{username}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [],
+        "covered": []
+      },
+      "PUT /users/v1/{username}/password": {
+        "documented": [
+          "204",
+          "400",
+          "401"
+        ],
+        "observed": [],
+        "covered": []
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.0,
+  "duration_s": 88.808,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T18:08:39",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:40",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f vampi  -> código 0. vampi",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:40",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name vampi -p 5000:5000 -e vulnerable=0 -e tokentimetolive=3600 deltaheal/vampi:f16052d  -> código 0. c90fa1e5ab88c90e0d7681c00974ac62e79ef6cbaba4f6dc86a3283c40d8b480",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:42",
+      "paso": "Preparación de datos",
+      "detalle": "GET /createdb -> 200",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:42",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /users/v1, GET /books/v1 respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:42",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin' -> HTTP 200; token obtenido (147 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:42",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=llm_full; modelo=gemini-3.8-flash; delta=no; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:43",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:08:43",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 2 modificadas, 0 eliminadas, 10 sin cambios. Nuevas: POST /books/v1, PUT /users/v1/{username}/password. Modificadas: GET /books/v1/{book_title}, DELETE /users/v1/{username}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:43",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:5000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:08:43",
+      "paso": "Construcción del contexto",
+      "detalle": "especificación completa (14 operaciones); 19,692 caracteres (completa: 19,692)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:10:08",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "4,444 tokens de entrada + 4,351 de salida; 28 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "código con error de sintaxis: SyntaxError: invalid syntax (línea 424): validate(instance=response_json := res2.json(), schema=schema); 0 tests ejecutados, 0 pasan, 0 fallan por aserción, 0 con error de código, ERROR DE COLECCIÓN (exit=2, 3.3s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Bucle finalizado",
+      "detalle": "configuración sin self-healing: el código se ejecuta tal como lo generó el LLM",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (0/28)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "0/12 pares (operación, código) cubiertos = 0.0%; 0 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=0.0; tokens=8795; duración=88.808 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T18:10:11",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

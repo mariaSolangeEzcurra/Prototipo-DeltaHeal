@@ -1,0 +1,16 @@
+{"method": "POST", "url": "http://127.0.0.1:5000/users/v1/register", "status": 200, "test": "test_generated.py::test_delete_user_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/user_del_c30650d3", "status": 200, "test": "test_generated.py::test_delete_user_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/nonexistent_3441b1cc", "status": 404, "test": "test_generated.py::test_delete_user_not_found"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/user_noauth_168a5653", "status": 401, "test": "test_generated.py::test_delete_user_unauthorized"}
+{"method": "POST", "url": "http://127.0.0.1:5000/users/v1/register", "status": 200, "test": "test_generated.py::test_put_user_password_success"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/pwd_user_551adce2/password", "status": 204, "test": "test_generated.py::test_put_user_password_success"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/name1/password", "status": 400, "test": "test_generated.py::test_put_user_password_malformed_data"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/name1/password", "status": 401, "test": "test_generated.py::test_put_user_password_unauthorized"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_post_book_success"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_post_book_already_exists"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 400, "test": "test_generated.py::test_post_book_already_exists"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 401, "test": "test_generated.py::test_post_book_unauthorized"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_get_book_by_title_success"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/bookGet_dbda1ba8", "status": 200, "test": "test_generated.py::test_get_book_by_title_success"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/ghostBook_3b3d508b", "status": 404, "test": "test_generated.py::test_get_book_by_title_not_found"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/bookTitle1", "status": 401, "test": "test_generated.py::test_get_book_by_title_unauthorized"}

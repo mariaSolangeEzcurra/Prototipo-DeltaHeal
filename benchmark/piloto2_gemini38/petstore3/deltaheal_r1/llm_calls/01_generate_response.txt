@@ -1,0 +1,276 @@
+```python
+import json
+import random
+import string
+import pytest
+from jsonschema import validate
+
+PET_SCHEMA = {
+    "type": "object",
+    "required": ["name", "photoUrls"],
+    "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "category": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "name": {"type": "string"},
+            },
+        },
+        "photoUrls": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                },
+            },
+        },
+        "status": {
+            "type": "string",
+            "enum": ["available", "pending", "sold"],
+        },
+    },
+}
+
+
+def _random_pet_payload(status="available", tag_name=None):
+    pet_id = random.randint(100000, 999999)
+    name = "pet_" + "".join(random.choices(string.ascii_lowercase, k=6))
+    tag = tag_name or "tag_" + "".join(random.choices(string.ascii_lowercase, k=4))
+    return {
+        "id": pet_id,
+        "name": name,
+        "category": {"id": 1, "name": "Dogs"},
+        "photoUrls": ["https://example.com/photo.jpg"],
+        "tags": [{"id": random.randint(1, 1000), "name": tag}],
+        "status": status,
+    }
+
+
+def _create_pet(api, status="available", tag_name=None):
+    payload = _random_pet_payload(status=status, tag_name=tag_name)
+    response = api.post("/pet", json=payload)
+    assert response.status_code == 200, f"Setup failed: {response.text}"
+    return response.json()
+
+
+# ==========================================
+# POST /pet (addPet)
+# ==========================================
+
+
+def test_post_pet_success(api):
+    payload = _random_pet_payload()
+    response = api.post("/pet", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["name"] == payload["name"]
+    assert data["photoUrls"] == payload["photoUrls"]
+
+
+def test_post_pet_missing_required_fields(api):
+    # 'name' and 'photoUrls' are required in Pet schema
+    invalid_payload = {"status": "available"}
+    response = api.post("/pet", json=invalid_payload)
+
+    assert response.status_code in [400, 422]
+
+
+def test_post_pet_invalid_input_malformed_json(api):
+    response = api.post(
+        "/pet",
+        data="{invalid_json: true}",
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code in [400, 422]
+
+
+# ==========================================
+# PUT /pet (updatePet)
+# ==========================================
+
+
+def test_put_pet_success(api):
+    created = _create_pet(api)
+    updated_payload = {
+        "id": created["id"],
+        "name": created["name"] + "_updated",
+        "photoUrls": created.get("photoUrls", ["https://example.com/new.jpg"]),
+        "status": "sold",
+    }
+    response = api.put("/pet", json=updated_payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["id"] == created["id"]
+    assert data["name"] == updated_payload["name"]
+    assert data["status"] == "sold"
+
+
+def test_put_pet_invalid_id(api):
+    payload = {
+        "id": "not-a-valid-int64-id",
+        "name": "InvalidIdPet",
+        "photoUrls": ["https://example.com/p.jpg"],
+    }
+    response = api.put("/pet", json=payload)
+    assert response.status_code in [400, 422]
+
+
+def test_put_pet_not_found_or_validation(api):
+    non_existent_id = 999999999999999
+    payload = {
+        "id": non_existent_id,
+        "name": "GhostPet",
+        "photoUrls": ["https://example.com/ghost.jpg"],
+        "status": "available",
+    }
+    response = api.put("/pet", json=payload)
+    # Spec documents 404 for pet not found, or 400/422 on validation
+    assert response.status_code in [200, 404, 400, 422]
+
+
+# ==========================================
+# GET /pet/{petId} (getPetById)
+# ==========================================
+
+
+def test_get_pet_by_id_success(api):
+    created = _create_pet(api)
+    pet_id = created["id"]
+
+    response = api.get(f"/pet/{pet_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["id"] == pet_id
+    assert data["name"] == created["name"]
+
+
+def test_get_pet_by_id_not_found(api):
+    non_existent_id = 9876543210
+    response = api.get(f"/pet/{non_existent_id}")
+    assert response.status_code == 404
+
+
+def test_get_pet_by_id_invalid_id(api):
+    invalid_id = "abc_invalid_id"
+    response = api.get(f"/pet/{invalid_id}")
+    assert response.status_code == 400
+
+
+# ==========================================
+# POST /pet/{petId} (updatePetWithForm)
+# ==========================================
+
+
+def test_post_pet_update_with_form_success(api):
+    created = _create_pet(api)
+    pet_id = created["id"]
+    new_name = "formUpdatedName"
+    new_status = "sold"
+
+    response = api.post(f"/pet/{pet_id}?name={new_name}&status={new_status}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=PET_SCHEMA)
+    assert data["name"] == new_name
+    assert data["status"] == new_status
+
+
+def test_post_pet_update_with_form_invalid_id(api):
+    response = api.post("/pet/not_an_int?name=BadPet&status=pending")
+    assert response.status_code in [400, 404]
+
+
+# ==========================================
+# GET /pet/findByStatus (findPetsByStatus)
+# ==========================================
+
+
+@pytest.mark.parametrize("status", ["available", "pending", "sold"])
+def test_get_pets_by_status_valid(api, status):
+    _create_pet(api, status=status)
+    response = api.get(f"/pet/findByStatus?status={status}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    for pet in data:
+        validate(instance=pet, schema=PET_SCHEMA)
+        assert pet.get("status") == status
+
+
+def test_get_pets_by_status_invalid(api):
+    response = api.get("/pet/findByStatus?status=unknown_invalid_status")
+    # API may reject with 400 as per spec or return an empty list
+    assert response.status_code in [200, 400]
+    if response.status_code == 200:
+        assert response.json() == []
+
+
+# ==========================================
+# GET /pet/findByTags (findPetsByTags)
+# ==========================================
+
+
+def test_get_pets_by_tags_success(api):
+    unique_tag = "tag_" + "".join(random.choices(string.ascii_lowercase, k=8))
+    _create_pet(api, tag_name=unique_tag)
+
+    response = api.get(f"/pet/findByTags?tags={unique_tag}")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    for pet in data:
+        validate(instance=pet, schema=PET_SCHEMA)
+
+    tag_names = [
+        t.get("name")
+        for pet in data
+        for t in pet.get("tags", [])
+        if isinstance(t, dict)
+    ]
+    assert unique_tag in tag_names
+
+
+def test_get_pets_by_tags_empty_filter(api):
+    response = api.get("/pet/findByTags?tags=")
+    assert response.status_code in [200, 400]
+
+
+# ==========================================
+# DELETE /store/order/{orderId} (deleteOrder)
+# ==========================================
+
+
+def test_delete_order_valid_range_or_not_found(api):
+    # Description states: for valid response try integer IDs with value < 1000
+    order_id = random.randint(1, 999)
+    response = api.delete(f"/store/order/{order_id}")
+    # 200 if deleted, 404 if order does not exist
+    assert response.status_code in [200, 404]
+
+
+def test_delete_order_invalid_id_format(api):
+    invalid_order_id = "non_integer_order_id"
+    response = api.delete(f"/store/order/{invalid_order_id}")
+    assert response.status_code == 400
+
+
+def test_delete_order_out_of_range_or_not_found(api):
+    # Description states: anything above 1000 will generate API errors (400 or 404)
+    out_of_range_id = 99999
+    response = api.delete(f"/store/order/{out_of_range_id}")
+    assert response.status_code in [400, 404]
+```

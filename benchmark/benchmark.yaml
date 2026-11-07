@@ -10,16 +10,17 @@ configs: [traditional, llm_full, deltaheal, delta_only, full_heal]
 llm:
   # GRATIS: nivel gratuito de Google AI Studio (sin tarjeta). Clave en .env -> GEMINI_API_KEY
   provider: gemini             # gemini | groq | ollama (local) | mock | deepseek/openai (pago)
-  model: gemini-2.5-flash      # lista los disponibles: python -m deltaheal models
+  model: gemini-3.8-flash      # lista los disponibles: python -m deltaheal models
   base_url: null               # null = URL por defecto del proveedor
   rpm: 8                       # llamadas por minuto (bajo el límite gratuito)
   temperature: 0.2             # >0 para observar la variabilidad entre repeticiones
   max_tokens: 32000            # presupuesto de salida (incluye el "pensamiento" del modelo)
   reasoning_effort: low        # limita el pensamiento para que no corte el código (igual para B y C)
-  # Pagas $0, pero se calcula el "costo equivalente" con el precio de lista de la capa de
-  # pago de gemini-2.5-flash (USD por 1M tokens, oct-2026). Confírmalo en ai.google.dev/pricing.
-  price_input_per_mtok: 0.30
-  price_output_per_mtok: 2.50
+  # Pagas $0, pero se calcula el "costo equivalente" con el precio de lista de la capa de pago
+  # de gemini-3.8-flash: $0.75 / $3.75 por 1M tokens (tarifa vigente hasta el 31-dic-2026;
+  # desde el 1-ene-2027 se duplica). Confírmalo en ai.google.dev/pricing.
+  price_input_per_mtok: 0.75
+  price_output_per_mtok: 3.75
 
 orchestrator:
   max_heal_iterations: 3
@@ -64,23 +65,60 @@ apis:
       remove_operations: ["PUT /pet", "GET /pet/findByTags", "DELETE /store/order/{orderId}"]
       remove_properties: {Pet: [tags]}
 
-  - name: api2
-    # Reemplaza por tu segunda API de código abierto (p. ej. una del EvoMaster Benchmark, EMB).
-    spec: benchmark/specs/api2.yaml
-    base_url: http://localhost:8081
-    health: http://localhost:8081/
-    start: null
-    reset: null
-    scenario:
-      remove_operations: []
-      remove_properties: {}
+  - name: vampi
+    # VAmPI (MIT): API REST vulnerable a propósito, con autenticación JWT; usada por Pasca et al. [11].
+    # Se ejecuta en modo seguro (vulnerable=0) y con tokens de 1 hora (por defecto duran 60 s).
+    spec: benchmark/specs/vampi.yaml              # openapi_specs/openapi3.yml del mismo commit
+    workdir: benchmark/apis/VAmPI                 # lo crea: python benchmark/setup_apis.py
+    base_url: http://127.0.0.1:5000
+    health: http://127.0.0.1:5000/
+    reset:
+      - docker rm -f vampi
+      - docker run -d --rm --name vampi -p 5000:5000 -e vulnerable=0 -e tokentimetolive=3600 deltaheal/vampi:f16052d
+    stop: docker rm -f vampi
+    setup:                                        # puebla la base de datos con usuarios y libros
+      - {method: GET, path: /createdb}
+    smoke:
+      - {method: GET, path: /users/v1, expect: 200}
+      - {method: GET, path: /books/v1, expect: 200}
+    auth:                                         # sesión de administrador para A, B y C
+      login: {method: POST, path: /users/v1/login, json: {username: admin, password: pass1}}
+      token_field: auth_token
+      header: Authorization
+      scheme: Bearer
+    context_note: >-
+      Usuarios existentes: name1/pass1 y name2/pass2 (normales) y admin/pass1 (administrador).
+      La fixture api tiene la sesión del usuario admin. Los libros existentes tienen títulos con el
+      formato bookTitle<número>. Usa nombres de usuario y títulos únicos al crear datos nuevos.
+    scenario:                                     # el "commit" agrega 2 endpoints y documenta 2 respuestas 401
+      remove_operations: ["POST /books/v1", "PUT /users/v1/{username}/password"]
+      remove_responses: {"DELETE /users/v1/{username}": ["401"], "GET /books/v1/{book_title}": ["401"]}
 
-  - name: api3
-    spec: benchmark/specs/api3.yaml
-    base_url: http://localhost:8082
-    health: http://localhost:8082/
-    start: null
-    reset: null
-    scenario:
-      remove_operations: []
-      remove_properties: {}
+  - name: fastapi_template
+    # Full Stack FastAPI Template (MIT): FastAPI + PostgreSQL + JWT, usuarios e ítems.
+    spec: benchmark/specs/fastapi_template.json   # /api/v1/openapi.json del mismo commit
+    workdir: benchmark/apis/full-stack-fastapi-template
+    base_url: http://127.0.0.1:8000
+    health: http://127.0.0.1:8000/api/v1/utils/health-check/
+    startup_timeout: 240
+    reset:                                        # base de datos NUEVA en cada corrida
+      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans
+      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml up -d db backend
+      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh
+    stop: docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans
+    smoke:
+      - {method: GET, path: /api/v1/utils/health-check/, expect: 200}
+    auth:
+      login: {method: POST, path: /api/v1/login/access-token, form: {username: admin@example.com, password: changethis}}
+      token_field: access_token
+      header: Authorization
+      scheme: Bearer
+    context_note: >-
+      Superusuario: admin@example.com con contraseña changethis (la fixture api ya está autenticada
+      con él). Al crear usuarios usa correos únicos (p. ej. con uuid) y contraseñas de 8 o más caracteres.
+      No elimines ni modifiques al superusuario.
+    scenario:                                     # el "commit" agrega 2 endpoints, 1 campo, 1 parámetro y 1 respuesta
+      remove_operations: ["PUT /api/v1/items/{id}", "PATCH /api/v1/users/me/password"]
+      remove_properties: {ItemCreate: [description]}
+      remove_parameters: {"GET /api/v1/users/": [limit]}
+      remove_responses: {"DELETE /api/v1/items/{id}": ["422"]}

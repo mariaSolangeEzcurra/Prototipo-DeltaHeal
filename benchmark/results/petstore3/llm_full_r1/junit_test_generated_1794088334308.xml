@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="39" time="1.409" timestamp="2026-11-07T16:52:17.217311-05:00" hostname="DESKTOP-Q84REPF"><testcase classname="test_generated" name="test_post_pet_success_200" time="0.167" /><testcase classname="test_generated" name="test_post_pet_missing_required_fields_400_or_422" time="0.020"><failure message="assert 500 in [400, 422]&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:117: in test_post_pet_missing_required_fields_400_or_422
+    assert response.status_code in [400, 422]
+E   assert 500 in [400, 422]
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_pet_success_200" time="0.023" /><testcase classname="test_generated" name="test_put_pet_invalid_payload_400_or_422" time="0.021" /><testcase classname="test_generated" name="test_put_pet_nonexistent_pet_404_or_200" time="0.010" /><testcase classname="test_generated" name="test_get_pet_findByStatus_valid_status_200[available]" time="0.042" /><testcase classname="test_generated" name="test_get_pet_findByStatus_valid_status_200[pending]" time="0.019" /><testcase classname="test_generated" name="test_get_pet_findByStatus_valid_status_200[sold]" time="0.018" /><testcase classname="test_generated" name="test_get_pet_findByStatus_invalid_status_400" time="0.012" /><testcase classname="test_generated" name="test_get_pet_findByTags_success_200" time="0.022" /><testcase classname="test_generated" name="test_get_pet_findByTags_empty_tag_200_or_400" time="0.009" /><testcase classname="test_generated" name="test_get_pet_getPetById_success_200" time="0.021" /><testcase classname="test_generated" name="test_get_pet_getPetById_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_get_pet_getPetById_invalid_id_400" time="0.011" /><testcase classname="test_generated" name="test_post_pet_updatePetWithForm_success_200" time="0.020" /><testcase classname="test_generated" name="test_post_pet_updatePetWithForm_invalid_pet_id_400_or_404" time="0.011" /><testcase classname="test_generated" name="test_delete_pet_deletePet_success_200" time="0.021" /><testcase classname="test_generated" name="test_delete_pet_deletePet_invalid_id_400_or_404" time="0.010" /><testcase classname="test_generated" name="test_post_pet_uploadImage_success_200" time="0.019" /><testcase classname="test_generated" name="test_post_pet_uploadImage_pet_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_get_store_inventory_success_200" time="0.008" /><testcase classname="test_generated" name="test_post_store_order_success_200" time="0.015" /><testcase classname="test_generated" name="test_post_store_order_invalid_input_400_or_422" time="0.012" /><testcase classname="test_generated" name="test_get_store_order_getOrderById_success_200" time="0.016" /><testcase classname="test_generated" name="test_get_store_order_getOrderById_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_get_store_order_getOrderById_invalid_id_400" time="0.010" /><testcase classname="test_generated" name="test_delete_store_order_deleteOrder_success_200" time="0.017" /><testcase classname="test_generated" name="test_delete_store_order_deleteOrder_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_delete_store_order_deleteOrder_invalid_id_400" time="0.011" /><testcase classname="test_generated" name="test_post_user_createUser_success_200" time="0.014" /><testcase classname="test_generated" name="test_post_user_createUsersWithListInput_success_200" time="0.027"><failure message="jsonschema.exceptions.ValidationError: [{'id': 878779, 'username': 'user_95f882fe', 'firstName': 'Test', 'lastName': 'User', 'email': '95f882fe@example.com', 'password': 'Password123!', 'phone': '555-0100', 'userStatus': 1}, {'id': 937846, 'username': 'user_d02b9e79', 'firstName': 'Test', 'lastName': 'User', 'email': 'd02b9e79@example.com', 'password': 'Password123!', 'phone': '555-0100', 'userStatus': 1}] is not of type 'object'&#10;&#10;Failed validating 'type' in schema:&#10;    {'type': 'object',&#10;[+26 more lines; full report in element text]">test_generated.py:413: in test_post_user_createUsersWithListInput_success_200
+    validate(instance=data, schema=USER_SCHEMA)
+D:\Tareas\env_rsu\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: [{'id': 878779, 'username': 'user_95f882fe', 'firstName': 'Test', 'lastName': 'User', 'email': '95f882fe@example.com', 'password': 'Password123!', 'phone': '555-0100', 'userStatus': 1}, {'id': 937846, 'username': 'user_d02b9e79', 'firstName': 'Test', 'lastName': 'User', 'email': 'd02b9e79@example.com', 'password': 'Password123!', 'phone': '555-0100', 'userStatus': 1}] is not of type 'object'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'object',
+E        'properties': {'id': {'type': 'integer'},
+E                       'username': {'type': 'string'},
+E                       'firstName': {'type': 'string'},
+E                       'lastName': {'type': 'string'},
+E                       'email': {'type': 'string'},
+E                       'password': {'type': 'string'},
+E                       'phone': {'type': 'string'},
+E                       'userStatus': {'type': 'integer'}}}
+E   
+E   On instance:
+E       [{'id': 878779,
+E         'username': 'user_95f882fe',
+E         'firstName': 'Test',
+E         'lastName': 'User',
+E         'email': '95f882fe@example.com',
+E         'password': 'Password123!',
+E         'phone': '555-0100',
+E         'userStatus': 1},
+E        {'id': 937846,
+E         'username': 'user_d02b9e79',
+E         'firstName': 'Test',
+E         'lastName': 'User',
+E         'email': 'd02b9e79@example.com',
+E         'password': 'Password123!',
+E         'phone': '555-0100',
+E         'userStatus': 1}]</failure></testcase><testcase classname="test_generated" name="test_get_user_login_success_200" time="0.029" /><testcase classname="test_generated" name="test_get_user_logout_success_200" time="0.008" /><testcase classname="test_generated" name="test_get_user_getUserByName_success_200" time="0.018" /><testcase classname="test_generated" name="test_get_user_getUserByName_not_found_404" time="0.008" /><testcase classname="test_generated" name="test_put_user_updateUser_success_200" time="0.022" /><testcase classname="test_generated" name="test_put_user_updateUser_not_found_404" time="0.009" /><testcase classname="test_generated" name="test_delete_user_deleteUser_success_200" time="0.021" /><testcase classname="test_generated" name="test_delete_user_deleteUser_not_found_404" time="0.007"><failure message="assert 200 in [404, 400]&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:489: in test_delete_user_deleteUser_not_found_404
+    assert response.status_code in [404, 400]
+E   assert 200 in [404, 400]
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase></testsuite></testsuites>

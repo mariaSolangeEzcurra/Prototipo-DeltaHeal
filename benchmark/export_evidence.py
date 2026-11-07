@@ -6,7 +6,12 @@
 Hojas:
   Leeme            qué contiene el libro y cómo se generó
   Resumen          promedios por configuración (fórmulas sobre la hoja Corridas)
+  Condiciones      modelo, parámetros, versiones de software y commits de las APIs
   Corridas         una fila por corrida (API × configuración × repetición)
+  Pasos            bitácora con hora de CADA paso de cada corrida (A, B y C): reinicio de la API,
+                   prueba de humo, login, análisis delta, generación, ejecución, reparación, cobertura
+  Codigo_generado  el archivo de pruebas final de cada corrida (Schemathesis en A, LLM en B y C)
+  Trafico_HTTP     cada petición HTTP real enviada a la API y su código de respuesta
   Llamadas_LLM     cada llamada al LLM: fase, tokens, latencia, si se cortó, archivos de evidencia
   Prompts          texto EXACTO del prompt enviado y de la respuesta recibida
   Casos_de_prueba  resultado final de cada test generado
@@ -37,6 +42,7 @@ HEAD_FILL = PatternFill("solid", start_color="1F3864")
 INPUT_FILL = PatternFill("solid", start_color="FFF2CC")
 THIN = Side(style="thin", color="BFBFBF")
 CELL_LIMIT = 32000  # Excel admite 32.767 caracteres por celda
+MAX_HTTP_ROWS_PER_RUN = 3000
 
 CONFIG_DESC = {
     "traditional": "A · Herramienta tradicional sin IA (Schemathesis)",
@@ -78,13 +84,25 @@ def _cut(text: str) -> str:
     return text if len(text) <= CELL_LIMIT else text[:CELL_LIMIT] + "\n…[recortado; ver archivo de evidencia]"
 
 
-def load_runs(results_dir: Path) -> list[dict]:
+def _evid_path(run_dir: Path, rel: str) -> str:
+    if not rel:
+        return ""
+    p = run_dir / rel
+    try:
+        return str(p.relative_to(ROOT))
+    except ValueError:
+        return str(p)
+
+
+def load_runs(results_dir: Path, api: str | None = None) -> list[dict]:
     csv_path = results_dir / "results.csv"
     if not csv_path.exists():
         raise SystemExit(f"No existe {csv_path}. Ejecuta primero benchmark/run_benchmark.py")
     runs = []
     with csv_path.open(encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
+            if api and row["api"] != api:
+                continue
             run_dir = results_dir / row["api"] / f"{row['config']}_r{row['rep']}"
             rep_path = run_dir / "report.json"
             report = json.loads(rep_path.read_text(encoding="utf-8")) if rep_path.exists() else {}
@@ -104,8 +122,8 @@ def _num(v):
         return v
 
 
-def build(results_dir: Path, out: Path) -> Path:
-    runs = load_runs(results_dir)
+def build(results_dir: Path, out: Path, api: str | None = None) -> Path:
+    runs = load_runs(results_dir, api)
     wb = Workbook()
 
     # ---------------- Leeme ----------------
@@ -113,7 +131,7 @@ def build(results_dir: Path, out: Path) -> Path:
     ws.title = "Leeme"
     model = next((r["report"].get("model") for r in runs if r["report"].get("model")), "—")
     info = [
-        ("Evidencia del experimento DeltaHeal", None),
+        ("Evidencia del experimento DeltaHeal" + (f" — API: {api}" if api else " — todas las APIs"), None),
         ("Generado", datetime.now().strftime("%Y-%m-%d %H:%M")),
         ("Carpeta de resultados", str(results_dir)),
         ("Corridas registradas", len(runs)),
@@ -124,6 +142,10 @@ def build(results_dir: Path, out: Path) -> Path:
         ("", None),
         ("Cómo se obtuvo cada dato", None),
         ("Corridas", "results.csv + report.json de cada corrida (benchmark/results/<api>/<config>_r<rep>/)"),
+        ("Pasos", "Bitácora con hora de cada paso, registrada por el prototipo mientras se ejecuta (report.json -> steps)"),
+        ("Codigo_generado", "Archivo de pruebas final: test_schemathesis.py (A) o test_generated.py (B, C)"),
+        ("Trafico_HTTP", "Cada petición real a la API (http_final.jsonl), capturada al ejecutar Pytest"),
+        ("Condiciones", "condiciones_experimento.json: modelo, parámetros, versiones y commits de las APIs"),
         ("Llamadas_LLM / Prompts", "llm_calls/NN_<fase>_prompt.txt y _response.txt: texto exacto enviado y recibido"),
         ("Casos_de_prueba", "Resultado de Pytest (JUnit XML) de la versión final del archivo de pruebas"),
         ("Cobertura", "Tráfico HTTP real registrado por el plugin (http_final.jsonl) vs. códigos del contrato"),
@@ -273,6 +295,85 @@ def build(results_dir: Path, out: Path) -> Path:
     _table(wv, ["API", "Config.", "Rep.", "Operación", "Códigos documentados", "Códigos observados",
                 "Códigos cubiertos", "Nº cubiertos", "Nº documentados"], vrows, [14, 13, 6, 30, 18, 18, 18, 10, 12])
 
+    # ---------------- Pasos ----------------
+    wpa = wb.create_sheet("Pasos")
+    parows = []
+    for r in runs:
+        for k, st in enumerate(r["report"].get("steps") or [], 1):
+            parows.append([r["row"]["api"], r["row"]["config"], CONFIG_DESC.get(r["row"]["config"], ""),
+                           _num(r["row"]["rep"]), k, st.get("hora", ""), st.get("paso", ""),
+                           st.get("detalle", ""), _evid_path(r["dir"], st.get("archivo", ""))])
+    _table(wpa, ["API", "Config.", "Descripción", "Rep.", "Nº paso", "Hora", "Paso", "Detalle",
+                 "Archivo de evidencia"], parows, [14, 12, 34, 6, 7, 19, 30, 90, 55])
+    for row_cells in wpa.iter_rows(min_row=2):
+        row_cells[7].alignment = Alignment(wrap_text=True, vertical="top")
+
+    # ---------------- Codigo_generado ----------------
+    wcg = wb.create_sheet("Codigo_generado")
+    cgrows = []
+    for r in runs:
+        f = r["dir"] / ("test_schemathesis.py" if r["row"]["config"] == "traditional" else "test_generated.py")
+        origin = ("Schemathesis (plantilla fija, sin IA)" if r["row"]["config"] == "traditional"
+                  else "LLM (versión final tras el bucle)" if r["row"]["config"] in ("deltaheal", "full_heal")
+                  else "LLM (tal como lo generó, sin reparar)")
+        code = f.read_text(encoding="utf-8") if f.exists() else "(no existe)"
+        cgrows.append([r["row"]["api"], r["row"]["config"], _num(r["row"]["rep"]), origin,
+                       _evid_path(r["dir"], f.name), code.count("\n") + 1, _cut(code)])
+    _table(wcg, ["API", "Config.", "Rep.", "Origen del código", "Archivo", "Líneas", "Código"],
+           cgrows, [14, 12, 6, 30, 50, 8, 110])
+    for row_cells in wcg.iter_rows(min_row=2):
+        row_cells[6].alignment = Alignment(wrap_text=True, vertical="top")
+        row_cells[6].font = Font(name="Consolas", size=9)
+
+    # ---------------- Trafico_HTTP ----------------
+    wth = wb.create_sheet("Trafico_HTTP")
+    throws = []
+    for r in runs:
+        log = r["dir"] / "http_final.jsonl"
+        if not log.exists():
+            continue
+        lines = log.read_text(encoding="utf-8").splitlines()
+        for n, line in enumerate(lines[:MAX_HTTP_ROWS_PER_RUN], 1):
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            throws.append([r["row"]["api"], r["row"]["config"], _num(r["row"]["rep"]), n,
+                           rec.get("test") or "", rec.get("method"), rec.get("url"), rec.get("status")])
+        if len(lines) > MAX_HTTP_ROWS_PER_RUN:
+            throws.append([r["row"]["api"], r["row"]["config"], _num(r["row"]["rep"]), None,
+                           f"… {len(lines) - MAX_HTTP_ROWS_PER_RUN} peticiones más en http_final.jsonl",
+                           None, None, None])
+    _table(wth, ["API", "Config.", "Rep.", "Nº", "Test que la envió", "Método", "URL", "Código HTTP"],
+           throws, [14, 12, 6, 7, 55, 8, 70, 10])
+
+    # ---------------- Condiciones ----------------
+    wco = wb.create_sheet("Condiciones", 2)
+    cond_path = results_dir / "condiciones_experimento.json"
+    conds = json.loads(cond_path.read_text(encoding="utf-8")) if cond_path.exists() else []
+    corows = []
+    for i, c in enumerate(conds, 1):
+        def add(k, v):
+            corows.append([i, c.get("fecha", ""), k, v if isinstance(v, (int, float)) or v is None
+                           else (v if isinstance(v, str) else json.dumps(v, ensure_ascii=False))])
+        add("Sistema", c.get("sistema"))
+        add("Configuraciones", c.get("configuraciones"))
+        add("Repeticiones", c.get("repeticiones"))
+        add("Semilla del orden aleatorio", c.get("semilla_orden"))
+        for k, v in (c.get("llm") or {}).items():
+            add(f"LLM · {k}", v)
+        for k, v in (c.get("orquestador") or {}).items():
+            add(f"Orquestador · {k}", v)
+        for k, v in (c.get("versiones") or {}).items():
+            add(f"Versión · {k}", v)
+        for name, a in (c.get("apis") or {}).items():
+            add(f"API · {name} · commit del código fuente", a.get("commit_codigo_fuente"))
+            add(f"API · {name} · especificación", a.get("spec"))
+            add(f"API · {name} · escenario de cambio", a.get("scenario"))
+    _table(wco, ["Ejecución Nº", "Fecha", "Parámetro", "Valor"], corows, [11, 19, 48, 100])
+    for row_cells in wco.iter_rows(min_row=2):
+        row_cells[3].alignment = Alignment(wrap_text=True, vertical="top")
+
     # ---------------- Registro_manual ----------------
     wm = wb.create_sheet("Registro_manual")
     legend = [
@@ -312,11 +413,21 @@ def build(results_dir: Path, out: Path) -> Path:
     return out
 
 
+def build_all(results_dir: Path) -> list[Path]:
+    """Excel general (todas las APIs) + un Excel por API."""
+    results_dir = results_dir.resolve()
+    paths = [build(results_dir, results_dir / "evidencia_experimento.xlsx")]
+    with (results_dir / "results.csv").open(encoding="utf-8") as fh:
+        apis = sorted({row["api"] for row in csv.DictReader(fh)})
+    for api in apis:
+        paths.append(build(results_dir, results_dir / f"evidencia_{api}.xlsx", api))
+    return paths
+
+
 def main() -> int:
     results_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "benchmark" / "results"
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else results_dir / "evidencia_experimento.xlsx"
-    path = build(results_dir.resolve(), out.resolve())
-    print(f"Evidencia exportada: {path}")
+    for path in build_all(results_dir):
+        print(f"Evidencia exportada: {path}")
     return 0
 
 

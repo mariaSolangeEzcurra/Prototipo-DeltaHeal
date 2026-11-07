@@ -88,14 +88,21 @@ def _retry_after_seconds(r: requests.Response) -> float | None:
     return float(m.group(1)) if m else None
 
 
+def _say(msg: str) -> None:
+    import sys
+    print(f"   ⏳ {msg}", file=sys.stderr, flush=True)
+
+
 def _post_with_retries(url: str, headers: dict[str, str], payload: dict[str, Any],
                        timeout: int, retries: int = 6) -> dict[str, Any]:
     delay = 5.0
     for attempt in range(retries + 1):
         try:
             r = requests.post(url, headers=headers, json=payload, timeout=timeout)
-        except requests.RequestException:
+        except requests.RequestException as e:
             if attempt < retries:
+                _say(f"sin respuesta del proveedor LLM ({type(e).__name__}); reintento {attempt + 1}/{retries} "
+                     f"en {delay:.0f} s")
                 time.sleep(delay + random.random())
                 delay = min(delay * 2, 120)
                 continue
@@ -108,11 +115,16 @@ def _post_with_retries(url: str, headers: dict[str, str], payload: dict[str, Any
                     "Se agotó la cuota diaria del nivel gratuito del proveedor LLM. "
                     "Vuelve a ejecutar mañana: el benchmark continúa donde quedó.\n" + body[:500])
             if attempt < retries:
-                time.sleep(min(max(wait or delay, 1.0), 180) + random.random())
+                w = min(max(wait or delay, 1.0), 180)
+                _say(f"límite por minuto del nivel gratuito (429); espero {w:.0f} s y reintento "
+                     f"({attempt + 1}/{retries})")
+                time.sleep(w + random.random())
                 delay = min(delay * 2, 120)
                 continue
             raise QuotaExhaustedError("Límite de peticiones persistente (429).\n" + body[:500])
         if r.status_code in (500, 502, 503, 504, 529) and attempt < retries:
+            _say(f"el proveedor LLM respondió {r.status_code} (servidor ocupado); reintento "
+                 f"{attempt + 1}/{retries} en {delay:.0f} s")
             time.sleep(delay + random.random())
             delay = min(delay * 2, 120)
             continue

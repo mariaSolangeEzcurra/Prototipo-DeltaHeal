@@ -18,7 +18,7 @@ inputs:
   provider:
     default: gemini
   model:
-    default: gemini-2.5-flash
+    default: gemini-3.8-flash
   llm-base-url:
     default: ""
   max-heal-iterations:

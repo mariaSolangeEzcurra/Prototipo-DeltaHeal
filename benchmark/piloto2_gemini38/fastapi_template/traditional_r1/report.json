@@ -1,0 +1,303 @@
+{
+  "timestamp": "2026-11-07T16:16:12",
+  "mode": "traditional",
+  "run_id": "traditional_r1",
+  "model": null,
+  "provider": null,
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /api/v1/items/{id}",
+      "PATCH /api/v1/users/me/password"
+    ],
+    "modified": [
+      "POST /api/v1/items/",
+      "DELETE /api/v1/items/{id}",
+      "GET /api/v1/users/"
+    ],
+    "removed": [],
+    "unchanged_count": 18
+  },
+  "operations_total": 23,
+  "target_operations": [
+    "POST /api/v1/items/",
+    "DELETE /api/v1/items/{id}",
+    "PUT /api/v1/items/{id}",
+    "GET /api/v1/users/",
+    "PATCH /api/v1/users/me/password"
+  ],
+  "context_operations": 5,
+  "spec_context_chars": 8217,
+  "spec_full_chars": 25117,
+  "spec_context_tokens_est": 2054,
+  "spec_full_tokens_est": 6279,
+  "context_reduction": 0.6729,
+  "llm_calls": 0,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "total_tokens": 0,
+  "generation_tokens": 0,
+  "repair_tokens": 0,
+  "cost_usd": 0.0,
+  "llm_latency_s": 0.0,
+  "generated_tests": 5,
+  "executable_tests": 5,
+  "executable_rate": 1.0,
+  "passed": 0,
+  "assertion_failures": 5,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.7,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 16.299,
+  "test_cases": [
+    {
+      "test": "test_schemathesis::test_api[GET /api/v1/users/]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PATCH /api/v1/users/me/password]",
+      "outcome": "assertion",
+      "message": "AssertionError: 2 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /api/v1/items/]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PUT /api/v1/items/{id}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[DELETE /api/v1/items/{id}]",
+      "outcome": "assertion",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_schemathesis::test_api[GET /api/v1/users/]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PATCH /api/v1/users/me/password]",
+      "message": "AssertionError: 2 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\n  FailureGroup: Schemathesis found 2 distinct failures\nassert not ['FailureGroup: Schemathesis found 1 distinct failure', 'FailureGroup: Schemathesis found 2 distinct failures']"
+    },
+    {
+      "test": "test_schemathesis::test_api[POST /api/v1/items/]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[PUT /api/v1/items/{id}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    },
+    {
+      "test": "test_schemathesis::test_api[DELETE /api/v1/items/{id}]",
+      "message": "AssertionError: 1 violaciones distintas:\n  FailureGroup: Schemathesis found 1 distinct failure\nassert not ['FailureGroup: Schemathesis found 1 distinct failure']"
+    }
+  ],
+  "coverage": {
+    "http_coverage": 0.7,
+    "documented_pairs": 10,
+    "covered_pairs": 7,
+    "operations_hit": 5,
+    "operations_total": 5,
+    "total_requests": 125,
+    "unmatched_requests": 0,
+    "undocumented_observed": {
+      "POST /api/v1/items/": [
+        400
+      ],
+      "DELETE /api/v1/items/{id}": [
+        404
+      ],
+      "PUT /api/v1/items/{id}": [
+        404
+      ],
+      "GET /api/v1/users/": [
+        500
+      ],
+      "PATCH /api/v1/users/me/password": [
+        400
+      ]
+    },
+    "per_operation": {
+      "POST /api/v1/items/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          400,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "DELETE /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          404,
+          422
+        ],
+        "covered": [
+          "422"
+        ]
+      },
+      "PUT /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          404,
+          422
+        ],
+        "covered": [
+          "422"
+        ]
+      },
+      "GET /api/v1/users/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422,
+          500
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "PATCH /api/v1/users/me/password": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          400,
+          422
+        ],
+        "covered": [
+          "422"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.1667,
+  "duration_s": 16.941,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T16:15:52",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:15:55",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans  -> código 0.  Network fastapi_bench_default Removed",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:05",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml up -d db backend  -> código 0.  Container fastapi_bench-backend-1 Started",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:09",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh  -> código 0. INFO:__main__:Initial data created",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:11",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /api/v1/utils/health-check/ respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:11",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin@example.com' -> HTTP 200; token obtenido (165 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:11",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=traditional; modelo=sin LLM; delta=sí; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:12",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\fastapi_template\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\fastapi_template\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T16:16:12",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 3 modificadas, 0 eliminadas, 18 sin cambios. Nuevas: PUT /api/v1/items/{id}, PATCH /api/v1/users/me/password. Modificadas: POST /api/v1/items/, DELETE /api/v1/items/{id}, GET /api/v1/users/",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:12",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:8000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:16:12",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 5 de 23 operaciones; 8,217 caracteres (completa: 25,117)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T16:16:12",
+      "paso": "Generación de casos (Schemathesis, sin IA)",
+      "detalle": "5 operaciones; 25 ejemplos por operación, datos válidos e inválidos",
+      "archivo": "test_schemathesis.py"
+    },
+    {
+      "hora": "2026-11-07T16:16:28",
+      "paso": "Ejecución de pruebas (Pytest)",
+      "detalle": "5 tests ejecutados, 0 pasan, 5 fallan por aserción, 0 con error de código (exit=1, 16.3s)",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T16:16:28",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "7/10 pares (operación, código) cubiertos = 70.0%; 125 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T16:16:28",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=0; duración=16.941 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T16:16:28",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

@@ -1,0 +1,359 @@
+{
+  "timestamp": "2026-11-07T18:12:50",
+  "mode": "delta_only",
+  "run_id": "delta_only_r2",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "POST /books/v1",
+      "PUT /users/v1/{username}/password"
+    ],
+    "modified": [
+      "GET /books/v1/{book_title}",
+      "DELETE /users/v1/{username}"
+    ],
+    "removed": [],
+    "unchanged_count": 10
+  },
+  "operations_total": 14,
+  "target_operations": [
+    "POST /books/v1",
+    "GET /books/v1/{book_title}",
+    "DELETE /users/v1/{username}",
+    "PUT /users/v1/{username}/password"
+  ],
+  "context_operations": 4,
+  "spec_context_chars": 7866,
+  "spec_full_chars": 19692,
+  "spec_context_tokens_est": 1966,
+  "spec_full_tokens_est": 4923,
+  "context_reduction": 0.6005,
+  "llm_calls": 1,
+  "prompt_tokens": 2102,
+  "completion_tokens": 2501,
+  "total_tokens": 4603,
+  "generation_tokens": 4603,
+  "repair_tokens": 0,
+  "cost_usd": 0.010955,
+  "llm_latency_s": 121.601,
+  "generated_tests": 12,
+  "executable_tests": 12,
+  "executable_rate": 1.0,
+  "passed": 7,
+  "assertion_failures": 5,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 1.0,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 9.671,
+  "test_cases": [
+    {
+      "test": "test_generated::test_delete_user_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn instance:\n    {'detail': 'No authorization token provided',\n     'status': 401,\n     'title': 'Unauthorized',\n     'type': 'about:blank'}"
+    },
+    {
+      "test": "test_generated::test_put_user_password_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_password_malformed_data",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_user_password_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn instance:\n    {'detail': 'No authorization token provided',\n     'status': 401,\n     'title': 'Unauthorized',\n     'type': 'about:blank'}"
+    },
+    {
+      "test": "test_generated::test_post_book_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_book_already_exists",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_book_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn instance:\n    {'detail': 'No authorization token provided',\n     'status': 401,\n     'title': 'Unauthorized',\n     'type': 'about:blank'}"
+    },
+    {
+      "test": "test_generated::test_get_book_by_title_success",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: {'book_title': 'bookGet_dbda1ba8', 'owner': 'admin', 'secret': 'ownerSecret123'} is not of type 'array'\n\nFailed validating 'type' in schema:\n    {'type': 'array',\n     'items': {'type': 'object',\n               'properties': {'book_title': {'type': 'string'},\n                              'owner': {'type': 'string'},\n                              'secret': {'type': 'string'}},\n               'required': ['book_title', 'owner', 'secret']}}\n\nOn instance:\n[+3 "
+    },
+    {
+      "test": "test_generated::test_get_book_by_title_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_book_by_title_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn instance:\n    {'detail': 'No authorization token provided',\n     'status': 401,\n     'title': 'Unauthorized',\n     'type': 'about:blank'}"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_delete_user_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn "
+    },
+    {
+      "test": "test_generated::test_put_user_password_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn "
+    },
+    {
+      "test": "test_generated::test_post_book_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn "
+    },
+    {
+      "test": "test_generated::test_get_book_by_title_success",
+      "message": "jsonschema.exceptions.ValidationError: {'book_title': 'bookGet_dbda1ba8', 'owner': 'admin', 'secret': 'ownerSecret123'} is not of type 'array'\n\nFailed validating 'type' in schema:\n    {'type': 'array',\n     'items': {'type': 'object',\n               'properties': {'book_title': {'type': 'string'},\n "
+    },
+    {
+      "test": "test_generated::test_get_book_by_title_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 'message' is a required property\n\nFailed validating 'required' in schema:\n    {'type': 'object',\n     'properties': {'status': {'type': 'string', 'enum': ['fail']},\n                    'message': {'type': 'string'}},\n     'required': ['status', 'message']}\n\nOn "
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 1.0,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 12,
+      "total": 12,
+      "broken": 0,
+      "assertion_failures": 5,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 2102,
+      "completion_tokens": 2501,
+      "latency_s": 121.60147410002537,
+      "cost_usd": 0.01095525,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 1.0,
+    "documented_pairs": 12,
+    "covered_pairs": 12,
+    "operations_hit": 4,
+    "operations_total": 4,
+    "total_requests": 16,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /books/v1": {
+        "documented": [
+          "200",
+          "400",
+          "401"
+        ],
+        "observed": [
+          200,
+          400,
+          401
+        ],
+        "covered": [
+          "200",
+          "400",
+          "401"
+        ]
+      },
+      "GET /books/v1/{book_title}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          200,
+          401,
+          404
+        ],
+        "covered": [
+          "200",
+          "401",
+          "404"
+        ]
+      },
+      "DELETE /users/v1/{username}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          200,
+          401,
+          404
+        ],
+        "covered": [
+          "200",
+          "401",
+          "404"
+        ]
+      },
+      "PUT /users/v1/{username}/password": {
+        "documented": [
+          "204",
+          "400",
+          "401"
+        ],
+        "observed": [
+          204,
+          400,
+          401
+        ],
+        "covered": [
+          "204",
+          "400",
+          "401"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.4643,
+  "duration_s": 131.809,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f vampi  -> código 0. vampi",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:45",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name vampi -p 5000:5000 -e vulnerable=0 -e tokentimetolive=3600 deltaheal/vampi:f16052d  -> código 0. 75d9c8399f97bb70b4e5a5faa2dba6d126be8ead813fe012a303b970f2003084",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Preparación de datos",
+      "detalle": "GET /createdb -> 200",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /users/v1, GET /books/v1 respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin' -> HTTP 200; token obtenido (147 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=delta_only; modelo=gemini-3.8-flash; delta=sí; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 2 modificadas, 0 eliminadas, 10 sin cambios. Nuevas: POST /books/v1, PUT /users/v1/{username}/password. Modificadas: GET /books/v1/{book_title}, DELETE /users/v1/{username}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:5000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:50",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 4 de 14 operaciones; 7,866 caracteres (completa: 19,692)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:14:52",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "2,102 tokens de entrada + 2,501 de salida; 12 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-07T18:15:01",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "12 tests ejecutados, 7 pasan, 5 fallan por aserción, 0 con error de código (exit=1, 9.7s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-07T18:15:01",
+      "paso": "Bucle finalizado",
+      "detalle": "no quedan errores en el código de prueba (5 fallas de aserción se reportan como posibles regresiones, no se reparan)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:15:01",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (12/12)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-07T18:15:01",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "12/12 pares (operación, código) cubiertos = 100.0%; 16 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:15:01",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=4603; duración=131.809 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T18:15:02",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

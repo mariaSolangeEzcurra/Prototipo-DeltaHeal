@@ -50,7 +50,7 @@ class Settings:
     mode: str = "deltaheal"
 
     provider: str = "gemini"              # gemini | groq | ollama | deepseek | openai | anthropic | mock
-    model: str = "gemini-2.5-flash"
+    model: str = "gemini-3.8-flash"
     llm_rpm: float | None = None          # llamadas/minuto (None = valor seguro del preset)
     llm_base_url: str | None = None
     temperature: float = 0.0
@@ -73,6 +73,7 @@ class Settings:
     pytest_timeout: int = 60
     spec_format: str = "yaml"             # formato en que se envía la spec al LLM
 
+    context_note: str = ""                # datos del entorno (p. ej. usuarios de prueba) para el prompt
     output_dir: str = "deltaheal-out"
     fail_on: str = "regression"           # regression | any | never
 

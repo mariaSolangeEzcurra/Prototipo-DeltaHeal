@@ -1,0 +1,427 @@
+{
+  "timestamp": "2026-11-07T16:27:29",
+  "mode": "delta_only",
+  "run_id": "delta_only_r1",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /pet",
+      "GET /pet/findByTags",
+      "DELETE /store/order/{orderId}"
+    ],
+    "modified": [
+      "POST /pet",
+      "GET /pet/findByStatus",
+      "GET /pet/{petId}",
+      "POST /pet/{petId}"
+    ],
+    "removed": [],
+    "unchanged_count": 12
+  },
+  "operations_total": 19,
+  "target_operations": [
+    "POST /pet",
+    "PUT /pet",
+    "GET /pet/findByStatus",
+    "GET /pet/findByTags",
+    "GET /pet/{petId}",
+    "POST /pet/{petId}",
+    "DELETE /store/order/{orderId}"
+  ],
+  "context_operations": 7,
+  "spec_context_chars": 10106,
+  "spec_full_chars": 22776,
+  "spec_context_tokens_est": 2526,
+  "spec_full_tokens_est": 5694,
+  "context_reduction": 0.5563,
+  "llm_calls": 1,
+  "prompt_tokens": 2919,
+  "completion_tokens": 3486,
+  "total_tokens": 6405,
+  "generation_tokens": 6405,
+  "repair_tokens": 0,
+  "cost_usd": 0.015262,
+  "llm_latency_s": 200.938,
+  "generated_tests": 20,
+  "executable_tests": 19,
+  "executable_rate": 0.95,
+  "passed": 15,
+  "assertion_failures": 4,
+  "runtime_errors": 1,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.6842,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 7.001,
+  "test_cases": [
+    {
+      "test": "test_generated::test_post_pet_creacion_exitosa_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_faltan_campos_requeridos_error",
+      "outcome": "assertion",
+      "message": "assert 200 in (400, 422)\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_pet_cuerpo_invalido_formato_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_actualizacion_exitosa_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_no_encontrada_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_pet_cuerpo_invalido_422_o_400",
+      "outcome": "assertion",
+      "message": "assert 500 in (400, 422)\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_pet_por_id_exitoso_200",
+      "outcome": "runtime_error",
+      "message": "NameError: name 'petId' is not defined"
+    },
+    {
+      "test": "test_generated::test_get_pet_por_id_no_existente_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_por_id_formato_invalido_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_con_formulario_exitoso_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_pet_con_formulario_id_invalido_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_status_valido_200[available]",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_status_valido_200[pending]",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_status_valido_200[sold]",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_status_invalido_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_tags_exitoso_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_pet_buscar_por_tags_multiples_200",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_order_id_invalido_no_entero_400",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_order_no_encontrada_404",
+      "outcome": "assertion",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_order_id_fuera_de_rango_400_o_404",
+      "outcome": "assertion",
+      "message": "assert 200 in (400, 404)\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_post_pet_faltan_campos_requeridos_error",
+      "message": "assert 200 in (400, 422)\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_pet_cuerpo_invalido_422_o_400",
+      "message": "assert 500 in (400, 422)\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_order_no_encontrada_404",
+      "message": "assert 200 == 404\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_delete_order_id_fuera_de_rango_400_o_404",
+      "message": "assert 200 in (400, 404)\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "max_iterations",
+  "executable_rate_before_heal": 0.95,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 19,
+      "total": 20,
+      "broken": 1,
+      "assertion_failures": 4,
+      "collection_error": false,
+      "action": "give_up"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 2919,
+      "completion_tokens": 3486,
+      "latency_s": 200.9375885000918,
+      "cost_usd": 0.01526175,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.6842,
+    "documented_pairs": 19,
+    "covered_pairs": 13,
+    "operations_hit": 7,
+    "operations_total": 7,
+    "total_requests": 29,
+    "unmatched_requests": 0,
+    "undocumented_observed": {
+      "PUT /pet": [
+        500
+      ]
+    },
+    "per_operation": {
+      "POST /pet": {
+        "documented": [
+          "200",
+          "400",
+          "422"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "PUT /pet": {
+        "documented": [
+          "200",
+          "400",
+          "404",
+          "422"
+        ],
+        "observed": [
+          200,
+          404,
+          500
+        ],
+        "covered": [
+          "200",
+          "404"
+        ]
+      },
+      "GET /pet/findByStatus": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "GET /pet/findByTags": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200
+        ],
+        "covered": [
+          "200"
+        ]
+      },
+      "GET /pet/{petId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          400,
+          404
+        ],
+        "covered": [
+          "400",
+          "404"
+        ]
+      },
+      "POST /pet/{petId}": {
+        "documented": [
+          "200",
+          "400"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      },
+      "DELETE /store/order/{orderId}": {
+        "documented": [
+          "200",
+          "400",
+          "404"
+        ],
+        "observed": [
+          200,
+          400
+        ],
+        "covered": [
+          "200",
+          "400"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.2889,
+  "duration_s": 208.618,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T16:27:23",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:24",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f petstore3  -> código 0. petstore3",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:24",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name petstore3 -p 8080:8080 swaggerapi/petstore3:unstable  -> código 0. 657d0cebdb3a906a8d581f2c93c4a9cd6fc4090a063a6c03ed9b18cac0d3bcbf",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /pet/findByStatus?status=available, GET /store/inventory respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=delta_only; modelo=gemini-3.8-flash; delta=sí; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\petstore3\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\petstore3\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Análisis delta",
+      "detalle": "3 nuevas, 4 modificadas, 0 eliminadas, 12 sin cambios. Nuevas: PUT /pet, GET /pet/findByTags, DELETE /store/order/{orderId}. Modificadas: POST /pet, GET /pet/findByStatus, GET /pet/{petId}, POST /pet/{petId}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:8080/api/v3",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:27:29",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 7 de 19 operaciones; 10,106 caracteres (completa: 22,776)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T16:30:50",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "2,919 tokens de entrada + 3,486 de salida; 18 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "20 tests ejecutados, 15 pasan, 4 fallan por aserción, 1 con error de código (exit=1, 7.0s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Bucle finalizado",
+      "detalle": "configuración sin self-healing: el código se ejecuta tal como lo generó el LLM",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (19/20)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "13/19 pares (operación, código) cubiertos = 68.4%; 29 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=0.95; tokens=6405; duración=208.618 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T16:30:57",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

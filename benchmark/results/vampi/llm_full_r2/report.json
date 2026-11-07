@@ -1,0 +1,455 @@
+{
+  "timestamp": "2026-11-07T18:12:15",
+  "mode": "llm_full",
+  "run_id": "llm_full_r2",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "POST /books/v1",
+      "PUT /users/v1/{username}/password"
+    ],
+    "modified": [
+      "GET /books/v1/{book_title}",
+      "DELETE /users/v1/{username}"
+    ],
+    "removed": [],
+    "unchanged_count": 10
+  },
+  "operations_total": 14,
+  "target_operations": [
+    "POST /books/v1",
+    "GET /books/v1/{book_title}",
+    "DELETE /users/v1/{username}",
+    "PUT /users/v1/{username}/password"
+  ],
+  "context_operations": 14,
+  "spec_context_chars": 19692,
+  "spec_full_chars": 19692,
+  "spec_context_tokens_est": 4923,
+  "spec_full_tokens_est": 4923,
+  "context_reduction": 0.0,
+  "llm_calls": 1,
+  "prompt_tokens": 4444,
+  "completion_tokens": 4485,
+  "total_tokens": 8929,
+  "generation_tokens": 8929,
+  "repair_tokens": 0,
+  "cost_usd": 0.020152,
+  "llm_latency_s": 22.962,
+  "generated_tests": 28,
+  "executable_tests": 28,
+  "executable_rate": 1.0,
+  "passed": 19,
+  "assertion_failures": 9,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 1.0,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 5.604,
+  "test_cases": [
+    {
+      "test": "test_generated::test_get_createdb_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_home_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_v1_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_v1_debug_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_v1_register_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_v1_register_duplicate_fail",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_v1_login_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_v1_login_invalid_password",
+      "outcome": "assertion",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_me_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_me_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string'}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_get_users_v1_by_username_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_v1_by_username_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_users_v1_username_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_users_v1_username_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_users_v1_username_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_email_success",
+      "outcome": "assertion",
+      "message": "assert 400 in [200, 204]\n +  where 400 = <Response [400]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_email_invalid_format",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_users_v1_email_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_password_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_users_v1_password_malformed",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_users_v1_password_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_get_books_v1_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_books_v1_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_books_v1_duplicate_fail",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_books_v1_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_get_books_v1_by_title_success",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: {'book_title': 'owner_book_3bbccc31', 'owner': 'admin', 'secret': 'top_secret_data'} is not of type 'array'\n\nFailed validating 'type' in schema:\n    {'type': 'array',\n     'items': {'type': 'object',\n               'properties': {'book_title': {'type': 'string'},\n                              'owner': {'type': 'string'},\n                              'secret': {'type': 'string'}}}}\n\nOn instance:\n    {'book_title': 'owner_book_3bbccc31',\n[+2 more lines; full"
+    },
+    {
+      "test": "test_generated::test_get_books_v1_by_title_not_found",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_books_v1_by_title_unauthorized",
+      "outcome": "assertion",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_post_users_v1_login_invalid_password",
+      "message": "assert 200 == 400\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "test": "test_generated::test_get_me_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string'}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_delete_users_v1_username_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_email_success",
+      "message": "assert 400 in [200, 204]\n +  where 400 = <Response [400]>.status_code"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_email_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_put_users_v1_password_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_post_books_v1_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    },
+    {
+      "test": "test_generated::test_get_books_v1_by_title_success",
+      "message": "jsonschema.exceptions.ValidationError: {'book_title': 'owner_book_3bbccc31', 'owner': 'admin', 'secret': 'top_secret_data'} is not of type 'array'\n\nFailed validating 'type' in schema:\n    {'type': 'array',\n     'items': {'type': 'object',\n               'properties': {'book_title': {'type': 'string'"
+    },
+    {
+      "test": "test_generated::test_get_books_v1_by_title_unauthorized",
+      "message": "jsonschema.exceptions.ValidationError: 401 is not of type 'string'\n\nFailed validating 'type' in schema['properties']['status']:\n    {'type': 'string', 'enum': ['fail']}\n\nOn instance['status']:\n    401"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 1.0,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 28,
+      "total": 28,
+      "broken": 0,
+      "assertion_failures": 9,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 4444,
+      "completion_tokens": 4485,
+      "latency_s": 22.961597700137645,
+      "cost_usd": 0.02015175,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 1.0,
+    "documented_pairs": 12,
+    "covered_pairs": 12,
+    "operations_hit": 4,
+    "operations_total": 4,
+    "total_requests": 33,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /books/v1": {
+        "documented": [
+          "200",
+          "400",
+          "401"
+        ],
+        "observed": [
+          200,
+          400,
+          401
+        ],
+        "covered": [
+          "200",
+          "400",
+          "401"
+        ]
+      },
+      "GET /books/v1/{book_title}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          200,
+          401,
+          404
+        ],
+        "covered": [
+          "200",
+          "401",
+          "404"
+        ]
+      },
+      "DELETE /users/v1/{username}": {
+        "documented": [
+          "200",
+          "401",
+          "404"
+        ],
+        "observed": [
+          200,
+          401,
+          404
+        ],
+        "covered": [
+          "200",
+          "401",
+          "404"
+        ]
+      },
+      "PUT /users/v1/{username}/password": {
+        "documented": [
+          "204",
+          "400",
+          "401"
+        ],
+        "observed": [
+          204,
+          400,
+          401
+        ],
+        "covered": [
+          "204",
+          "400",
+          "401"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.8929,
+  "duration_s": 28.887,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-07T18:12:11",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:12",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker rm -f vampi  -> código 0. vampi",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:12",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker run -d --rm --name vampi -p 5000:5000 -e vulnerable=0 -e tokentimetolive=3600 deltaheal/vampi:f16052d  -> código 0. 72e8b5cfffdbc877a0d2bde23e50c7455f8c58ef0ab86aad497b64980e8994d5",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Preparación de datos",
+      "detalle": "GET /createdb -> 200",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /users/v1, GET /books/v1 respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin' -> HTTP 200; token obtenido (147 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=llm_full; modelo=gemini-3.8-flash; delta=no; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\base.yaml; versión nueva: D:\\Tareas\\deltaheal-api-testing\\deltaheal-api-testing\\benchmark\\results\\vampi\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 2 modificadas, 0 eliminadas, 10 sin cambios. Nuevas: POST /books/v1, PUT /users/v1/{username}/password. Modificadas: GET /books/v1/{book_title}, DELETE /users/v1/{username}",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:5000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:15",
+      "paso": "Construcción del contexto",
+      "detalle": "especificación completa (14 operaciones); 19,692 caracteres (completa: 19,692)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-07T18:12:38",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "4,444 tokens de entrada + 4,485 de salida; 28 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "28 tests ejecutados, 19 pasan, 9 fallan por aserción, 0 con error de código (exit=1, 5.6s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Bucle finalizado",
+      "detalle": "no quedan errores en el código de prueba (9 fallas de aserción se reportan como posibles regresiones, no se reparan)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (28/28)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "12/12 pares (operación, código) cubiertos = 100.0%; 33 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=8929; duración=28.887 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-07T18:12:44",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}
