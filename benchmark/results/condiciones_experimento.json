@@ -634,5 +634,217 @@
         }
       }
     }
+  },
+  {
+    "fecha": "2026-11-08T17:59:15",
+    "archivo_configuracion": "C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\benchmark.yaml",
+    "sistema": "Windows 11 · Python 3.13.5",
+    "versiones": {
+      "pytest": "9.2.0",
+      "schemathesis": "4.33.1",
+      "hypothesis": "6.170.15",
+      "requests": "2.34.2",
+      "pandas": "3.1.1",
+      "scipy": "1.18.1"
+    },
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "base_url": null,
+      "rpm": 8,
+      "temperature": 0.2,
+      "max_tokens": 32000,
+      "reasoning_effort": "low",
+      "price_input_per_mtok": 0.75,
+      "price_output_per_mtok": 3.75
+    },
+    "orquestador": {
+      "max_heal_iterations": 3,
+      "heal_policy": "errors",
+      "repair_mode": "patch",
+      "coverage_scope": "delta",
+      "traditional_scope": "delta",
+      "schemathesis_examples": 25,
+      "pytest_timeout": 60
+    },
+    "configuraciones": [
+      "traditional",
+      "llm_full",
+      "deltaheal",
+      "delta_only",
+      "full_heal"
+    ],
+    "repeticiones": 5,
+    "semilla_orden": 2026,
+    "apis": {
+      "petstore3": {
+        "spec": "benchmark/specs/petstore3.json",
+        "base_url": "http://127.0.0.1:8080/api/v3",
+        "commit_codigo_fuente": "—",
+        "scenario": {
+          "remove_operations": [
+            "PUT /pet",
+            "GET /pet/findByTags",
+            "DELETE /store/order/{orderId}"
+          ],
+          "remove_properties": {
+            "Pet": [
+              "tags"
+            ]
+          }
+        }
+      },
+      "vampi": {
+        "spec": "benchmark/specs/vampi.yaml",
+        "base_url": "http://127.0.0.1:5000",
+        "commit_codigo_fuente": "f16052dce83f05847133ec98f01c5193a41de7d8",
+        "scenario": {
+          "remove_operations": [
+            "POST /books/v1",
+            "PUT /users/v1/{username}/password"
+          ],
+          "remove_responses": {
+            "DELETE /users/v1/{username}": [
+              "401"
+            ],
+            "GET /books/v1/{book_title}": [
+              "401"
+            ]
+          }
+        }
+      },
+      "fastapi_template": {
+        "spec": "benchmark/specs/fastapi_template.json",
+        "base_url": "http://127.0.0.1:8000",
+        "commit_codigo_fuente": "aabb90126964a164e02aff39e7c385bb0598236d",
+        "scenario": {
+          "remove_operations": [
+            "PUT /api/v1/items/{id}",
+            "PATCH /api/v1/users/me/password"
+          ],
+          "remove_properties": {
+            "ItemCreate": [
+              "description"
+            ]
+          },
+          "remove_parameters": {
+            "GET /api/v1/users/": [
+              "limit"
+            ]
+          },
+          "remove_responses": {
+            "DELETE /api/v1/items/{id}": [
+              "422"
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "fecha": "2026-11-08T18:00:18",
+    "archivo_configuracion": "C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\benchmark.yaml",
+    "sistema": "Windows 11 · Python 3.13.5",
+    "versiones": {
+      "pytest": "9.2.0",
+      "schemathesis": "4.33.1",
+      "hypothesis": "6.170.15",
+      "requests": "2.34.2",
+      "pandas": "3.1.1",
+      "scipy": "1.18.1"
+    },
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "base_url": null,
+      "rpm": 8,
+      "temperature": 0.2,
+      "max_tokens": 32000,
+      "reasoning_effort": "low",
+      "price_input_per_mtok": 0.75,
+      "price_output_per_mtok": 3.75
+    },
+    "orquestador": {
+      "max_heal_iterations": 3,
+      "heal_policy": "errors",
+      "repair_mode": "patch",
+      "coverage_scope": "delta",
+      "traditional_scope": "delta",
+      "schemathesis_examples": 25,
+      "pytest_timeout": 60
+    },
+    "configuraciones": [
+      "traditional",
+      "llm_full",
+      "deltaheal",
+      "delta_only",
+      "full_heal"
+    ],
+    "repeticiones": 5,
+    "semilla_orden": 2026,
+    "apis": {
+      "petstore3": {
+        "spec": "benchmark/specs/petstore3.json",
+        "base_url": "http://127.0.0.1:8080/api/v3",
+        "commit_codigo_fuente": "—",
+        "scenario": {
+          "remove_operations": [
+            "PUT /pet",
+            "GET /pet/findByTags",
+            "DELETE /store/order/{orderId}"
+          ],
+          "remove_properties": {
+            "Pet": [
+              "tags"
+            ]
+          }
+        }
+      },
+      "vampi": {
+        "spec": "benchmark/specs/vampi.yaml",
+        "base_url": "http://127.0.0.1:5000",
+        "commit_codigo_fuente": "f16052dce83f05847133ec98f01c5193a41de7d8",
+        "scenario": {
+          "remove_operations": [
+            "POST /books/v1",
+            "PUT /users/v1/{username}/password"
+          ],
+          "remove_responses": {
+            "DELETE /users/v1/{username}": [
+              "401"
+            ],
+            "GET /books/v1/{book_title}": [
+              "401"
+            ]
+          }
+        }
+      },
+      "fastapi_template": {
+        "spec": "benchmark/specs/fastapi_template.json",
+        "base_url": "http://127.0.0.1:8000",
+        "commit_codigo_fuente": "aabb90126964a164e02aff39e7c385bb0598236d",
+        "scenario": {
+          "remove_operations": [
+            "PUT /api/v1/items/{id}",
+            "PATCH /api/v1/users/me/password"
+          ],
+          "remove_properties": {
+            "ItemCreate": [
+              "description"
+            ]
+          },
+          "remove_parameters": {
+            "GET /api/v1/users/": [
+              "limit"
+            ]
+          },
+          "remove_responses": {
+            "DELETE /api/v1/items/{id}": [
+              "422"
+            ]
+          }
+        }
+      }
+    }
   }
 ]

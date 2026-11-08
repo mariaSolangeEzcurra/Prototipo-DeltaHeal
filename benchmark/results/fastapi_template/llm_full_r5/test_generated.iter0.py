@@ -1,0 +1,490 @@
+import uuid
+import pytest
+import requests
+from jsonschema import validate
+
+# JSON Schemas basades en el contrato OpenAPI
+USER_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["email", "id"],
+    "properties": {
+        "email": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "is_superuser": {"type": "boolean"},
+        "full_name": {"type": ["string", "null"]},
+        "id": {"type": "string"},
+        "created_at": {"type": ["string", "null"]},
+    },
+}
+
+USERS_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["data", "count"],
+    "properties": {
+        "data": {"type": "array", "items": USER_PUBLIC_SCHEMA},
+        "count": {"type": "integer"},
+    },
+}
+
+ITEM_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["title", "id", "owner_id"],
+    "properties": {
+        "title": {"type": "string"},
+        "description": {"type": ["string", "null"]},
+        "id": {"type": "string"},
+        "owner_id": {"type": "string"},
+        "created_at": {"type": ["string", "null"]},
+    },
+}
+
+ITEMS_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["data", "count"],
+    "properties": {
+        "data": {"type": "array", "items": ITEM_PUBLIC_SCHEMA},
+        "count": {"type": "integer"},
+    },
+}
+
+TOKEN_SCHEMA = {
+    "type": "object",
+    "required": ["access_token"],
+    "properties": {
+        "access_token": {"type": "string"},
+        "token_type": {"type": "string"},
+    },
+}
+
+MESSAGE_SCHEMA = {
+    "type": "object",
+    "required": ["message"],
+    "properties": {
+        "message": {"type": "string"},
+    },
+}
+
+HTTP_VALIDATION_ERROR_SCHEMA = {
+    "type": "object",
+    "required": ["detail"],
+    "properties": {
+        "detail": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["loc", "msg", "type"],
+                "properties": {
+                    "loc": {"type": "array"},
+                    "msg": {"type": "string"},
+                    "type": {"type": "string"},
+                },
+            },
+        }
+    },
+}
+
+
+def random_email():
+    return f"user_{uuid.uuid4().hex[:8]}@example.com"
+
+
+# --- Pruebas de Login y Autenticación ---
+
+def test_post_login_access_token_success(base_url):
+    response = requests.post(
+        f"{base_url}/api/v1/login/access-token",
+        data={"username": "admin@example.com", "password": "changethis"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=TOKEN_SCHEMA)
+    assert data.get("token_type") == "bearer"
+
+
+def test_post_login_access_token_validation_error(base_url):
+    response = requests.post(
+        f"{base_url}/api/v1/login/access-token",
+        data={"username": "admin@example.com"},  # password missing
+    )
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_login_test_token_success(api):
+    response = api.post("/api/v1/login/test-token")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["email"] == "admin@example.com"
+
+
+def test_post_login_test_token_unauthorized(base_url):
+    response = requests.post(f"{base_url}/api/v1/login/test-token")
+    assert response.status_code in (401, 403)
+
+
+# --- Pruebas de Recuperación de Contraseña ---
+
+def test_post_password_recovery_success(api):
+    response = api.post("/api/v1/password-recovery/admin@example.com")
+    assert response.status_code == 200
+    validate(instance=response.json(), schema=MESSAGE_SCHEMA)
+
+
+def test_post_password_recovery_html_content_success(api):
+    response = api.post("/api/v1/password-recovery-html-content/admin@example.com")
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("Content-Type", "")
+    assert isinstance(response.text, str)
+
+
+def test_post_password_recovery_html_content_unauthorized(base_url):
+    response = requests.post(f"{base_url}/api/v1/password-recovery-html-content/admin@example.com")
+    assert response.status_code in (401, 403)
+
+
+def test_post_reset_password_validation_error(base_url):
+    # Contraseña demasiado corta (< 8 caracteres)
+    payload = {"token": "some-token", "new_password": "short"}
+    response = requests.post(f"{base_url}/api/v1/reset-password/", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Pruebas de Registro / Creación Privada de Usuarios ---
+
+def test_post_users_signup_success(base_url):
+    email = random_email()
+    payload = {
+        "email": email,
+        "password": "validpassword123",
+        "full_name": "New User",
+    }
+    response = requests.post(f"{base_url}/api/v1/users/signup", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["email"] == email
+
+
+def test_post_users_signup_validation_error(base_url):
+    payload = {"email": "invalid-email-format", "password": "short"}
+    response = requests.post(f"{base_url}/api/v1/users/signup", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_private_users_success(base_url):
+    email = random_email()
+    payload = {
+        "email": email,
+        "password": "validpassword123",
+        "full_name": "Private Test User",
+        "is_verified": True,
+    }
+    response = requests.post(f"{base_url}/api/v1/private/users/", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["email"] == email
+
+
+def test_post_private_users_validation_error(base_url):
+    payload = {"email": random_email()}  # falta password y full_name
+    response = requests.post(f"{base_url}/api/v1/private/users/", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Pruebas de Gestión de Usuarios (/api/v1/users/) ---
+
+def test_get_users_success(api):
+    response = api.get("/api/v1/users/", params={"skip": 0, "limit": 10})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USERS_PUBLIC_SCHEMA)
+    assert isinstance(data["data"], list)
+    assert isinstance(data["count"], int)
+
+
+def test_get_users_unauthorized(base_url):
+    response = requests.get(f"{base_url}/api/v1/users/")
+    assert response.status_code in (401, 403)
+
+
+def test_get_users_validation_error(api):
+    response = api.get("/api/v1/users/", params={"limit": "not_an_integer"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_users_create_success(api):
+    email = random_email()
+    payload = {
+        "email": email,
+        "password": "password12345",
+        "full_name": "API Created User",
+        "is_active": True,
+        "is_superuser": False,
+    }
+    response = api.post("/api/v1/users/", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["email"] == email
+
+
+def test_post_users_create_validation_error(api):
+    payload = {"email": "not-an-email", "password": "123"}
+    response = api.post("/api/v1/users/", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_get_user_by_id_success(api):
+    email = random_email()
+    user_res = api.post(
+        "/api/v1/users/",
+        json={"email": email, "password": "password12345", "full_name": "User Fetch"},
+    )
+    user_id = user_res.json()["id"]
+
+    response = api.get(f"/api/v1/users/{user_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["id"] == user_id
+
+
+def test_get_user_by_id_validation_error(api):
+    response = api.get("/api/v1/users/not-a-valid-uuid")
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_user_success(api):
+    email = random_email()
+    user_res = api.post(
+        "/api/v1/users/",
+        json={"email": email, "password": "password12345", "full_name": "Old Name"},
+    )
+    user_id = user_res.json()["id"]
+
+    update_payload = {"full_name": "Updated Name"}
+    response = api.patch(f"/api/v1/users/{user_id}", json=update_payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["full_name"] == "Updated Name"
+
+
+def test_patch_user_validation_error(api):
+    email = random_email()
+    user_res = api.post(
+        "/api/v1/users/",
+        json={"email": email, "password": "password12345", "full_name": "Name"},
+    )
+    user_id = user_res.json()["id"]
+
+    response = api.patch(f"/api/v1/users/{user_id}", json={"email": "invalid-email"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_delete_user_success(api):
+    email = random_email()
+    user_res = api.post(
+        "/api/v1/users/",
+        json={"email": email, "password": "password12345", "full_name": "To Delete"},
+    )
+    user_id = user_res.json()["id"]
+
+    response = api.delete(f"/api/v1/users/{user_id}")
+    assert response.status_code == 200
+    validate(instance=response.json(), schema=MESSAGE_SCHEMA)
+
+
+def test_delete_user_validation_error(api):
+    response = api.delete("/api/v1/users/invalid-uuid")
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Pruebas de Usuario Autenticado (/api/v1/users/me) ---
+
+def test_get_users_me_success(api):
+    response = api.get("/api/v1/users/me")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["email"] == "admin@example.com"
+
+
+def test_patch_users_me_success(api):
+    original_user = api.get("/api/v1/users/me").json()
+    original_name = original_user.get("full_name") or "Admin User"
+
+    response = api.patch("/api/v1/users/me", json={"full_name": "Admin Updated"})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USER_PUBLIC_SCHEMA)
+    assert data["full_name"] == "Admin Updated"
+
+    # Restaurar nombre original
+    api.patch("/api/v1/users/me", json={"full_name": original_name})
+
+
+def test_patch_users_me_validation_error(api):
+    response = api.patch("/api/v1/users/me", json={"email": "not-an-email"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_validation_error(api):
+    # Longitudes menores a 8 caracteres
+    payload = {"current_password": "short", "new_password": "short"}
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_delete_users_me_success(base_url):
+    email = random_email()
+    password = "password12345"
+    requests.post(
+        f"{base_url}/api/v1/users/signup",
+        json={"email": email, "password": password, "full_name": "Ephemeral User"},
+    )
+    login_res = requests.post(
+        f"{base_url}/api/v1/login/access-token",
+        data={"username": email, "password": password},
+    )
+    token = login_res.json()["access_token"]
+    user_session = requests.Session()
+    user_session.headers.update({"Authorization": f"Bearer {token}"})
+
+    response = user_session.delete(f"{base_url}/api/v1/users/me")
+    assert response.status_code == 200
+    validate(instance=response.json(), schema=MESSAGE_SCHEMA)
+
+
+# --- Pruebas de Utilidades (/api/v1/utils/) ---
+
+def test_get_utils_health_check_success(base_url):
+    response = requests.get(f"{base_url}/api/v1/utils/health-check/")
+    assert response.status_code == 200
+    assert isinstance(response.json(), bool)
+    assert response.json() is True
+
+
+def test_post_utils_test_email_success(api):
+    response = api.post("/api/v1/utils/test-email/", params={"email_to": "recipient@example.com"})
+    assert response.status_code == 201
+    validate(instance=response.json(), schema=MESSAGE_SCHEMA)
+
+
+def test_post_utils_test_email_validation_error(api):
+    response = api.post("/api/v1/utils/test-email/", params={"email_to": "not-a-valid-email"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_utils_test_email_unauthorized(base_url):
+    response = requests.post(f"{base_url}/api/v1/utils/test-email/?email_to=admin@example.com")
+    assert response.status_code in (401, 403)
+
+
+# --- Pruebas de Items (/api/v1/items/) ---
+
+def test_get_items_success(api):
+    response = api.get("/api/v1/items/", params={"skip": 0, "limit": 10})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEMS_PUBLIC_SCHEMA)
+    assert isinstance(data["data"], list)
+    assert isinstance(data["count"], int)
+
+
+def test_get_items_unauthorized(base_url):
+    response = requests.get(f"{base_url}/api/v1/items/")
+    assert response.status_code in (401, 403)
+
+
+def test_get_items_validation_error(api):
+    response = api.get("/api/v1/items/", params={"skip": "invalid_number"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_items_create_success(api):
+    payload = {"title": "Test Item", "description": "Item description"}
+    response = api.post("/api/v1/items/", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["title"] == payload["title"]
+    assert data["description"] == payload["description"]
+
+
+def test_post_items_create_validation_error(api):
+    # title es obligatorio y minLength: 1
+    response = api.post("/api/v1/items/", json={"description": "No Title"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_get_item_by_id_success(api):
+    created = api.post("/api/v1/items/", json={"title": "Specific Item"}).json()
+    item_id = created["id"]
+
+    response = api.get(f"/api/v1/items/{item_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["id"] == item_id
+    assert data["title"] == "Specific Item"
+
+
+def test_get_item_by_id_validation_error(api):
+    response = api.get("/api/v1/items/not-a-valid-uuid")
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_put_item_success(api):
+    created = api.post("/api/v1/items/", json={"title": "Item to Update"}).json()
+    item_id = created["id"]
+
+    update_payload = {"title": "Updated Item Title", "description": "Updated Description"}
+    response = api.put(f"/api/v1/items/{item_id}", json=update_payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["title"] == update_payload["title"]
+    assert data["description"] == update_payload["description"]
+
+
+def test_put_item_validation_error(api):
+    created = api.post("/api/v1/items/", json={"title": "Item to Put"}).json()
+    item_id = created["id"]
+
+    # title no puede ser string vacío (minLength: 1)
+    response = api.put(f"/api/v1/items/{item_id}", json={"title": ""})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_delete_item_success(api):
+    created = api.post("/api/v1/items/", json={"title": "Item to Delete"}).json()
+    item_id = created["id"]
+
+    response = api.delete(f"/api/v1/items/{item_id}")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=MESSAGE_SCHEMA)
+
+
+def test_delete_item_validation_error(api):
+    response = api.delete("/api/v1/items/invalid-uuid")
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
