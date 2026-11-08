@@ -1,0 +1,17 @@
+{"method": "GET", "url": "http://127.0.0.1:8000/api/v1/users/", "status": 200, "test": "test_generated.py::test_get_users_default_pagination"}
+{"method": "GET", "url": "http://127.0.0.1:8000/api/v1/users/?skip=0&limit=10", "status": 200, "test": "test_generated.py::test_get_users_with_valid_query_params"}
+{"method": "GET", "url": "http://127.0.0.1:8000/api/v1/users/?skip=invalid_number", "status": 422, "test": "test_generated.py::test_get_users_invalid_query_params"}
+{"method": "PATCH", "url": "http://127.0.0.1:8000/api/v1/users/me/password", "status": 422, "test": "test_generated.py::test_patch_user_me_password_validation_error_short_password"}
+{"method": "PATCH", "url": "http://127.0.0.1:8000/api/v1/users/me/password", "status": 422, "test": "test_generated.py::test_patch_user_me_password_missing_fields"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 200, "test": "test_generated.py::test_post_items_success"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 200, "test": "test_generated.py::test_post_items_optional_description_null"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 422, "test": "test_generated.py::test_post_items_validation_error_missing_title"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 422, "test": "test_generated.py::test_post_items_validation_error_empty_title"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 200, "test": "test_generated.py::test_put_items_success"}
+{"method": "PUT", "url": "http://127.0.0.1:8000/api/v1/items/fc3920a7-03d4-4fe2-abdc-bcbaed6928f3", "status": 200, "test": "test_generated.py::test_put_items_success"}
+{"method": "PUT", "url": "http://127.0.0.1:8000/api/v1/items/not-a-valid-uuid", "status": 422, "test": "test_generated.py::test_put_items_validation_error_invalid_uuid"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 200, "test": "test_generated.py::test_put_items_validation_error_empty_title"}
+{"method": "PUT", "url": "http://127.0.0.1:8000/api/v1/items/21a312cd-fce4-445a-95fe-5b4fa30bedc5", "status": 422, "test": "test_generated.py::test_put_items_validation_error_empty_title"}
+{"method": "POST", "url": "http://127.0.0.1:8000/api/v1/items/", "status": 200, "test": "test_generated.py::test_delete_items_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:8000/api/v1/items/927c0c8e-80b4-4061-90cb-753557b58d8a", "status": 200, "test": "test_generated.py::test_delete_items_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:8000/api/v1/items/not-a-valid-uuid", "status": 422, "test": "test_generated.py::test_delete_items_validation_error_invalid_uuid"}

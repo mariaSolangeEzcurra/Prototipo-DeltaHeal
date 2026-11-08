@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="39" time="2.481" timestamp="2026-11-08T13:53:48.409198-05:00" hostname="DESKTOP-KC1SKU0"><testcase classname="test_generated" name="test_post_login_access_token_success" time="0.109" /><testcase classname="test_generated" name="test_post_login_access_token_invalid_data" time="0.010" /><testcase classname="test_generated" name="test_post_test_token_success" time="0.015" /><testcase classname="test_generated" name="test_post_test_token_unauthorized" time="0.007" /><testcase classname="test_generated" name="test_post_password_recovery_success" time="0.010" /><testcase classname="test_generated" name="test_post_password_recovery_html_content_success" time="0.025"><failure message="requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))">..\..\..\..\.venv\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\..\..\.venv\Lib\site-packages\urllib3\connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\urllib3\connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\http\client.py:1430: in getresponse
+    response.begin()
+C:\Python313\Lib\http\client.py:331: in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\http\client.py:300: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+..\..\..\..\.venv\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\..\..\.venv\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\..\..\.venv\Lib\site-packages\urllib3\util\retry.py:510: in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\urllib3\util\util.py:38: in reraise
+    raise value.with_traceback(tb)
+..\..\..\..\.venv\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\..\..\.venv\Lib\site-packages\urllib3\connectionpool.py:540: in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\urllib3\connection.py:638: in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\http\client.py:1430: in getresponse
+    response.begin()
+C:\Python313\Lib\http\client.py:331: in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\http\client.py:300: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+test_generated.py:135: in test_post_password_recovery_html_content_success
+    response = api.post(f"/api/v1/password-recovery-html-content/{email}")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\deltaheal\pytest_plugin.py:59: in request
+    return super().request(method, url, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\deltaheal\pytest_plugin.py:37: in _recording_send
+    resp = _original_send(self, request, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\requests\adapters.py:711: in send
+    raise ConnectionError(err, request=request)
+E   requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))</failure></testcase><testcase classname="test_generated" name="test_post_reset_password_validation_error" time="0.012" /><testcase classname="test_generated" name="test_get_users_success" time="0.057" /><testcase classname="test_generated" name="test_get_users_invalid_query_param" time="0.013" /><testcase classname="test_generated" name="test_post_users_success" time="0.105" /><testcase classname="test_generated" name="test_post_users_validation_error" time="0.012" /><testcase classname="test_generated" name="test_post_users_signup_success" time="0.098" /><testcase classname="test_generated" name="test_post_users_signup_validation_error" time="0.010" /><testcase classname="test_generated" name="test_get_user_by_id_success" time="0.126" /><testcase classname="test_generated" name="test_get_user_by_id_invalid_uuid" time="0.013" /><testcase classname="test_generated" name="test_patch_user_by_id_success" time="0.126" /><testcase classname="test_generated" name="test_patch_user_by_id_validation_error" time="0.013" /><testcase classname="test_generated" name="test_delete_user_by_id_success" time="0.140" /><testcase classname="test_generated" name="test_delete_user_by_id_invalid_uuid" time="0.013" /><testcase classname="test_generated" name="test_get_user_me_success" time="0.013" /><testcase classname="test_generated" name="test_patch_user_me_success" time="0.019" /><testcase classname="test_generated" name="test_patch_user_me_validation_error" time="0.013" /><testcase classname="test_generated" name="test_patch_user_me_password_validation_error" time="0.013" /><testcase classname="test_generated" name="test_delete_user_me_success" time="0.254" /><testcase classname="test_generated" name="test_get_items_success" time="0.020" /><testcase classname="test_generated" name="test_get_items_validation_error" time="0.019" /><testcase classname="test_generated" name="test_post_item_success" time="0.020" /><testcase classname="test_generated" name="test_post_item_validation_error" time="0.013" /><testcase classname="test_generated" name="test_get_item_by_id_success" time="0.026" /><testcase classname="test_generated" name="test_get_item_by_id_invalid_uuid" time="0.012" /><testcase classname="test_generated" name="test_put_item_success" time="0.068" /><testcase classname="test_generated" name="test_put_item_validation_error" time="0.013" /><testcase classname="test_generated" name="test_delete_item_success" time="0.026" /><testcase classname="test_generated" name="test_delete_item_invalid_uuid" time="0.013" /><testcase classname="test_generated" name="test_get_health_check_success" time="0.007" /><testcase classname="test_generated" name="test_post_test_email_success" time="0.021"><failure message="assert 500 == 201&#10; +  where 500 = &lt;Response [500]&gt;.status_code">test_generated.py:442: in test_post_test_email_success
+    assert response.status_code == 201
+E   assert 500 == 201
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_post_test_email_validation_error" time="0.016" /><testcase classname="test_generated" name="test_post_private_user_success" time="0.293" /><testcase classname="test_generated" name="test_post_private_user_validation_error" time="0.010" /></testsuite></testsuites>

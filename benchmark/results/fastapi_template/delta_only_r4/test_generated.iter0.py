@@ -1,0 +1,256 @@
+import uuid
+import pytest
+import requests
+from jsonschema import validate
+
+# JSON Schemas definidos según el OpenAPI
+USERS_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["data", "count"],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["email", "id"],
+                "properties": {
+                    "email": {"type": "string"},
+                    "is_active": {"type": "boolean"},
+                    "is_superuser": {"type": "boolean"},
+                    "full_name": {"type": ["string", "null"]},
+                    "id": {"type": "string"},
+                    "created_at": {"type": ["string", "null"]},
+                },
+            },
+        },
+        "count": {"type": "integer"},
+    },
+}
+
+ITEM_PUBLIC_SCHEMA = {
+    "type": "object",
+    "required": ["title", "id", "owner_id"],
+    "properties": {
+        "title": {"type": "string"},
+        "description": {"type": ["string", "null"]},
+        "id": {"type": "string"},
+        "owner_id": {"type": "string"},
+        "created_at": {"type": ["string", "null"]},
+    },
+}
+
+MESSAGE_SCHEMA = {
+    "type": "object",
+    "required": ["message"],
+    "properties": {
+        "message": {"type": "string"},
+    },
+}
+
+HTTP_VALIDATION_ERROR_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "detail": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["loc", "msg", "type"],
+                "properties": {
+                    "loc": {"type": "array"},
+                    "msg": {"type": "string"},
+                    "type": {"type": "string"},
+                    "input": {},
+                    "ctx": {"type": "object"},
+                },
+            },
+        }
+    },
+}
+
+
+# --- Tests para GET /api/v1/users/ ---
+
+def test_get_users_default_success(api):
+    response = api.get("/api/v1/users/")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USERS_PUBLIC_SCHEMA)
+    assert isinstance(data["data"], list)
+    assert isinstance(data["count"], int)
+    assert data["count"] >= len(data["data"])
+
+
+def test_get_users_with_valid_pagination(api):
+    response = api.get("/api/v1/users/", params={"skip": 0, "limit": 5})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=USERS_PUBLIC_SCHEMA)
+    assert len(data["data"]) <= 5
+
+
+def test_get_users_invalid_skip_type(api):
+    response = api.get("/api/v1/users/", params={"skip": "not-an-int"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_get_users_invalid_limit_type(api):
+    response = api.get("/api/v1/users/", params={"limit": "not-an-int"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Tests para PATCH /api/v1/users/me/password ---
+
+def test_patch_users_me_password_validation_error_short_password(api):
+    payload = {
+        "current_password": "short",
+        "new_password": "new_valid_password_123"
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_validation_error_missing_field(api):
+    payload = {
+        "current_password": "changethis"
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_validation_error_exceed_max_length(api):
+    payload = {
+        "current_password": "changethis",
+        "new_password": "a" * 129
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_patch_users_me_password_roundtrip_success(api):
+    initial_pwd = "changethis"
+    temp_pwd = "temporary_password_123"
+
+    # Actualiza a contraseña temporal
+    res_update = api.patch(
+        "/api/v1/users/me/password",
+        json={"current_password": initial_pwd, "new_password": temp_pwd}
+    )
+    assert res_update.status_code == 200
+    validate(instance=res_update.json(), schema=MESSAGE_SCHEMA)
+
+    # Restaura inmediatamente la contraseña original del superusuario
+    res_restore = api.patch(
+        "/api/v1/users/me/password",
+        json={"current_password": temp_pwd, "new_password": initial_pwd}
+    )
+    assert res_restore.status_code == 200
+    validate(instance=res_restore.json(), schema=MESSAGE_SCHEMA)
+
+
+# --- Tests para POST /api/v1/items/ ---
+
+def test_post_items_success(api):
+    title = f"Test Item {uuid.uuid4().hex[:8]}"
+    desc = "Item created for testing purposes"
+    response = api.post("/api/v1/items/", json={"title": title, "description": desc})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["title"] == title
+    assert data["description"] == desc
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{data['id']}")
+
+
+def test_post_items_missing_required_title(api):
+    response = api.post("/api/v1/items/", json={"description": "Missing title"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_items_empty_title_validation_error(api):
+    response = api.post("/api/v1/items/", json={"title": "", "description": "Empty title"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_post_items_title_exceeding_max_length(api):
+    response = api.post("/api/v1/items/", json={"title": "T" * 256})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+# --- Tests para PUT /api/v1/items/{id} ---
+
+def test_put_item_success(api):
+    create_res = api.post(
+        "/api/v1/items/",
+        json={"title": f"Initial {uuid.uuid4().hex[:6]}", "description": "Initial desc"}
+    )
+    assert create_res.status_code == 200
+    item_id = create_res.json()["id"]
+
+    updated_title = f"Updated {uuid.uuid4().hex[:6]}"
+    updated_desc = "Updated desc"
+    response = api.put(
+        f"/api/v1/items/{item_id}",
+        json={"title": updated_title, "description": updated_desc}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=ITEM_PUBLIC_SCHEMA)
+    assert data["id"] == item_id
+    assert data["title"] == updated_title
+    assert data["description"] == updated_desc
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{item_id}")
+
+
+def test_put_item_invalid_uuid(api):
+    response = api.put("/api/v1/items/not-a-valid-uuid", json={"title": "Valid Title"})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+
+def test_put_item_invalid_body_empty_title(api):
+    create_res = api.post(
+        "/api/v1/items/",
+        json={"title": f"Item {uuid.uuid4().hex[:6]}"}
+    )
+    assert create_res.status_code == 200
+    item_id = create_res.json()["id"]
+
+    response = api.put(f"/api/v1/items/{item_id}", json={"title": ""})
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{item_id}")
+
+
+# --- Tests para DELETE /api/v1/items/{id} ---
+
+def test_delete_item_success(api):
+    create_res = api.post(
+        "/api/v1/items/",
+        json={"title": f"Item to delete {uuid.uuid4().hex[:6]}"}
+    )
+    assert create_res.status_code == 200
+    item_id = create_res.json()["id"]
+
+    response = api.delete(f"/api/v1/items/{item_id}")
+    assert response.status_code == 200
+    validate(instance=response.json(), schema=MESSAGE_SCHEMA)
+
+
+def test_delete_item_invalid_uuid(api):
+    response = api.delete("/api/v1/items/invalid-uuid-format")
+    assert response.status_code == 422
+    validate(instance=response.json(), schema=HTTP_VALIDATION_ERROR_SCHEMA)

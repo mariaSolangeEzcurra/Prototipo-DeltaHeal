@@ -1,0 +1,340 @@
+{
+  "timestamp": "2026-11-08T13:59:06",
+  "mode": "deltaheal",
+  "run_id": "deltaheal_r5",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /api/v1/items/{id}",
+      "PATCH /api/v1/users/me/password"
+    ],
+    "modified": [
+      "POST /api/v1/items/",
+      "DELETE /api/v1/items/{id}",
+      "GET /api/v1/users/"
+    ],
+    "removed": [],
+    "unchanged_count": 18
+  },
+  "operations_total": 23,
+  "target_operations": [
+    "POST /api/v1/items/",
+    "DELETE /api/v1/items/{id}",
+    "PUT /api/v1/items/{id}",
+    "GET /api/v1/users/",
+    "PATCH /api/v1/users/me/password"
+  ],
+  "context_operations": 5,
+  "spec_context_chars": 8217,
+  "spec_full_chars": 25117,
+  "spec_context_tokens_est": 2054,
+  "spec_full_tokens_est": 6279,
+  "context_reduction": 0.6729,
+  "llm_calls": 1,
+  "prompt_tokens": 2560,
+  "completion_tokens": 1925,
+  "total_tokens": 4485,
+  "generation_tokens": 4485,
+  "repair_tokens": 0,
+  "cost_usd": 0.009139,
+  "llm_latency_s": 53.751,
+  "generated_tests": 12,
+  "executable_tests": 12,
+  "executable_rate": 1.0,
+  "passed": 12,
+  "assertion_failures": 0,
+  "runtime_errors": 0,
+  "connection_errors": 0,
+  "heal_iterations": 0,
+  "http_coverage": 0.9,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 0,
+  "pytest_duration_s": 3.746,
+  "test_cases": [
+    {
+      "test": "test_generated::test_get_users_default_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_with_pagination",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_invalid_params_validation_error",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_users_me_password_validation_error_short_password",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_users_me_password_validation_error_missing_field",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_items_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_items_validation_error_missing_title",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_items_validation_error_empty_title",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_items_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_items_validation_error_invalid_uuid",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_items_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_items_validation_error_invalid_uuid",
+      "outcome": "passed",
+      "message": ""
+    }
+  ],
+  "possible_regressions": [],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 1.0,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 12,
+      "total": 12,
+      "broken": 0,
+      "assertion_failures": 0,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 2560,
+      "completion_tokens": 1925,
+      "latency_s": 53.750621799961664,
+      "cost_usd": 0.00913875,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.9,
+    "documented_pairs": 10,
+    "covered_pairs": 9,
+    "operations_hit": 5,
+    "operations_total": 5,
+    "total_requests": 16,
+    "unmatched_requests": 0,
+    "undocumented_observed": {},
+    "per_operation": {
+      "POST /api/v1/items/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "DELETE /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "PUT /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "GET /api/v1/users/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "PATCH /api/v1/users/me/password": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          422
+        ],
+        "covered": [
+          "422"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.2143,
+  "duration_s": 57.943,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-08T13:58:49",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:58:52",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans  -> código 0.  Network fastapi_bench_default  Removed",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:00",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml up -d db backend  -> código 0.  Container fastapi_bench-backend-1  Started",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:03",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh  -> código 0. INFO:__main__:Initial data created",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:05",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /api/v1/utils/health-check/ respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:05",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin@example.com' -> HTTP 200; token obtenido (165 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:05",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=deltaheal; modelo=gemini-3.8-flash; delta=sí; self-healing=sí",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:06",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\results\\fastapi_template\\scenario\\base.yaml; versión nueva: C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\results\\fastapi_template\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-08T13:59:06",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 3 modificadas, 0 eliminadas, 18 sin cambios. Nuevas: PUT /api/v1/items/{id}, PATCH /api/v1/users/me/password. Modificadas: POST /api/v1/items/, DELETE /api/v1/items/{id}, GET /api/v1/users/",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:06",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:8000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:59:06",
+      "paso": "Construcción del contexto",
+      "detalle": "sub-especificación con 5 de 23 operaciones; 8,217 caracteres (completa: 25,117)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-08T14:00:00",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "2,560 tokens de entrada + 1,925 de salida; 12 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "12 tests ejecutados, 12 pasan, 0 fallan por aserción, 0 con error de código (exit=0, 3.7s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Bucle finalizado",
+      "detalle": "no quedan errores en el código de prueba",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (12/12)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "9/10 pares (operación, código) cubiertos = 90.0%; 16 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=1.0; tokens=4485; duración=57.943 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-08T14:00:03",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}

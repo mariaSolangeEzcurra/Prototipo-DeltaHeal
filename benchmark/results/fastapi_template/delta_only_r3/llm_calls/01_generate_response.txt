@@ -1,0 +1,273 @@
+```python
+import uuid
+import pytest
+import requests
+from jsonschema import validate
+
+# JSON Schemas basándose estrictamente en los componentes de OpenAPI
+SCHEMA_HTTP_VALIDATION_ERROR = {
+    "type": "object",
+    "properties": {
+        "detail": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "loc": {
+                        "type": "array",
+                        "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+                    },
+                    "msg": {"type": "string"},
+                    "type": {"type": "string"},
+                    "input": {},
+                    "ctx": {"type": "object"},
+                },
+                "required": ["loc", "msg", "type"],
+            },
+        }
+    },
+}
+
+SCHEMA_USER_PUBLIC = {
+    "type": "object",
+    "properties": {
+        "email": {"type": "string", "maxLength": 255},
+        "is_active": {"type": "boolean"},
+        "is_superuser": {"type": "boolean"},
+        "full_name": {"anyOf": [{"type": "string", "maxLength": 255}, {"type": "null"}]},
+        "id": {"type": "string"},
+        "created_at": {
+            "anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]
+        },
+    },
+    "required": ["email", "id"],
+}
+
+SCHEMA_USERS_PUBLIC = {
+    "type": "object",
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": SCHEMA_USER_PUBLIC,
+        },
+        "count": {"type": "integer"},
+    },
+    "required": ["data", "count"],
+}
+
+SCHEMA_ITEM_PUBLIC = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "minLength": 1, "maxLength": 255},
+        "description": {
+            "anyOf": [{"type": "string", "maxLength": 255}, {"type": "null"}]
+        },
+        "id": {"type": "string"},
+        "owner_id": {"type": "string"},
+        "created_at": {
+            "anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]
+        },
+    },
+    "required": ["title", "id", "owner_id"],
+}
+
+SCHEMA_MESSAGE = {
+    "type": "object",
+    "properties": {
+        "message": {"type": "string"},
+    },
+    "required": ["message"],
+}
+
+
+# --- Pruebas para GET /api/v1/users/ ---
+
+
+def test_get_users_success_default_params(api):
+    response = api.get("/api/v1/users/")
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_USERS_PUBLIC)
+    assert isinstance(data["data"], list)
+    assert isinstance(data["count"], int)
+    assert data["count"] >= len(data["data"])
+
+
+def test_get_users_success_pagination_params(api):
+    response = api.get("/api/v1/users/", params={"skip": 0, "limit": 5})
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_USERS_PUBLIC)
+    assert len(data["data"]) <= 5
+
+
+def test_get_users_invalid_params_validation_error(api):
+    response = api.get("/api/v1/users/", params={"skip": "invalid_number", "limit": "abc"})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+# --- Pruebas para PATCH /api/v1/users/me/password ---
+
+
+def test_patch_users_me_password_validation_error_missing_fields(api):
+    response = api.patch("/api/v1/users/me/password", json={})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+def test_patch_users_me_password_validation_error_short_password(api):
+    payload = {
+        "current_password": "short",
+        "new_password": "short",
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+def test_patch_users_me_password_validation_error_invalid_types(api):
+    payload = {
+        "current_password": 12345678,
+        "new_password": ["new_pass_array"],
+    }
+    response = api.patch("/api/v1/users/me/password", json=payload)
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+def test_patch_users_me_password_success(api):
+    # Actualiza la contraseña del admin y la revierte para mantener el estado del entorno
+    payload_to_new = {
+        "current_password": "changethis",
+        "new_password": "changethis_new",
+    }
+    response_update = api.patch("/api/v1/users/me/password", json=payload_to_new)
+    try:
+        assert response_update.status_code == 200
+        data = response_update.json()
+        validate(instance=data, schema=SCHEMA_MESSAGE)
+    finally:
+        # Revertir siempre para asegurar la idempotencia del entorno
+        if response_update.status_code == 200:
+            payload_revert = {
+                "current_password": "changethis_new",
+                "new_password": "changethis",
+            }
+            api.patch("/api/v1/users/me/password", json=payload_revert)
+
+
+# --- Pruebas para POST /api/v1/items/ ---
+
+
+def test_post_items_success(api):
+    item_payload = {
+        "title": f"Test Item {uuid.uuid4().hex[:8]}",
+        "description": "Item description for testing",
+    }
+    response = api.post("/api/v1/items/", json=item_payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_ITEM_PUBLIC)
+    assert data["title"] == item_payload["title"]
+    assert data["description"] == item_payload["description"]
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{data['id']}")
+
+
+def test_post_items_success_without_description(api):
+    item_payload = {
+        "title": f"Item No Desc {uuid.uuid4().hex[:8]}"
+    }
+    response = api.post("/api/v1/items/", json=item_payload)
+    assert response.status_code == 200
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_ITEM_PUBLIC)
+    assert data["title"] == item_payload["title"]
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{data['id']}")
+
+
+def test_post_items_validation_error_missing_title(api):
+    response = api.post("/api/v1/items/", json={"description": "No title provided"})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+def test_post_items_validation_error_empty_title(api):
+    response = api.post("/api/v1/items/", json={"title": ""})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+# --- Pruebas para PUT /api/v1/items/{id} ---
+
+
+def test_put_items_success(api):
+    # Crear item para actualizar
+    create_payload = {"title": f"Initial {uuid.uuid4().hex[:8]}", "description": "Initial desc"}
+    create_res = api.post("/api/v1/items/", json=create_payload)
+    assert create_res.status_code == 200
+    item_id = create_res.json()["id"]
+
+    update_payload = {
+        "title": f"Updated {uuid.uuid4().hex[:8]}",
+        "description": "Updated desc",
+    }
+    put_res = api.put(f"/api/v1/items/{item_id}", json=update_payload)
+    assert put_res.status_code == 200
+    data = put_res.json()
+    validate(instance=data, schema=SCHEMA_ITEM_PUBLIC)
+    assert data["id"] == item_id
+    assert data["title"] == update_payload["title"]
+    assert data["description"] == update_payload["description"]
+
+    # Limpieza
+    api.delete(f"/api/v1/items/{item_id}")
+
+
+def test_put_items_validation_error_invalid_uuid(api):
+    response = api.put("/api/v1/items/not-a-valid-uuid", json={"title": "New Title"})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+def test_put_items_validation_error_empty_title(api):
+    random_uuid = str(uuid.uuid4())
+    response = api.put(f"/api/v1/items/{random_uuid}", json={"title": ""})
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+
+
+# --- Pruebas para DELETE /api/v1/items/{id} ---
+
+
+def test_delete_items_success(api):
+    # Crear item para eliminar
+    create_payload = {"title": f"To Delete {uuid.uuid4().hex[:8]}"}
+    create_res = api.post("/api/v1/items/", json=create_payload)
+    assert create_res.status_code == 200
+    item_id = create_res.json()["id"]
+
+    delete_res = api.delete(f"/api/v1/items/{item_id}")
+    assert delete_res.status_code == 200
+    data = delete_res.json()
+    validate(instance=data, schema=SCHEMA_MESSAGE)
+
+
+def test_delete_items_validation_error_invalid_uuid(api):
+    response = api.delete("/api/v1/items/not-a-valid-uuid")
+    assert response.status_code == 422
+    data = response.json()
+    validate(instance=data, schema=SCHEMA_HTTP_VALIDATION_ERROR)
+```

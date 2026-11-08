@@ -1,0 +1,500 @@
+{
+  "timestamp": "2026-11-08T13:46:06",
+  "mode": "llm_full",
+  "run_id": "llm_full_r4",
+  "model": "gemini-3.8-flash",
+  "provider": "gemini",
+  "spec_file_changed": true,
+  "delta": {
+    "added": [
+      "PUT /api/v1/items/{id}",
+      "PATCH /api/v1/users/me/password"
+    ],
+    "modified": [
+      "POST /api/v1/items/",
+      "DELETE /api/v1/items/{id}",
+      "GET /api/v1/users/"
+    ],
+    "removed": [],
+    "unchanged_count": 18
+  },
+  "operations_total": 23,
+  "target_operations": [
+    "POST /api/v1/items/",
+    "DELETE /api/v1/items/{id}",
+    "PUT /api/v1/items/{id}",
+    "GET /api/v1/users/",
+    "PATCH /api/v1/users/me/password"
+  ],
+  "context_operations": 23,
+  "spec_context_chars": 25117,
+  "spec_full_chars": 25117,
+  "spec_context_tokens_est": 6279,
+  "spec_full_tokens_est": 6279,
+  "context_reduction": 0.0,
+  "llm_calls": 1,
+  "prompt_tokens": 6664,
+  "completion_tokens": 5516,
+  "total_tokens": 12180,
+  "generation_tokens": 12180,
+  "repair_tokens": 0,
+  "cost_usd": 0.025683,
+  "llm_latency_s": 148.15,
+  "generated_tests": 42,
+  "executable_tests": 41,
+  "executable_rate": 0.9762,
+  "passed": 40,
+  "assertion_failures": 1,
+  "runtime_errors": 0,
+  "connection_errors": 1,
+  "heal_iterations": 0,
+  "http_coverage": 0.9,
+  "reasoning_tokens": 0,
+  "llm_truncated_calls": 0,
+  "skipped": 0,
+  "collection_error": false,
+  "pytest_exit_code": 1,
+  "pytest_duration_s": 6.999,
+  "test_cases": [
+    {
+      "test": "test_generated::test_get_health_check_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_test_email_success",
+      "outcome": "assertion",
+      "message": "assert 500 == 201\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "test": "test_generated::test_post_test_email_invalid_email_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_login_access_token_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_login_access_token_validation_error_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_login_test_token_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_login_test_token_unauthorized_401",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_password_recovery_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_reset_password_invalid_token_400_or_404",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_reset_password_validation_error_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_password_recovery_html_content_success",
+      "outcome": "connection_error",
+      "message": "requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "test": "test_generated::test_post_password_recovery_html_content_unauthorized_401",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_signup_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_signup_invalid_data_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_private_users_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_private_users_missing_fields_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_list_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_users_list_invalid_params_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_create_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_users_create_validation_error_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_user_me_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_me_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_me_invalid_email_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_me_password_invalid_current_password",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_patch_user_me_password_validation_error_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_user_me_as_separate_user",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_items_list_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_items_list_invalid_params_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_items_create_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_post_items_create_missing_title_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_item_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_get_item_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_item_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_put_item_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_item_by_id_success",
+      "outcome": "passed",
+      "message": ""
+    },
+    {
+      "test": "test_generated::test_delete_item_by_id_invalid_uuid_422",
+      "outcome": "passed",
+      "message": ""
+    }
+  ],
+  "possible_regressions": [
+    {
+      "test": "test_generated::test_post_test_email_success",
+      "message": "assert 500 == 201\n +  where 500 = <Response [500]>.status_code"
+    }
+  ],
+  "repair_mode": "patch",
+  "heal_stop_reason": "clean",
+  "executable_rate_before_heal": 0.9762,
+  "iterations": [
+    {
+      "index": 0,
+      "executable": 41,
+      "total": 42,
+      "broken": 0,
+      "assertion_failures": 1,
+      "collection_error": false,
+      "action": "done"
+    }
+  ],
+  "llm_calls_detail": [
+    {
+      "phase": "generate",
+      "prompt_tokens": 6664,
+      "completion_tokens": 5516,
+      "latency_s": 148.1501050000079,
+      "cost_usd": 0.025683,
+      "reasoning_tokens": 0,
+      "truncated": false
+    }
+  ],
+  "static_ok": true,
+  "coverage": {
+    "http_coverage": 0.9,
+    "documented_pairs": 10,
+    "covered_pairs": 9,
+    "operations_hit": 5,
+    "operations_total": 5,
+    "total_requests": 49,
+    "unmatched_requests": 0,
+    "undocumented_observed": {
+      "PATCH /api/v1/users/me/password": [
+        400
+      ]
+    },
+    "per_operation": {
+      "POST /api/v1/items/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "DELETE /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "PUT /api/v1/items/{id}": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "GET /api/v1/users/": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          200,
+          422
+        ],
+        "covered": [
+          "200",
+          "422"
+        ]
+      },
+      "PATCH /api/v1/users/me/password": {
+        "documented": [
+          "200",
+          "422"
+        ],
+        "observed": [
+          400,
+          422
+        ],
+        "covered": [
+          "422"
+        ]
+      }
+    }
+  },
+  "http_coverage_all_ops": 0.8571,
+  "duration_s": 155.784,
+  "status": "ok",
+  "steps": [
+    {
+      "hora": "2026-11-08T13:45:49",
+      "paso": "Reinicio de la API",
+      "detalle": "intento 1: entorno limpio antes de la corrida",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:45:53",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans  -> código 0.  Network fastapi_bench_default  Removed",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:45:59",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml up -d db backend  -> código 0.  Container fastapi_bench-backend-1  Started",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:03",
+      "paso": "Comando de entorno",
+      "detalle": "$ docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh  -> código 0. INFO:__main__:Initial data created",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:05",
+      "paso": "Prueba de humo",
+      "detalle": "OK: GET /api/v1/utils/health-check/ respondieron lo esperado",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:05",
+      "paso": "Autenticación",
+      "detalle": "login como 'admin@example.com' -> HTTP 200; token obtenido (165 caracteres, no se guarda por seguridad)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:05",
+      "paso": "Inicio de la corrida",
+      "detalle": "configuración=llm_full; modelo=gemini-3.8-flash; delta=no; self-healing=no",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:06",
+      "paso": "Carga de especificaciones",
+      "detalle": "versión base: C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\results\\fastapi_template\\scenario\\base.yaml; versión nueva: C:\\Users\\Usuario\\Documents\\U\\TAIS\\Prototipo-DeltaHeal\\benchmark\\results\\fastapi_template\\scenario\\head.yaml; ¿cambió el contrato?: sí",
+      "archivo": "spec_head.yaml"
+    },
+    {
+      "hora": "2026-11-08T13:46:06",
+      "paso": "Análisis delta",
+      "detalle": "2 nuevas, 3 modificadas, 0 eliminadas, 18 sin cambios. Nuevas: PUT /api/v1/items/{id}, PATCH /api/v1/users/me/password. Modificadas: POST /api/v1/items/, DELETE /api/v1/items/{id}, GET /api/v1/users/",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:06",
+      "paso": "Verificación de la API",
+      "detalle": "responde en http://127.0.0.1:8000",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:46:06",
+      "paso": "Construcción del contexto",
+      "detalle": "especificación completa (23 operaciones); 25,117 caracteres (completa: 25,117)",
+      "archivo": "spec_context.yaml"
+    },
+    {
+      "hora": "2026-11-08T13:48:34",
+      "paso": "Generación de pruebas con el LLM",
+      "detalle": "6,664 tokens de entrada + 5,516 de salida; 42 funciones de test; respuesta cortada: no",
+      "archivo": "llm_calls/01_generate_prompt.txt"
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Ejecución de pruebas (iteración 0)",
+      "detalle": "42 tests ejecutados, 40 pasan, 1 fallan por aserción, 0 con error de código, 1 sin conexión (exit=1, 7.0s)",
+      "archivo": "test_generated.iter0.py"
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Bucle finalizado",
+      "detalle": "no quedan errores en el código de prueba (1 fallas de aserción se reportan como posibles regresiones, no se reparan)",
+      "archivo": ""
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Selección de la versión final",
+      "detalle": "se conserva la versión con más tests ejecutables (41/42)",
+      "archivo": "test_generated.py"
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Cálculo de cobertura HTTP",
+      "detalle": "9/10 pares (operación, código) cubiertos = 90.0%; 49 peticiones registradas",
+      "archivo": "http_final.jsonl"
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Fin",
+      "detalle": "estado=ok; tasa ejecutable=0.9762; tokens=12180; duración=155.784 s",
+      "archivo": "report.json"
+    },
+    {
+      "hora": "2026-11-08T13:48:41",
+      "paso": "Estado de la API al terminar",
+      "detalle": "ok",
+      "archivo": ""
+    }
+  ]
+}
