@@ -1,0 +1,304 @@
+### SYSTEM
+Eres un ingeniero de QA experto en testing de APIs REST con Python y Pytest.
+Generas pruebas de regresión ejecutables a partir de contratos OpenAPI.
+
+Reglas estrictas del código que produces:
+1. Devuelve UN único bloque ```python``` con un archivo Pytest completo; nada de texto fuera del bloque.
+2. Usa SOLO la fixture `api` (ya provista por conftest; NO la definas). `api` es un requests.Session
+   con base URL: llama `api.get("/ruta")`, `api.post("/ruta", json=...)`, etc. con rutas relativas.
+3. Librerías permitidas: pytest, requests, json, uuid, random, string, datetime, re y jsonschema.
+4. Cada test debe ser independiente: si necesita un recurso existente, créalo primero en el propio test
+   (o en una fixture local) y usa el id devuelto. No dependas del orden de ejecución.
+5. Cubre para cada operación el mayor número posible de códigos de respuesta DOCUMENTADOS
+   (casos exitosos, 4xx por datos inválidos, recursos inexistentes, etc.).
+6. Verifica el código de estado y, cuando la respuesta tenga esquema, los campos requeridos y sus tipos.
+7. No uses time.sleep, no hagas llamadas a hosts externos, no leas variables de entorno.
+8. Nombres de test descriptivos: test_<metodo>_<recurso>_<escenario>.
+
+
+### USER
+Genera pruebas de regresión Pytest para las operaciones de la siguiente especificación OpenAPI.
+La especificación contiene SOLO las operaciones que cambiaron en este commit (nuevas o modificadas) y los componentes que usan. Genera pruebas para todas ellas.
+Entorno: la fixture `api` YA está autenticada (incluye el header de autorización); no hagas login para usarla. Para probar respuestas sin autenticación (401/403) crea una sesión sin credenciales: `requests.get(base_url + ruta)`, usando la fixture `base_url`.
+Datos del entorno de pruebas: Usuarios existentes: name1/pass1 y name2/pass2 (normales) y admin/pass1 (administrador). La fixture api tiene la sesión del usuario admin. Los libros existentes tienen títulos con el formato bookTitle<número>. Usa nombres de usuario y títulos únicos al crear datos nuevos.
+<openapi_spec>
+openapi: 3.0.1
+info:
+  title: VAmPI
+  description: OpenAPI v3 specs for VAmPI
+  version: '0.1'
+servers:
+- url: http://localhost:5000
+paths:
+  /users/v1/{username}:
+    delete:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Deletes user by username (Only Admins)
+      description: Deletes user by username (Only Admins)
+      operationId: api_views.users.delete_user
+      parameters:
+      - name: username
+        in: path
+        description: Delete username
+        required: true
+        schema:
+          type: string
+          example: name1
+      responses:
+        '200':
+          description: Successfully deleted user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User deleted.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                    enum:
+                    - fail
+                  message:
+                    type: string
+                    example: Only Admins may delete users!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                    enum:
+                    - fail
+                  message:
+                    type: string
+                    example: User not found!
+  /users/v1/{username}/password:
+    put:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Update users password
+      description: Update users password
+      operationId: api_views.users.update_password
+      parameters:
+      - name: username
+        in: path
+        description: username to update password
+        required: true
+        schema:
+          type: string
+          example: name1
+      requestBody:
+        description: field to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: pass4
+        required: true
+      responses:
+        '204':
+          description: Successfully updated users password
+          content: {}
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Malformed Data
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+  /books/v1:
+    post:
+      security:
+      - bearerAuth: []
+      tags:
+      - books
+      summary: Add new book
+      description: Add new book
+      operationId: api_views.books.add_new_book
+      requestBody:
+        description: Add new book with title and secret content only available to the user who added it.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                book_title:
+                  type: string
+                  example: book99
+                secret:
+                  type: string
+                  example: pass1secret
+        required: true
+      responses:
+        '200':
+          description: Successfully added a book
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Book has been added.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Book Already exists!
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+  /books/v1/{book_title}:
+    get:
+      security:
+      - bearerAuth: []
+      tags:
+      - books
+      summary: Retrieves book by title along with secret
+      description: Retrieves book by title along with secret. Only the owner may retrieve it
+      operationId: api_views.books.get_by_title
+      parameters:
+      - name: book_title
+        in: path
+        description: retrieve book data
+        required: true
+        schema:
+          type: string
+          example: bookTitle77
+      responses:
+        '200':
+          description: Successfully retrieve book info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    book_title:
+                      type: string
+                      example: bookTitle77
+                    owner:
+                      type: string
+                      example: name1
+                    secret:
+                      type: string
+                      example: secret for bookTitle77
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Book not found!
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: models.user_model.User.decode_auth_token
+
+</openapi_spec>
+

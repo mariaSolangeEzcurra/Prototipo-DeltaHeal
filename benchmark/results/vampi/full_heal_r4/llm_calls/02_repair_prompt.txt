@@ -1,0 +1,1309 @@
+### SYSTEM
+Eres un ingeniero de QA experto en testing de APIs REST con Python y Pytest.
+Generas pruebas de regresión ejecutables a partir de contratos OpenAPI.
+
+Reglas estrictas del código que produces:
+1. Devuelve UN único bloque ```python``` con un archivo Pytest completo; nada de texto fuera del bloque.
+2. Usa SOLO la fixture `api` (ya provista por conftest; NO la definas). `api` es un requests.Session
+   con base URL: llama `api.get("/ruta")`, `api.post("/ruta", json=...)`, etc. con rutas relativas.
+3. Librerías permitidas: pytest, requests, json, uuid, random, string, datetime, re y jsonschema.
+4. Cada test debe ser independiente: si necesita un recurso existente, créalo primero en el propio test
+   (o en una fixture local) y usa el id devuelto. No dependas del orden de ejecución.
+5. Cubre para cada operación el mayor número posible de códigos de respuesta DOCUMENTADOS
+   (casos exitosos, 4xx por datos inválidos, recursos inexistentes, etc.).
+6. Verifica el código de estado y, cuando la respuesta tenga esquema, los campos requeridos y sus tipos.
+7. No uses time.sleep, no hagas llamadas a hosts externos, no leas variables de entorno.
+8. Nombres de test descriptivos: test_<metodo>_<recurso>_<escenario>.
+
+Ahora actúas como reparador: recibes un archivo Pytest que falló al ejecutarse y los errores capturados.
+Corrige SOLO los defectos del código de prueba (errores de sintaxis, imports, nombres, fixtures,
+construcción de payloads, rutas mal formadas, parseo de JSON, etc.).
+No modifiques tests que ya pasan. No elimines tests salvo que sean imposibles de corregir.
+NUNCA cambies una aserción para que acepte un comportamiento que contradice la especificación:
+esas fallas pueden ser regresiones reales de la API.
+Devuelve el archivo completo corregido en un único bloque ```python```.
+
+
+### USER
+Iteración de reparación 1/3.
+
+<openapi_spec>
+openapi: 3.0.1
+info:
+  title: VAmPI
+  description: OpenAPI v3 specs for VAmPI
+  version: '0.1'
+servers:
+- url: http://localhost:5000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: models.user_model.User.decode_auth_token
+paths:
+  /createdb:
+    get:
+      tags:
+      - db-init
+      summary: Creates and populates the database with dummy data
+      description: Creates and populates the database with dummy data
+      operationId: api_views.main.populate_db
+      responses:
+        '200':
+          description: Creates and populates the database with dummy data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Database populated.
+  /:
+    get:
+      tags:
+      - home
+      summary: VAmPI home
+      description: VAmPI is a vulnerable on purpose API. It was created in order to evaluate the efficiency of third party
+        tools in identifying vulnerabilities in APIs but it can also be used in learning/teaching purposes.
+      operationId: api_views.main.basic
+      responses:
+        '200':
+          description: Home - Help
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: VAmPI the Vulnerable API
+                  help:
+                    type: string
+                    example: VAmPI is a vulnerable on purpose API. It was created in order to evaluate the efficiency of third
+                      party tools in identifying vulnerabilities in APIs but it can also be used in learning/teaching purposes.
+                  vulnerable:
+                    type: number
+                    example: 1
+  /users/v1:
+    get:
+      tags:
+      - users
+      summary: Retrieves all users
+      description: Displays all users with basic information
+      operationId: api_views.users.get_all_users
+      responses:
+        '200':
+          description: See basic info about all users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        email:
+                          type: string
+                          example: mail1@mail.com
+                        username:
+                          type: string
+                          example: name1
+  /users/v1/_debug:
+    get:
+      tags:
+      - users
+      summary: Retrieves all details for all users
+      description: Displays all details for all users
+      operationId: api_views.users.debug
+      responses:
+        '200':
+          description: See all details of the users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        admin:
+                          type: boolean
+                          example: false
+                        email:
+                          type: string
+                          example: mail1@mail.com
+                        password:
+                          type: string
+                          example: pass1
+                        username:
+                          type: string
+                          example: name1
+  /users/v1/register:
+    post:
+      tags:
+      - users
+      summary: Register new user
+      description: Register new user
+      operationId: api_views.users.register_user
+      requestBody:
+        description: Username of the user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: name1
+                password:
+                  type: string
+                  example: pass1
+                email:
+                  type: string
+                  example: user@tempmail.com
+        required: true
+      responses:
+        '200':
+          description: Successfully created user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully registered. Login to receive an auth token.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '400':
+          description: Invalid request
+          content: {}
+  /users/v1/login:
+    post:
+      tags:
+      - users
+      summary: Login to VAmPI
+      description: Login to VAmPI
+      operationId: api_views.users.login_user
+      requestBody:
+        description: Username of the user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: name1
+                password:
+                  type: string
+                  example: pass1
+        required: true
+      responses:
+        '200':
+          description: Sucessfully logged in user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_token:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2NzAxNjA2MTcsImlhdCI6MTY3MDE2MDU1Nywic3ViIjoiSm9obi5Eb2UifQ.n17N4AxTbL4_z65-NR46meoytauPDjImUxrLiUMSTQw
+                  message:
+                    type: string
+                    example: Successfully logged in.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Password is not correct for the given username.
+  /me:
+    get:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Retrieves currently logged in user
+      description: Displays information about the currently authenticated user
+      operationId: api_views.users.me
+      responses:
+        '200':
+          description: Display current user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      admin:
+                        type: boolean
+                        example: false
+                      email:
+                        type: string
+                        example: mail1@mail.com
+                      username:
+                        type: string
+                        example: name1
+                  status:
+                    type: string
+                    example: success
+        '401':
+          description: Unauthorized access due to expired, invalid, or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    enum:
+                    - Signature expired. Please log in again.
+                    - Invalid token. Please log in again.
+  /users/v1/{username}:
+    get:
+      tags:
+      - users
+      summary: Retrieves user by username
+      description: Displays user by username
+      operationId: api_views.users.get_by_username
+      parameters:
+      - name: username
+        in: path
+        description: retrieve username data
+        required: true
+        schema:
+          type: string
+          example: name1
+      responses:
+        '200':
+          description: Successfully display user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: name1
+                  email:
+                    type: string
+                    example: mail1@mail.com
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+    delete:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Deletes user by username (Only Admins)
+      description: Deletes user by username (Only Admins)
+      operationId: api_views.users.delete_user
+      parameters:
+      - name: username
+        in: path
+        description: Delete username
+        required: true
+        schema:
+          type: string
+          example: name1
+      responses:
+        '200':
+          description: Successfully deleted user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User deleted.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                    enum:
+                    - fail
+                  message:
+                    type: string
+                    example: Only Admins may delete users!
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                    enum:
+                    - fail
+                  message:
+                    type: string
+                    example: User not found!
+  /users/v1/{username}/email:
+    put:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Update users email
+      description: Update a single users email
+      operationId: api_views.users.update_email
+      parameters:
+      - name: username
+        in: path
+        description: username to update email
+        required: true
+        schema:
+          type: string
+          example: name1
+      requestBody:
+        description: field to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: mail3@mail.com
+        required: true
+      responses:
+        '204':
+          description: Successfully updated user email
+          content: {}
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Please Provide a valid email address.
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+  /users/v1/{username}/password:
+    put:
+      security:
+      - bearerAuth: []
+      tags:
+      - users
+      summary: Update users password
+      description: Update users password
+      operationId: api_views.users.update_password
+      parameters:
+      - name: username
+        in: path
+        description: username to update password
+        required: true
+        schema:
+          type: string
+          example: name1
+      requestBody:
+        description: field to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: pass4
+        required: true
+      responses:
+        '204':
+          description: Successfully updated users password
+          content: {}
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Malformed Data
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+  /books/v1:
+    get:
+      tags:
+      - books
+      summary: Retrieves all books
+      description: Retrieves all books
+      operationId: api_views.books.get_all_books
+      responses:
+        '200':
+          description: See all books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Books:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        book_title:
+                          type: string
+                        user:
+                          type: string
+              example:
+                Books:
+                - book_title: bookTitle77
+                  user: name1
+                - book_title: bookTitle85
+                  user: name2
+                - book_title: bookTitle47
+                  user: admin
+    post:
+      security:
+      - bearerAuth: []
+      tags:
+      - books
+      summary: Add new book
+      description: Add new book
+      operationId: api_views.books.add_new_book
+      requestBody:
+        description: Add new book with title and secret content only available to the user who added it.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                book_title:
+                  type: string
+                  example: book99
+                secret:
+                  type: string
+                  example: pass1secret
+        required: true
+      responses:
+        '200':
+          description: Successfully added a book
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Book has been added.
+                  status:
+                    type: string
+                    enum:
+                    - success
+                    - fail
+                    example: success
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Book Already exists!
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+  /books/v1/{book_title}:
+    get:
+      security:
+      - bearerAuth: []
+      tags:
+      - books
+      summary: Retrieves book by title along with secret
+      description: Retrieves book by title along with secret. Only the owner may retrieve it
+      operationId: api_views.books.get_by_title
+      parameters:
+      - name: book_title
+        in: path
+        description: retrieve book data
+        required: true
+        schema:
+          type: string
+          example: bookTitle77
+      responses:
+        '200':
+          description: Successfully retrieve book info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    book_title:
+                      type: string
+                      example: bookTitle77
+                    owner:
+                      type: string
+                      example: name1
+                    secret:
+                      type: string
+                      example: secret for bookTitle77
+        '401':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid token. Please log in again.
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - fail
+                    example: fail
+                  message:
+                    type: string
+                    example: Book not found!
+
+</openapi_spec>
+
+<current_code>
+import uuid
+import requests
+import pytest
+from jsonschema import validate
+
+
+# Helper function to generate unique identifiers
+def unique_str(prefix="test_"):
+    return f"{prefix}{uuid.uuid4().hex[:8]}"
+
+
+# ---------------------------------------------------------------------------
+# Path: /createdb
+# ---------------------------------------------------------------------------
+
+
+def test_get_createdb_success(api):
+    response = api.get("/createdb")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {"message": {"type": "string"}},
+        "required": ["message"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /
+# ---------------------------------------------------------------------------
+
+
+def test_get_home_success(api):
+    response = api.get("/")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "help": {"type": "string"},
+            "vulnerable": {"type": "number"},
+        },
+        "required": ["message"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1
+# ---------------------------------------------------------------------------
+
+
+def test_get_users_v1_success(api):
+    response = api.get("/users/v1")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "users": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "email": {"type": "string"},
+                        "username": {"type": "string"},
+                    },
+                    "required": ["email", "username"],
+                },
+            }
+        },
+        "required": ["users"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/_debug
+# ---------------------------------------------------------------------------
+
+
+def test_get_users_v1_debug_success(api):
+    response = api.get("/users/v1/_debug")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "users": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "admin": {"type": "boolean"},
+                        "email": {"type": "string"},
+                        "password": {"type": "string"},
+                        "username": {"type": "string"},
+                    },
+                    "required": ["admin", "email", "password", "username"],
+                },
+            }
+        },
+        "required": ["users"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/register
+# ---------------------------------------------------------------------------
+
+
+def test_post_users_v1_register_success(api):
+    new_user = unique_str("user_")
+    payload = {
+        "username": new_user,
+        "password": "ValidPassword123!",
+        "email": f"{new_user}@example.com",
+    }
+    response = api.post("/users/v1/register", json=payload)
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_post_users_v1_register_bad_request(api):
+    # Invalid registration request (missing password and email)
+    payload = {"username": unique_str("user_")}
+    response = api.post("/users/v1/register", json=payload)
+    assert response.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/login
+# ---------------------------------------------------------------------------
+
+
+def test_post_users_v1_login_success(api):
+    # Use existing user name1/pass1
+    payload = {"username": "name1", "password": "pass1"}
+    response = api.post("/users/v1/login", json=payload)
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "auth_token": {"type": "string"},
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["auth_token", "message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_post_users_v1_login_bad_request(api):
+    payload = {"username": "name1", "password": "wrong_password"}
+    response = api.post("/users/v1/login", json=payload)
+    assert response.status_code == 400
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /me
+# ---------------------------------------------------------------------------
+
+
+def test_get_me_success(api):
+    response = api.get("/me")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "data": {
+                "type": "object",
+                "properties": {
+                    "admin": {"type": "boolean"},
+                    "email": {"type": "string"},
+                    "username": {"type": "string"},
+                },
+                "required": ["admin", "email", "username"],
+            },
+            "status": {"type": "string"},
+        },
+        "required": ["data", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_get_me_unauthorized(base_url):
+    response = requests.get(f"{base_url}/me")
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string",
+                "enum": [
+                    "Signature expired. Please log in again.",
+                    "Invalid token. Please log in again.",
+                ],
+            },
+            "status": {"type": "string"},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/{username}
+# ---------------------------------------------------------------------------
+
+
+def test_get_user_by_username_success(api):
+    response = api.get("/users/v1/name1")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "username": {"type": "string"},
+            "email": {"type": "string"},
+        },
+        "required": ["username", "email"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_get_user_by_username_not_found(api):
+    non_existent = unique_str("nouser_")
+    response = api.get(f"/users/v1/{non_existent}")
+    assert response.status_code == 404
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_delete_user_by_username_success(api):
+    # Create user first to avoid side effects on fixed users
+    user_to_delete = unique_str("deluser_")
+    reg_payload = {
+        "username": user_to_delete,
+        "password": "password123",
+        "email": f"{user_to_delete}@test.com",
+    }
+    create_res = api.post("/users/v1/register", json=reg_payload)
+    assert create_res.status_code == 200
+
+    # api fixture is admin, so delete should succeed
+    response = api.delete(f"/users/v1/{user_to_delete}")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_delete_user_by_username_not_found(api):
+    non_existent = unique_str("nouser_")
+    response = api.delete(f"/users/v1/{non_existent}")
+    assert response.status_code == 404
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_delete_user_by_username_unauthorized(base_url):
+    response = requests.delete(f"{base_url}/users/v1/name2")
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/{username}/email
+# ---------------------------------------------------------------------------
+
+
+def test_put_user_email_success(api):
+    target_user = unique_str("mailuser_")
+    api.post(
+        "/users/v1/register",
+        json={
+            "username": target_user,
+            "password": "password123",
+            "email": f"{target_user}@test.com",
+        },
+    )
+
+    new_email = f"updated_{target_user}@test.com"
+    response = api.put(
+        f"/users/v1/{target_user}/email", json={"email": new_email}
+    )
+    assert response.status_code == 204
+
+
+def test_put_user_email_bad_request(api):
+    target_user = unique_str("mailuser_")
+    api.post(
+        "/users/v1/register",
+        json={
+            "username": target_user,
+            "password": "password123",
+            "email": f"{target_user}@test.com",
+        },
+    )
+
+    # Invalid email format
+    response = api.put(
+        f"/users/v1/{target_user}/email", json={"email": "invalid-email"}
+    )
+    assert response.status_code == 400
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_put_user_email_unauthorized(base_url):
+    response = requests.put(
+        f"{base_url}/users/v1/name1/email", json={"email": "test@domain.com"}
+    )
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /users/v1/{username}/password
+# ---------------------------------------------------------------------------
+
+
+def test_put_user_password_success(api):
+    target_user = unique_str("pwduser_")
+    api.post(
+        "/users/v1/register",
+        json={
+            "username": target_user,
+            "password": "password123",
+            "email": f"{target_user}@test.com",
+        },
+    )
+
+    response = api.put(
+        f"/users/v1/{target_user}/password", json={"password": "newPassword456!"}
+    )
+    assert response.status_code == 204
+
+
+def test_put_user_password_bad_request(api):
+    target_user = unique_str("pwduser_")
+    api.post(
+        "/users/v1/register",
+        json={
+            "username": target_user,
+            "password": "password123",
+            "email": f"{target_user}@test.com",
+        },
+    )
+
+    # Malformed data (missing password key)
+    response = api.put(f"/users/v1/{target_user}/password", json={})
+    assert response.status_code == 400
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_put_user_password_unauthorized(base_url):
+    response = requests.put(
+        f"{base_url}/users/v1/name1/password", json={"password": "newpass"}
+    )
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /books/v1
+# ---------------------------------------------------------------------------
+
+
+def test_get_books_v1_success(api):
+    response = api.get("/books/v1")
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "Books": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "book_title": {"type": "string"},
+                        "user": {"type": "string"},
+                    },
+                    "required": ["book_title", "user"],
+                },
+            }
+        },
+        "required": ["Books"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_post_books_v1_success(api):
+    book_title = unique_str("book_")
+    payload = {"book_title": book_title, "secret": "super_secret_text"}
+    response = api.post("/books/v1", json=payload)
+    assert response.status_code == 200
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_post_books_v1_duplicate_bad_request(api):
+    book_title = unique_str("book_dup_")
+    payload = {"book_title": book_title, "secret": "secret_content"}
+
+    # First creation
+    res1 = api.post("/books/v1", json=payload)
+    assert res1.status_code == 200
+
+    # Second creation with identical title
+    res2 = api.post("/books/v1", json=payload)
+    assert res2.status_code == 400
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response2 := res2.json(), schema=schema)
+
+
+def test_post_books_v1_unauthorized(base_url):
+    payload = {"book_title": unique_str("book_"), "secret": "secret"}
+    response = requests.post(f"{base_url}/books/v1", json=payload)
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# Path: /books/v1/{book_title}
+# -------------------------------------------
+
+
+def test_get_book_by_title_success(api):
+    # Admin creates a book to ensure ownership
+    book_title = unique_str("book_own_")
+    create_res = api.post(
+        "/books/v1", json={"book_title": book_title, "secret": "admin_secret"}
+    )
+    assert create_res.status_code == 200
+
+    response = api.get(f"/books/v1/{book_title}")
+    assert response.status_code == 200
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "book_title": {"type": "string"},
+                "owner": {"type": "string"},
+                "secret": {"type": "string"},
+            },
+            "required": ["book_title", "owner", "secret"],
+        },
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_get_book_by_title_not_found(api):
+    non_existent_title = unique_str("nobook_")
+    response = api.get(f"/books/v1/{non_existent_title}")
+    assert response.status_code == 404
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+
+def test_get_book_by_title_unauthorized(base_url):
+    response = requests.get(f"{base_url}/books/v1/bookTitle1")
+    assert response.status_code == 401
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["fail"]},
+        },
+        "required": ["message", "status"],
+    }
+    validate(instance=response.json(), schema=schema)
+
+</current_code>
+
+<pytest_errors>
+SyntaxError: invalid syntax (línea 502): validate(instance=response2 := res2.json(), schema=schema)
+
+## ERROR DE COLECCIÓN (el archivo no se pudo importar/colectar)
+collection failure
+..\..\..\..\.venv\Lib\site-packages\_pytest\python.py:528: in importtestmodule
+    mod = import_path(
+..\..\..\..\.venv\Lib\site-packages\_pytest\pathlib.py:640: in import_path
+    importlib.import_module(module_name)
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+..\..\..\..\.venv\Lib\site-packages\_pytest\assertion\rewrite.py:176: in exec_module
+    source_hash, co = _rewrite_test(fn, self.config)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.venv\Lib\site-packages\_pytest\assertion\rewrite.py:339: in _rewrite_test
+    tree = ast.parse(source, filename=strfn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\ast.py:50: in parse
+    return compile(source, filename, mode, flags,
+E     File "C:\Users\Usuario\Documents\U\TAIS\Prototipo-DeltaHeal\benchmark\results\vampi\full_heal_r4\test_generated.py", line 502
+E       validate(instance=response2 := res2.json(), schema=schema)
+E                                   ^^
+E   SyntaxError: invalid syntax
+</pytest_errors>
+

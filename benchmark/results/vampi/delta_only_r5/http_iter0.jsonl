@@ -1,0 +1,15 @@
+{"method": "POST", "url": "http://127.0.0.1:5000/users/v1/register", "status": 200, "test": "test_generated.py::test_delete_users_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/user_del_8c44ebeb", "status": 200, "test": "test_generated.py::test_delete_users_success"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/nonexistent_561c7847", "status": 404, "test": "test_generated.py::test_delete_users_not_found"}
+{"method": "DELETE", "url": "http://127.0.0.1:5000/users/v1/user_52340798", "status": 401, "test": "test_generated.py::test_delete_users_unauthorized"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/admin/password", "status": 204, "test": "test_generated.py::test_put_users_password_success"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/admin/password", "status": 400, "test": "test_generated.py::test_put_users_password_bad_request"}
+{"method": "PUT", "url": "http://127.0.0.1:5000/users/v1/admin/password", "status": 401, "test": "test_generated.py::test_put_users_password_unauthorized"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_post_books_success"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_post_books_duplicate_bad_request"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 400, "test": "test_generated.py::test_post_books_duplicate_bad_request"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 401, "test": "test_generated.py::test_post_books_unauthorized"}
+{"method": "POST", "url": "http://127.0.0.1:5000/books/v1", "status": 200, "test": "test_generated.py::test_get_books_by_title_success"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/bookTitle_e5e99be7", "status": 200, "test": "test_generated.py::test_get_books_by_title_success"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/nonExistentBook_6a75c513", "status": 404, "test": "test_generated.py::test_get_books_by_title_not_found"}
+{"method": "GET", "url": "http://127.0.0.1:5000/books/v1/bookTitle1", "status": 401, "test": "test_generated.py::test_get_books_by_title_unauthorized"}

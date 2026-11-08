@@ -1,0 +1,263 @@
+import uuid
+import requests
+import jsonschema
+
+
+def _unique_str(prefix="test_"):
+    return f"{prefix}{uuid.uuid4().hex[:8]}"
+
+
+# ---------------------------------------------------------------------------
+# Tests para DELETE /users/v1/{username}
+# ---------------------------------------------------------------------------
+
+
+def test_delete_users_success(api):
+    # Crear un usuario único para eliminarlo y garantizar idempotencia
+    username = _unique_str("user_del_")
+    create_payload = {
+        "username": username,
+        "password": "Password123!",
+        "email": f"{username}@example.com",
+    }
+    # VAmPI permite registrar usuarios en /users/v1/register
+    api.post("/users/v1/register", json=create_payload)
+
+    response = api.delete(f"/users/v1/{username}")
+    assert response.status_code == 200
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["status"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "success"
+
+
+def test_delete_users_not_found(api):
+    non_existent_user = _unique_str("nonexistent_")
+    response = api.delete(f"/users/v1/{non_existent_user}")
+    assert response.status_code == 404
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+def test_delete_users_unauthorized(base_url):
+    username = _unique_str("user_")
+    response = requests.delete(f"{base_url}/users/v1/{username}")
+    assert response.status_code == 401
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+# ---------------------------------------------------------------------------
+# Tests para PUT /users/v1/{username}/password
+# ---------------------------------------------------------------------------
+
+
+def test_put_users_password_success(api):
+    # La fixture 'api' es admin; actualizamos la contraseña de admin
+    payload = {"password": "newSecurePassword123"}
+    response = api.put("/users/v1/admin/password", json=payload)
+    assert response.status_code == 204
+
+
+def test_put_users_password_bad_request(api):
+    # Enviar payload malformado o vacío
+    payload = {"wrong_key": "newPassword"}
+    response = api.put("/users/v1/admin/password", json=payload)
+    assert response.status_code == 400
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+def test_put_users_password_unauthorized(base_url):
+    payload = {"password": "attemptUnauthorized"}
+    response = requests.put(f"{base_url}/users/v1/admin/password", json=payload)
+    assert response.status_code == 401
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+# ---------------------------------------------------------------------------
+# Tests para POST /books/v1
+# ---------------------------------------------------------------------------
+
+
+def test_post_books_success(api):
+    title = _unique_str("bookTitle_")
+    payload = {"book_title": title, "secret": "mySecret123"}
+    response = api.post("/books/v1", json=payload)
+    assert response.status_code == 200
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "status": {"type": "string", "enum": ["success", "fail"]},
+        },
+        "required": ["status"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "success"
+
+
+def test_post_books_duplicate_bad_request(api):
+    title = _unique_str("bookTitle_")
+    payload = {"book_title": title, "secret": "initialSecret"}
+
+    # Primer registro exitoso
+    res1 = api.post("/books/v1", json=payload)
+    assert res1.status_code == 200
+
+    # Segundo registro con el mismo título debe devolver 400
+    res2 = api.post("/books/v1", json=payload)
+    assert res2.status_code == 400
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = res2.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+def test_post_books_unauthorized(base_url):
+    payload = {"book_title": _unique_str("bookTitle_"), "secret": "unauthSecret"}
+    response = requests.post(f"{base_url}/books/v1", json=payload)
+    assert response.status_code == 401
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+# ---------------------------------------------------------------------------
+# Tests para GET /books/v1/{book_title}
+# ---------------------------------------------------------------------------
+
+
+def test_get_books_by_title_success(api):
+    title = _unique_str("bookTitle_")
+    secret_val = "secretValue456"
+
+    # Crear libro como usuario admin (sesión de api)
+    create_res = api.post(
+        "/books/v1", json={"book_title": title, "secret": secret_val}
+    )
+    assert create_res.status_code == 200
+
+    response = api.get(f"/books/v1/{title}")
+    assert response.status_code == 200
+
+    schema = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "book_title": {"type": "string"},
+                "owner": {"type": "string"},
+                "secret": {"type": "string"},
+            },
+            "required": ["book_title", "owner", "secret"],
+        },
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert len(body) > 0
+    assert body[0]["book_title"] == title
+    assert body[0]["secret"] == secret_val
+
+
+def test_get_books_by_title_not_found(api):
+    non_existent_title = _unique_str("nonExistentBook_")
+    response = api.get(f"/books/v1/{non_existent_title}")
+    assert response.status_code == 404
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"
+
+
+def test_get_books_by_title_unauthorized(base_url):
+    response = requests.get(f"{base_url}/books/v1/bookTitle1")
+    assert response.status_code == 401
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {"type": "string", "enum": ["fail"]},
+            "message": {"type": "string"},
+        },
+        "required": ["status", "message"],
+    }
+    body = response.json()
+    jsonschema.validate(instance=body, schema=schema)
+    assert body.get("status") == "fail"

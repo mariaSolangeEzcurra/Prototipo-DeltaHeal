@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="28" time="2.334" timestamp="2026-11-08T12:01:07.095580-05:00" hostname="DESKTOP-KC1SKU0"><testcase classname="test_generated" name="test_get_createdb_success" time="0.248" /><testcase classname="test_generated" name="test_get_home_success" time="0.031" /><testcase classname="test_generated" name="test_get_users_v1_success" time="0.054" /><testcase classname="test_generated" name="test_get_users_v1_debug_success" time="0.030" /><testcase classname="test_generated" name="test_post_users_v1_register_success" time="0.086" /><testcase classname="test_generated" name="test_post_users_v1_register_invalid_request" time="0.051" /><testcase classname="test_generated" name="test_post_users_v1_login_success" time="0.120" /><testcase classname="test_generated" name="test_post_users_v1_login_invalid_credentials" time="0.073"><failure message="assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">test_generated.py:171: in test_post_users_v1_login_invalid_credentials
+    assert response.status_code == 400
+E   assert 200 == 400
+E    +  where 200 = &lt;Response [200]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_get_me_success" time="0.014" /><testcase classname="test_generated" name="test_get_me_unauthorized" time="0.010"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string'}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:219: in test_get_me_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string'}
+E   
+E   On instance['status']:
+E       401</failure></testcase><testcase classname="test_generated" name="test_get_user_by_username_success" time="0.032" /><testcase classname="test_generated" name="test_get_user_by_username_not_found" time="0.011" /><testcase classname="test_generated" name="test_delete_user_by_username_success" time="0.049" /><testcase classname="test_generated" name="test_delete_user_by_username_not_found" time="0.011" /><testcase classname="test_generated" name="test_delete_user_by_username_unauthorized" time="0.010"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string', 'enum': ['fail']}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:316: in test_delete_user_by_username_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string', 'enum': ['fail']}
+E   
+E   On instance['status']:
+E       401</failure></testcase><testcase classname="test_generated" name="test_put_user_email_success" time="0.045"><failure message="assert 400 == 204&#10; +  where 400 = &lt;Response [400]&gt;.status_code">test_generated.py:333: in test_put_user_email_success
+    assert response.status_code == 204
+E   assert 400 == 204
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="test_generated" name="test_put_user_email_invalid_request" time="0.060" /><testcase classname="test_generated" name="test_put_user_email_unauthorized" time="0.020"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string', 'enum': ['fail']}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:371: in test_put_user_email_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string', 'enum': ['fail']}
+E   
+E   On instance['status']:
+E       401</failure></testcase><testcase classname="test_generated" name="test_put_user_password_success" time="0.091" /><testcase classname="test_generated" name="test_put_user_password_invalid_request" time="0.057" /><testcase classname="test_generated" name="test_put_user_password_unauthorized" time="0.018"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string', 'enum': ['fail']}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:428: in test_put_user_password_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string', 'enum': ['fail']}
+E   
+E   On instance['status']:
+E       401</failure></testcase><testcase classname="test_generated" name="test_get_books_v1_success" time="0.028" /><testcase classname="test_generated" name="test_post_books_v1_success" time="0.048" /><testcase classname="test_generated" name="test_post_books_v1_already_exists" time="0.067" /><testcase classname="test_generated" name="test_post_books_v1_unauthorized" time="0.017"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string', 'enum': ['fail']}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:516: in test_post_books_v1_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string', 'enum': ['fail']}
+E   
+E   On instance['status']:
+E       401</failure></testcase><testcase classname="test_generated" name="test_get_book_by_title_success" time="0.075"><failure message="jsonschema.exceptions.ValidationError: {'book_title': 'owned_book_aa763337', 'owner': 'admin', 'secret': 'secretContent123'} is not of type 'array'&#10;&#10;Failed validating 'type' in schema:&#10;    {'type': 'array',&#10;     'items': {'type': 'object',&#10;               'properties': {'book_title': {'type': 'string'},&#10;                              'owner': {'type': 'string'},&#10;                              'secret': {'type': 'string'}}}}&#10;&#10;On instance:&#10;    {'book_title': 'owned_book_aa763337',&#10;[+2 more lines; full report in element text]">test_generated.py:543: in test_get_book_by_title_success
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: {'book_title': 'owned_book_aa763337', 'owner': 'admin', 'secret': 'secretContent123'} is not of type 'array'
+E   
+E   Failed validating 'type' in schema:
+E       {'type': 'array',
+E        'items': {'type': 'object',
+E                  'properties': {'book_title': {'type': 'string'},
+E                                 'owner': {'type': 'string'},
+E                                 'secret': {'type': 'string'}}}}
+E   
+E   On instance:
+E       {'book_title': 'owned_book_aa763337',
+E        'owner': 'admin',
+E        'secret': 'secretContent123'}</failure></testcase><testcase classname="test_generated" name="test_get_book_by_title_not_found" time="0.023" /><testcase classname="test_generated" name="test_get_book_by_title_unauthorized" time="0.018"><failure message="jsonschema.exceptions.ValidationError: 401 is not of type 'string'&#10;&#10;Failed validating 'type' in schema['properties']['status']:&#10;    {'type': 'string', 'enum': ['fail']}&#10;&#10;On instance['status']:&#10;    401">test_generated.py:572: in test_get_book_by_title_unauthorized
+    validate(instance=data, schema=schema)
+..\..\..\..\.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 401 is not of type 'string'
+E   
+E   Failed validating 'type' in schema['properties']['status']:
+E       {'type': 'string', 'enum': ['fail']}
+E   
+E   On instance['status']:
+E       401</failure></testcase></testsuite></testsuites>
