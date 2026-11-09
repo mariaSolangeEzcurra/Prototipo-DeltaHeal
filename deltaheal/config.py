@@ -58,8 +58,8 @@ class Settings:
     reasoning_effort: str | None = None   # low | medium | high | none | "" (None = preset)
     seed: int | None = 42
 
-    # USD por millón de tokens. Con el nivel gratuito pagas 0, pero conviene poner el precio de
-    # LISTA de la capa de pago del mismo modelo para reportar un "costo equivalente" en la tesis.
+    # USD por millón de tokens. En el nivel gratuito el costo real es 0; se usa el precio de lista
+    # de la capa de pago del mismo modelo para reportar un "costo equivalente".
     price_input_per_mtok: float = 0.0
     price_output_per_mtok: float = 0.0
 

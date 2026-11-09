@@ -1,7 +1,7 @@
 """Experimento controlado de benchmarking.
 
-    python benchmark/run_benchmark.py -c benchmark/benchmark.yaml
-    python benchmark/run_benchmark.py -c benchmark/benchmark.yaml --apis petstore3 --reps 1   # prueba corta
+    python benchmark/run.py -c benchmark/config.yaml
+    python benchmark/run.py -c benchmark/config.yaml --apis petstore3 --reps 1   # prueba corta
 
 - Construye, por API, el escenario de cambio (spec BASE vs. spec HEAD).
 - Ejecuta cada configuración `repetitions` veces, en orden aleatorizado (semilla fija)
@@ -31,8 +31,8 @@ sys.path.insert(0, str(ROOT))
 from deltaheal.config import Settings, load_dotenv  # noqa: E402
 from deltaheal.delta import HTTP_METHODS, resolve_pointer  # noqa: E402
 from deltaheal.llm import QuotaExhaustedError  # noqa: E402
-from deltaheal.orchestrator import run  # noqa: E402
-from deltaheal.spec_io import dump_spec, load_spec_file  # noqa: E402
+from deltaheal.pipeline import run  # noqa: E402
+from deltaheal.spec_loader import dump_spec, load_spec_file  # noqa: E402
 
 CSV_FIELDS = [
     "api", "config", "rep", "order", "status", "model",
@@ -265,7 +265,7 @@ def done_runs(csv_path: Path) -> set[tuple[str, str, int]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--config", default=str(ROOT / "benchmark" / "benchmark.yaml"))
+    ap.add_argument("-c", "--config", default=str(ROOT / "benchmark" / "config.yaml"))
     ap.add_argument("--apis", nargs="*", help="subconjunto de APIs")
     ap.add_argument("--configs", nargs="*", help="subconjunto de configuraciones")
     ap.add_argument("--reps", type=int, help="sobrescribe repetitions")
@@ -356,7 +356,7 @@ def main() -> int:
             except QuotaExhaustedError as e:
                 print(f"\n⏸  {e}\nLas corridas completadas están guardadas en {csv_path}.")
                 try:
-                    from export_evidence import build_all
+                    from export_excel import build_all
                     for xlsx in build_all(out_dir):
                         print(f"Evidencia parcial en Excel: {xlsx}")
                 except Exception:
@@ -385,7 +385,7 @@ def main() -> int:
         sh(api.get("stop"), api_workdir(api))
 
     try:
-        from export_evidence import build_all
+        from export_excel import build_all
         print()
         for xlsx in build_all(out_dir):
             print(f"Evidencia en Excel: {xlsx}")

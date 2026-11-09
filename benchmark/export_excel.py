@@ -1,7 +1,7 @@
 """Exporta la evidencia del experimento a un libro Excel.
 
-    python benchmark/export_evidence.py                                   # usa benchmark/results
-    python benchmark/export_evidence.py benchmark/results evidencia.xlsx
+    python benchmark/export_excel.py                                   # usa benchmark/results
+    python benchmark/export_excel.py benchmark/results evidencia.xlsx
 
 Hojas:
   Leeme            qué contiene el libro y cómo se generó
@@ -19,7 +19,7 @@ Hojas:
   Registro_manual  plantilla para registrar ejecuciones hechas por una persona (opcional)
 
 Todo sale de los archivos que el prototipo guarda en cada corrida (report.json,
-llm_calls/*.txt, test_generated.py, junit_*.xml, http_final.jsonl), así que cada fila
+llm_calls/*.txt, test_generated.py, junit*.xml, http_final.jsonl), así que cada fila
 puede rastrearse hasta su archivo de origen.
 """
 
@@ -97,7 +97,7 @@ def _evid_path(run_dir: Path, rel: str) -> str:
 def load_runs(results_dir: Path, api: str | None = None) -> list[dict]:
     csv_path = results_dir / "results.csv"
     if not csv_path.exists():
-        raise SystemExit(f"No existe {csv_path}. Ejecuta primero benchmark/run_benchmark.py")
+        raise SystemExit(f"No existe {csv_path}. Ejecuta primero benchmark/run.py")
     runs = []
     with csv_path.open(encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
@@ -208,7 +208,7 @@ def build(results_dir: Path, out: Path, api: str | None = None) -> Path:
             elif h.startswith("Tokens"):
                 cell.number_format = "#,##0"
     wc[f"{L['Costo equiv. (USD)']}1"].comment = Comment(
-        "Calculado con el precio de lista configurado en benchmark.yaml (price_input/output_per_mtok). "
+        "Calculado con el precio de lista configurado en benchmark/config.yaml (price_input/output_per_mtok). "
         "Con el nivel gratuito del proveedor el gasto real es $0.", "DeltaHeal")
 
     # ---------------- Resumen ----------------
@@ -377,7 +377,7 @@ def build(results_dir: Path, out: Path, api: str | None = None) -> Path:
     # ---------------- Registro_manual ----------------
     wm = wb.create_sheet("Registro_manual")
     legend = [
-        "Plantilla OPCIONAL para registrar una ejecución hecha por una persona (p. ej. si tu asesor pide",
+        "Plantilla OPCIONAL para registrar una ejecución hecha por una persona (p. ej. para",
         "contrastar con pruebas manuales en Postman o con un LLM usado a mano en el chat web).",
         "Celdas amarillas = completar. La fila 6 es un EJEMPLO: reemplázala. Una fila por ejecución.",
     ]

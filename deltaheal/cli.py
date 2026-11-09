@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .config import MODES, Settings, load_dotenv
 from .delta import build_subspec, compute_delta
-from .spec_io import dump_spec, load_spec_at_ref, load_spec_file
+from .spec_loader import dump_spec, load_spec_at_ref, load_spec_file
 
 
 def _common(p: argparse.ArgumentParser) -> None:
@@ -44,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--fail-on", choices=["regression", "any", "never"])
     r.add_argument("--json", action="store_true", help="imprimir el reporte JSON completo")
 
-    m = sub.add_parser("models", help="listar los modelos disponibles para tu clave")
+    m = sub.add_parser("models", help="listar los modelos disponibles para la clave configurada")
     m.add_argument("--provider", default=None)
     m.add_argument("--llm-base-url", default=None)
     m.add_argument("--config", "-c")
@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
             print(dump_spec(build_subspec(new, delta.targets)))
         return 0
 
-    from .orchestrator import run  # import diferido: evita costo en `delta`
+    from .pipeline import run  # import diferido: evita costo en `delta`
     s = Settings.load(
         a.config, spec_path=a.spec_path, base_ref=a.base_ref, head_ref=a.head_ref, mode=a.mode,
         base_url=a.base_url, provider=a.provider, model=a.model, llm_base_url=a.llm_base_url,

@@ -1,5 +1,6 @@
-# Ejecuta el experimento controlado (3 configuraciones × N APIs × R repeticiones) bajo demanda.
+# Ejecuta el experimento comparativo (5 configuraciones × N APIs × R repeticiones) bajo demanda.
 # Todas las corridas se hacen en el mismo runner para controlar la variabilidad del entorno.
+# El experimento es reanudable: las corridas ya registradas en la carpeta de resultados se omiten.
 name: Benchmark experiment
 
 on:
@@ -7,7 +8,7 @@ on:
     inputs:
       config:
         description: "Archivo de configuración del benchmark"
-        default: benchmark/benchmark.yaml
+        default: benchmark/config.yaml
       reps:
         description: "Repeticiones (vacío = usar el archivo)"
         required: false
@@ -28,7 +29,14 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
+          cache-dependency-path: pyproject.toml
+      - name: Instalar dependencias
+        run: pip install ".[baseline,analysis,demo]"
+
+      - name: Preparar APIs del experimento (Docker)
+        # Descarga VAmPI y FastAPI Template y construye sus imágenes (no aplica a la configuración demo).
+        if: ${{ !contains(inputs.config, 'demo') }}
+        run: python benchmark/setup_apis.py
 
       - name: Carpeta de resultados
         run: |
@@ -46,16 +54,16 @@ jobs:
           [ -n "${{ inputs.model }}" ] && ARGS="$ARGS --model ${{ inputs.model }}"
           # La demo necesita la API local; las APIs reales se levantan con `start` en el YAML.
           if grep -q demo_petstore "${{ inputs.config }}"; then
-            nohup uvicorn examples.demo_api.app:app --port 8000 > api.log 2>&1 &
+            nohup uvicorn demo_api.app:app --port 8000 > api.log 2>&1 &
             sleep 5
           fi
-          python benchmark/run_benchmark.py $ARGS || [ $? -eq 5 ]   # 5 = cuota diaria agotada: se guardan las corridas hechas
+          python benchmark/run.py $ARGS || [ $? -eq 5 ]   # 5 = cuota diaria agotada: se guardan las corridas hechas
 
       - name: Análisis estadístico y Excel de evidencias
         if: always()
         run: |
           python benchmark/analyze.py "$OUT/results.csv"
-          python benchmark/export_evidence.py "$OUT"
+          python benchmark/export_excel.py "$OUT"
           cat "$OUT/analysis.md" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4

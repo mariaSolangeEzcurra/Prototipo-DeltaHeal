@@ -24,11 +24,11 @@ from pathlib import Path
 from typing import Any
 
 from . import prompts
-from .codegen import extract_code, static_check
-from .evidence import StepLog, run_summary
+from .generated_code import extract_code, static_check
+from .step_log import StepLog, run_summary
 from .llm import LLMClient, LLMResponse
-from .patcher import failing_toplevel_names, merge_patch, split_for_patch
-from .runner import RunResult, format_assertions_for_llm, format_errors_for_llm, run_pytest
+from .partial_repair import failing_toplevel_names, merge_patch, split_for_patch
+from .pytest_runner import RunResult, format_assertions_for_llm, format_errors_for_llm, run_pytest
 
 
 @dataclass
@@ -137,7 +137,8 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
         st = static_check(code)
         http_log = workdir / f"http_iter{i}.jsonl"
         http_log.unlink(missing_ok=True)
-        run = run_pytest(test_file, workdir, base_url, http_log, timeout_per_test=pytest_timeout)
+        run = run_pytest(test_file, workdir, base_url, http_log, timeout_per_test=pytest_timeout,
+                         junit_name=f"junit_iter{i}.xml")
         log.add(f"Ejecución de pruebas (iteración {i})",
                 ("" if st.ok else f"código con error de sintaxis: {st.error}; ") + run_summary(run),
                 workdir / f"{test_file.stem}.iter{i}.py")

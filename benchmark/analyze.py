@@ -6,7 +6,7 @@ Produce en la misma carpeta:
   summary_by_api.csv     media, desviación estándar, mediana por (API, configuración)
   summary_pooled.csv     agregados por configuración (las 3 APIs juntas)
   tests.csv              pruebas de hipótesis por métrica
-  analysis.md            reporte legible para la tesis
+  analysis.md            reporte legible con las tablas de resultados
   fig_<metrica>.png      diagramas de caja (si matplotlib está disponible)
 
 Métodos (no paramétricos, adecuados para n=5 por celda y distribuciones no normales):

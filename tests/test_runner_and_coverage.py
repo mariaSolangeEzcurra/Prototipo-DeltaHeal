@@ -2,13 +2,13 @@ from pathlib import Path
 
 import yaml
 
-from deltaheal.codegen import extract_code, static_check
-from deltaheal.coverage import PathMatcher, compute_coverage
+from deltaheal.generated_code import extract_code, static_check
+from deltaheal.http_coverage import PathMatcher, compute_coverage
 from deltaheal.delta import OperationKey
-from deltaheal.runner import _classify
+from deltaheal.pytest_runner import _classify
 
 ROOT = Path(__file__).resolve().parent.parent
-V2 = yaml.safe_load((ROOT / "examples/demo_api/openapi_v2.yaml").read_text(encoding="utf-8"))
+V2 = yaml.safe_load((ROOT / "demo_api/openapi_v2.yaml").read_text(encoding="utf-8"))
 
 
 def test_classify_outcomes():

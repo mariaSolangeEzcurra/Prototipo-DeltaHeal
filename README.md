@@ -1,408 +1,373 @@
-# DeltaHeal — testing de regresión de APIs REST con LLMs en CI/CD
+# DeltaHeal
 
-Prototipo orquestador en Python, integrado en GitHub Actions, que **genera y ejecuta pruebas de
-regresión de APIs REST usando un LLM**. Ataca los dos problemas de los enfoques actuales:
+**Generación automática de pruebas de regresión para APIs REST con IA, enfocada en los cambios
+del contrato OpenAPI.**
 
-| Problema | Cómo lo resuelve DeltaHeal |
+DeltaHeal se ejecuta en cada Pull Request: detecta qué endpoints cambiaron en el contrato, solicita
+a un modelo de lenguaje (LLM) pruebas solo para esos endpoints, las ejecuta contra la API, corrige
+automáticamente las pruebas con errores de código y publica en el Pull Request un reporte con las
+posibles regresiones.
+
+| Problema al generar pruebas con IA | Solución de DeltaHeal |
 |---|---|
-| **Alto consumo de tokens**: se envía la especificación OpenAPI completa en cada ejecución | **Análisis delta**: con `git diff` detecta qué endpoints cambiaron y envía al LLM solo esos (con los esquemas que usan). Si el contrato no cambió, no llama al LLM (**0 tokens**). |
-| **Alucinaciones sintácticas**: el código generado no compila o no se ejecuta | **Bucle de auto-corrección (self-healing)**: ejecuta Pytest, captura los errores y le pide al LLM que repare **solo los tests que fallaron**, hasta 3 veces. |
+| **Alto consumo de tokens**: en cada cambio se envía al modelo el contrato completo de la API | **Análisis delta**: se envían solo los endpoints modificados y los esquemas que usan. Si el contrato no cambió, no se invoca al modelo (0 tokens). |
+| **Código generado que no se ejecuta** (errores de sintaxis, imports, nombres) | **Auto-corrección (self-healing)**: se ejecutan las pruebas, se capturan los errores y se solicita al modelo reparar solo las pruebas defectuosas, hasta 3 iteraciones. |
 
-Además incluye el **experimento controlado** de la tesis: compara la herramienta tradicional, el
-LLM básico y el prototipo sobre varias APIs con repeticiones. Exporta toda la **evidencia a Excel**:
-prompts exactos, respuestas, tokens, resultados de cada test y cobertura.
-
----
-
-## Índice
-1. [Cómo funciona](#1-cómo-funciona)
-2. [Requisitos](#2-requisitos)
-3. [Instalación (Windows)](#3-instalación-windows)
-4. [Configurar el LLM gratuito (Gemini)](#4-configurar-el-llm-gratuito-gemini)
-5. [Primera prueba (API demo)](#5-primera-prueba-con-la-api-demo)
-6. [El experimento](#6-el-experimento)
-7. [Evidencia en Excel](#7-evidencia-en-excel)
-8. [Integración con GitHub Actions](#8-integración-con-github-actions)
-9. [Configuraciones del experimento y por qué son automáticas](#9-configuraciones-del-experimento-y-por-qué-son-automáticas)
-10. [Métricas](#10-métricas-definición-operativa)
-11. [Estructura del proyecto](#11-estructura-del-proyecto)
-12. [Solución de problemas](#12-solución-de-problemas)
+En la evaluación con 3 APIs de referencia, DeltaHeal redujo el consumo de tokens en **47 %**
+respecto al envío del contrato completo y logró que el **100 %** de las pruebas generadas fueran
+ejecutables, frente a un 92 %. Detalle en [Resultados](#resultados).
 
 ---
 
-## 1. Cómo funciona
+## Contenido
+1. [Funcionamiento](#funcionamiento)
+2. [Arquitectura](#arquitectura)
+3. [Supervisión humana](#supervisión-humana)
+4. [Instalación](#instalación)
+5. [Demostración](#demostración)
+6. [Uso con un proveedor de IA](#uso-con-un-proveedor-de-ia)
+7. [Referencia de la línea de comandos](#referencia-de-la-línea-de-comandos)
+8. [Integración con GitHub Actions](#integración-con-github-actions)
+9. [Resultados](#resultados)
+10. [Estructura del proyecto](#estructura-del-proyecto)
+11. [Limitaciones](#limitaciones)
+12. [Solución de problemas](#solución-de-problemas)
+
+---
+
+## Funcionamiento
+
+DeltaHeal no analiza el código fuente de la API, sino su **contrato OpenAPI**: el archivo YAML/JSON
+que describe cada endpoint, sus parámetros y sus respuestas.
 
 ```
- Pull Request que modifica openapi.yaml
+ Pull Request que modifica el contrato (openapi.yaml)
                 │
                 ▼
- ① git diff sobre la especificación ──► ¿cambió? ──no──► fin (0 tokens)
+ ① ¿Cambió el contrato? ──── no ───► fin (0 tokens)
                 │ sí
                 ▼
- ② Análisis delta: compara cada operación (método + ruta) entre la versión base y la nueva,
-    resolviendo los $ref. Un cambio en un esquema marca todos los endpoints que lo usan.
+ ② Comparación endpoint por endpoint entre la versión base y la nueva, con referencias
+    ($ref) resueltas: un cambio en un esquema marca todos los endpoints que lo usan.
                 │
                 ▼
- ③ Sub-especificación mínima: solo endpoints nuevos/modificados + esquemas que necesitan
-                │
+ ③ El modelo genera pruebas Pytest solo para esos endpoints     ◄──────────┐
+                │                                                         │
+                ▼                                                         │
+ ④ Ejecución de las pruebas contra la API                                 │
+                │                                                         │
+                ▼                                                         │
+ ⑤ ¿Hay pruebas con errores de código? ── sí ──► reparación de esas pruebas ┘
+                │ no                              (máximo 3 iteraciones)
                 ▼
- ④ El LLM genera un archivo Pytest            ◄─────────────────────────────┐
-                │                                                            │
-                ▼                                                            │
- ⑤ Se ejecuta Pytest contra la API real, registrando cada petición HTTP       │
-                │                                                            │
-                ▼                                                            │
- ⑥ ¿Hay errores en el CÓDIGO de prueba? (sintaxis, NameError, imports…)        │
-        │ sí (y quedan iteraciones)                    │ no                  │
-        └──► se envían solo los tests rotos + errores ─┘──────────────────────┘
-                                                       ▼
- ⑦ Reporte: tests ejecutables, cobertura HTTP, tokens, costo y POSIBLES REGRESIONES
-    (fallas de aserción: la API respondió distinto a lo que dice su contrato)
+ ⑥ Reporte en el Pull Request: pruebas, cobertura, tokens y posibles regresiones
 ```
 
-**Principio clave:** el bucle repara errores del **código de prueba**, nunca las fallas de
-aserción. Si un test falla porque la API respondió 500 en vez de 200, eso puede ser una
-regresión real, y "repararla" la ocultaría. Por eso se reporta y no se toca.
-
-**Ejemplo concreto (API demo):** el commit agrega `PATCH /pets/{petId}` y el campo `age` al
-esquema de mascota. El análisis delta detecta 1 operación nueva y 3 modificadas (las que usan ese
-esquema), y **excluye** `DELETE /pets/{petId}` porque no cambió.
+- Las etapas ① y ② no requieren la API ni el modelo: comparan dos versiones de un archivo.
+- La etapa ④ requiere la API en ejecución, ya que las pruebas la invocan y verifican sus respuestas.
+- **Principio de diseño:** la auto-corrección repara únicamente defectos del *código de prueba*.
+  Las fallas de aserción (por ejemplo, la API responde 500 en lugar de 200) no se reparan, porque
+  pueden corresponder a regresiones reales de la API; se reportan como **posibles regresiones**.
 
 ---
 
-## 2. Requisitos
+## Arquitectura
 
-| Programa | Para qué | Dónde |
-|---|---|---|
-| Python 3.10 o superior | ejecutar el prototipo | python.org (marca **"Add Python to PATH"**) |
-| Git | análisis delta y GitHub | git-scm.com |
-| Docker Desktop | levantar las APIs del experimento | docker.com |
-| Cuenta de Google | clave gratuita de Gemini | aistudio.google.com |
-| Cuenta de GitHub | integración CI/CD | github.com |
+**Estilo arquitectónico: tubería y filtros (*pipes and filters*) con un bucle de
+retroalimentación.** El sistema se distribuye como una **aplicación de línea de comandos (CLI)**
+que se ejecuta dentro de un pipeline de **CI/CD** (GitHub Actions), activado por eventos de
+Pull Request.
+
+- **Tubería y filtros:** cada etapa recibe un artefacto, lo transforma y lo entrega a la siguiente
+  (contrato → delta → pruebas → resultados → reporte). Cada etapa es un módulo independiente y
+  verificable por separado.
+- **Bucle de retroalimentación:** los resultados de la ejecución (etapa ④) se envían al modelo para
+  reparar las pruebas (etapa ⑤).
+- **Monolito modular sin estado:** cada ejecución es un proceso que termina al generar el reporte.
+  No requiere servidor ni base de datos.
+- **Patrones de diseño:**
+  - **Adaptador y Fábrica** para los proveedores de IA: todos implementan la interfaz
+    `complete()` y `make_client()` instancia el proveedor configurado (Gemini, Groq, Ollama,
+    OpenAI, DeepSeek, Anthropic o un cliente simulado).
+  - **Plugin** de Pytest: provee la fixture `api` y registra cada petición HTTP para medir la
+    cobertura.
+  - **Estrategia** para los modos de ejecución: el mismo flujo, con el análisis delta y la
+    auto-corrección activables por configuración.
+
+```mermaid
+flowchart LR
+    dev([Desarrollador]) -->|abre Pull Request| gh[GitHub]
+    gh -->|evento| ga[GitHub Actions]
+    ga -->|ejecuta| dh[DeltaHeal CLI]
+    dh -->|"endpoints modificados"| ia[("Proveedor de IA")]
+    ia -->|pruebas Pytest| dh
+    dh -->|ejecuta las pruebas| api[("API bajo prueba")]
+    dh -->|publica el reporte| gh
+    gh -->|revisión y decisión| dev
+```
+
+**Etapas y módulos** (paquete [deltaheal/](deltaheal/), coordinado por
+[pipeline.py](deltaheal/pipeline.py)):
+
+| Etapa | Módulos |
+|---|---|
+| ① Carga del contrato (archivo o git) | [spec_loader.py](deltaheal/spec_loader.py) |
+| ② Análisis delta | [delta.py](deltaheal/delta.py) |
+| ③ Generación de pruebas | [prompts.py](deltaheal/prompts.py), [llm.py](deltaheal/llm.py), [generated_code.py](deltaheal/generated_code.py) |
+| ④ Ejecución | [pytest_runner.py](deltaheal/pytest_runner.py), [pytest_plugin.py](deltaheal/pytest_plugin.py) |
+| ⑤ Auto-corrección | [self_healing.py](deltaheal/self_healing.py), [partial_repair.py](deltaheal/partial_repair.py) |
+| ⑥ Cobertura y reporte | [http_coverage.py](deltaheal/http_coverage.py), [report.py](deltaheal/report.py) |
+
+**Tecnologías:** Python 3.10+, Pytest, OpenAPI 3 / Swagger 2, Git, GitHub Actions y API de
+Google Gemini. Evaluación experimental: Docker, Schemathesis, pandas, SciPy y Streamlit.
 
 ---
 
-## 3. Instalación (Windows)
+## Supervisión humana
 
-Abre PowerShell en la carpeta del proyecto:
+DeltaHeal sigue un modelo de **supervisión humana sobre el ciclo (*human-on-the-loop*)**: la
+generación, ejecución y reparación de pruebas son automáticas, y la decisión final corresponde a
+la persona que revisa el Pull Request.
+
+| Responsable | Decisión |
+|---|---|
+| **DeltaHeal** | Endpoints a probar, pruebas a generar y reparación de errores de código en las pruebas. |
+| **Revisor del Pull Request** | Si cada posible regresión es un defecto real de la API o una prueba incorrecta, y si el cambio se integra. |
+
+Mecanismos que garantizan esta supervisión:
+- **Las fallas no se ocultan:** las fallas de aserción nunca se envían a reparación; se reportan
+  como posibles regresiones.
+- **Bloqueo del Pull Request:** con `--fail-on regression` (valor por defecto), el check queda en
+  rojo si hay posibles regresiones y requiere revisión.
+- **Trazabilidad completa:** se conservan el prompt exacto, la respuesta del modelo, cada versión
+  del archivo de pruebas y cada petición HTTP.
+- **Registro de revisiones manuales:** el [visor de resultados](benchmark/viewer/) incluye una
+  sección para registrar pruebas realizadas por personas y contrastarlas con las generadas.
+
+---
+
+## Instalación
+
+Requisitos: Python 3.10 o superior y Git.
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1          # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-pytest
+pytest                              # resultado esperado: 32 passed
 ```
-Debe terminar con **`32 passed`**.
 
-> **Cada vez** que abras una terminal nueva, activa el entorno (`.venv\Scripts\Activate.ps1`).
-> Sabrás que está activo porque la línea empieza con `(.venv)`.
-> Mac/Linux: `source .venv/bin/activate`.
+Para instalar solo la herramienta, sin las dependencias del experimento: `pip install .`
+(queda disponible el comando `deltaheal`).
 
 ---
 
-## 4. Configurar el LLM gratuito (Gemini)
+## Demostración
 
-1. Entra a **https://aistudio.google.com/apikey** y pulsa **Create API key**. Copia la clave.
-2. Crea el archivo `.env` a partir del ejemplo y pega tu clave:
-   ```powershell
-   copy .env.example .env
-   notepad .env
-   ```
-   ```
-   GEMINI_API_KEY=tu-clave
-   ```
-   El archivo `.env` **nunca se sube a GitHub** (está en `.gitignore`).
-3. Verifica:
-   ```powershell
-   python -m deltaheal check-llm
-   ```
-   Debe terminar con **✅ Conexión correcta**.
+La demostración usa la API de ejemplo ([demo_api/](demo_api/)) y un **proveedor de IA simulado**
+(`--provider mock`), que introduce un error deliberado para mostrar la auto-corrección. No requiere
+Docker, conexión a internet ni clave de API.
 
-**Límites del nivel gratuito:** Google limita las llamadas por minuto y por día, y cada modelo
-tiene su propia cuota. Puedes ver tus límites en https://ai.dev/rate-limit. El prototipo espacia las
-llamadas automáticamente. Si se agota la cuota del día, se detiene sin perder nada, y al
-ejecutarlo de nuevo continúa donde quedó. La cuota se reinicia a medianoche hora del Pacífico
-(3:00 a.m. en Lima).
-
-Otros proveedores soportados: `--provider groq` (gratis, clave `GROQ_API_KEY`),
-`--provider ollama` (modelo local, sin límites), y `deepseek`/`openai` (de pago).
-Lista de modelos disponibles para tu clave: `python -m deltaheal models`.
-
----
-
-## 5. Primera prueba con la API demo
-
-Necesitas **dos terminales** con el entorno activado.
-
-**Terminal 1**: levanta la API demo y déjala abierta.
+**1. Iniciar la API de ejemplo** (terminal 1):
 ```powershell
-uvicorn examples.demo_api.app:app --port 8000
-```
-Comprueba en el navegador que `http://127.0.0.1:8000/pets` muestra `[]`.
-
-**Terminal 2**, sin gastar cuota (LLM simulado):
-```powershell
-python -m deltaheal run --mode deltaheal --provider mock --model mock-1 --spec examples/demo_api/openapi_v2.yaml --old-spec examples/demo_api/openapi_v1.yaml --base-url http://127.0.0.1:8000
-```
-El LLM simulado mete un error a propósito: verás *tasa ejecutable 75 % → 100 %* tras 1 reparación.
-
-**Terminal 2**, con Gemini:
-```powershell
-python -m deltaheal run --mode deltaheal --spec examples/demo_api/openapi_v2.yaml --old-spec examples/demo_api/openapi_v1.yaml --base-url http://127.0.0.1:8000
+uvicorn demo_api.app:app --port 8000
 ```
 
-Dónde queda todo (`deltaheal-out\deltaheal\`):
+**2. Ejecutar DeltaHeal** (terminal 2). Compara el contrato base (`openapi_v1.yaml`) con el
+modificado (`openapi_v2.yaml`, que agrega `PATCH /pets/{petId}` y el campo `age`):
+```powershell
+python -m deltaheal run --mode deltaheal --provider mock --model mock-1 --spec demo_api/openapi_v2.yaml --old-spec demo_api/openapi_v1.yaml --base-url http://127.0.0.1:8000
+```
+Resultado esperado:
+- 1 endpoint nuevo y 3 modificados; `DELETE /pets/{petId}` se excluye porque no cambió.
+- Tasa de pruebas ejecutables: 75 % antes de la reparación y 100 % después de 1 iteración.
+
+**3. Simular una regresión.** Detener la API (Ctrl+C) e iniciarla con la regresión activada:
+```powershell
+$env:DEMO_REGRESSION="1"; uvicorn demo_api.app:app --port 8000
+```
+Al repetir el paso 2, `GET /pets/{petId}` responde 500 y el reporte la muestra en
+**Posibles regresiones**, sin repararla. Para desactivarla: `$env:DEMO_REGRESSION="0"`.
+
+**4. Visor de resultados del experimento** (opcional):
+```powershell
+streamlit run benchmark\viewer\app.py
+```
+
+Archivos generados en cada ejecución (`deltaheal-out\<modo>\`):
 
 | Archivo | Contenido |
 |---|---|
-| `report.md` / `report.json` | reporte legible / métricas completas |
-| `test_generated.py` | pruebas finales; `test_generated.iterN.py` = cada versión del bucle |
-| `llm_calls\NN_fase_prompt.txt` | prompt **exacto** enviado al LLM |
-| `llm_calls\NN_fase_response.txt` | respuesta **exacta** del LLM |
-| `junit_*.xml` | resultado de Pytest por iteración |
-| `http_final.jsonl` | cada petición HTTP hecha a la API y su código de respuesta |
-| `spec_context.yaml` | sub-especificación que se envió al LLM |
-
-> La API demo tiene a propósito una inconsistencia con su contrato: devuelve `tag: null`
-> aunque el contrato dice texto. Las pruebas generadas lo detectan como "posible regresión",
-> que es un buen ejemplo de lo que la herramienta encuentra.
+| `report.md` / `report.json` | reporte (el comentario del Pull Request) y métricas completas |
+| `test_generated.py` | pruebas finales; `test_generated.iterN.py` corresponde a cada iteración |
+| `llm_calls\NN_<fase>_prompt.txt` / `_response.txt` | texto exacto enviado al modelo y su respuesta |
+| `junit_iterN.xml` | resultado de Pytest en cada iteración |
+| `http_final.jsonl` | cada petición HTTP enviada a la API y su código de respuesta |
+| `spec_context.yaml` | fragmento del contrato enviado al modelo |
 
 ---
 
-## 6. El experimento
+## Uso con un proveedor de IA
 
-### 6.1 Diseño
-`benchmark/benchmark.yaml` define **5 configuraciones × 3 APIs × 5 repeticiones = 75 corridas**
-(ver [sección 9](#9-configuraciones-del-experimento-y-por-qué-son-automáticas)). El orden de las
-configuraciones se aleatoriza dentro de cada repetición (semilla fija), y la API se reinicia antes
-de cada corrida para partir de datos limpios.
-
-Como las APIs reales no traen un "commit con cambios", se simula un **escenario de cambio**: la
-especificación vigente es la versión nueva, y la versión "anterior" se obtiene quitándole los
-endpoints/campos listados en `scenario` (`remove_operations`, `remove_properties`).
-
-### 6.2 APIs del experimento
-
-| API | Complejidad | Operaciones | Autenticación | Cambio simulado (operaciones objetivo) | Reducción de contexto |
-|---|---|---|---|---|---|
-| **Swagger Petstore v3** | baja | 19 | no | 3 endpoints nuevos + campo `tags` agregado al esquema `Pet` (7 ops) | 56 % |
-| **VAmPI** | media | 14 | JWT (`admin`) | 2 endpoints nuevos + 2 respuestas 401 documentadas (4 ops) | 60 % |
-| **Full Stack FastAPI Template** | alta (FastAPI + PostgreSQL) | 23 | JWT (superusuario) | 2 endpoints nuevos, 1 campo, 1 parámetro y 1 respuesta (5 ops) | 67 % |
-
-- **Petstore** se usa en varios estudios de la revisión [4], [12], [14] y tiene un bug documentado (ver piloto).
-- **VAmPI** aparece en Pasca et al. [11]; se ejecuta en modo seguro (`vulnerable=0`).
-- **FastAPI Template** tiene base de datos real, validaciones y roles; su base se recrea en cada corrida.
-
-Las versiones están **fijadas en un commit** (`benchmark/setup_apis.py`) y sus contratos OpenAPI
-(`benchmark/specs/`) se extrajeron de esos mismos commits.
-
-**Cómo se simula el cambio.** La versión *nueva* del contrato es la API tal como se ejecuta, así
-que todo lo que se detecta como cambio existe de verdad en la aplicación. La versión *anterior*
-se obtiene deshaciendo cambios con estas reglas (sección `scenario` de cada API):
-`remove_operations` (endpoints nuevos), `remove_properties` (campos nuevos), `remove_required`
-(campos que pasaron a ser obligatorios), `remove_parameters` (parámetros nuevos) y
-`remove_responses` (respuestas HTTP documentadas).
-
-**Autenticación.** Antes de cada corrida el script inicia sesión (`auth` en `benchmark.yaml`) y usa
-el mismo token para **A, B y C**. Las pruebas del LLM lo reciben a través de la fixture `api`, y
-Schemathesis como header. El prompt de B y C incluye la misma nota de entorno (`context_note`).
-
-**Estado limpio verificado.** Antes de cada corrida la API se recrea desde cero (contenedor o base
-de datos nueva), se pueblan sus datos (`setup`) y se ejecuta una **prueba de humo** (`smoke`). Si
-falla, se reintenta, y si sigue fallando no se ejecuta la corrida ni se gasta cuota.
-
-### 6.3 Ejecutar
-Con Docker Desktop abierto, **una sola vez**, prepara las APIs (descarga el código fijado y
-construye las imágenes; la primera vez tarda varios minutos):
-```powershell
-python benchmark/setup_apis.py
-```
-Luego:
-```powershell
-# prueba corta: 1 repetición, solo Petstore
-python benchmark/run_benchmark.py --apis petstore3 --reps 1
-
-# experimento completo (reanudable: si se corta o se acaba la cuota, vuelve a ejecutarlo)
-python benchmark/run_benchmark.py
-
-# análisis estadístico
-python benchmark/analyze.py benchmark/results/results.csv
-```
-Si cambias de modelo o de configuración, borra `benchmark\results` y empieza de cero: todas las
-corridas deben hacerse en las mismas condiciones.
-
-### 6.4 Resultados (`benchmark\results\`)
-| Archivo | Contenido |
-|---|---|
-| `results.csv` | una fila por corrida |
-| `evidencia_experimento.xlsx` | evidencia completa ([sección 7](#7-evidencia-en-excel)) |
-| `analysis.md` | tablas y pruebas estadísticas para la tesis |
-| `summary_*.csv`, `tests.csv` | resúmenes y pruebas de hipótesis |
-| `fig_*.png` | diagramas de caja por métrica |
-| `<api>\<config>_r<rep>\` | todos los archivos de cada corrida (ver tabla de la sección 5) |
-
-Estadística: Kruskal–Wallis entre configuraciones, Mann–Whitney U por pares con corrección de
-Holm, δ de Cliff como tamaño del efecto y Friedman con bloques API × repetición.
-
----
-
-## 7. Evidencia en Excel
-
-Se genera sola al terminar (o detenerse) el experimento: un Excel **general** (`evidencia_experimento.xlsx`, las 3 APIs) y **uno por API** (`evidencia_<api>.xlsx`). También puedes generarlos a mano:
-```powershell
-python benchmark/export_evidence.py
-```
-
-| Hoja | Qué registra |
-|---|---|
-| **Leeme** | descripción, modelo usado y de dónde sale cada dato |
-| **Resumen** | promedios por configuración y reducción de tokens C vs. B (fórmulas) |
-| **Condiciones** | modelo y parámetros del LLM, versiones de software, commits de las APIs y escenarios de cambio |
-| **Corridas** | una fila por corrida: fecha, API, configuración, tests, tasa ejecutable, cobertura, tokens, costo, iteraciones, estado de la API al terminar, carpeta de evidencia |
-| **Pasos** | **bitácora con hora de cada paso de cada corrida, para A, B y C**: reinicio de la API, preparación de datos, prueba de humo, login, carga de especificaciones, análisis delta, contexto enviado, generación (Schemathesis o LLM), cada ejecución de Pytest, cada reparación, versión final, cobertura y estado final |
-| **Codigo_generado** | el archivo de pruebas final de cada corrida (Schemathesis en A, LLM en B y C) |
-| **Trafico_HTTP** | cada petición HTTP real enviada a la API, con el test que la envió y el código de respuesta |
-| **Llamadas_LLM** | cada llamada al LLM: fase (generación/reparación), tokens, latencia, si se cortó, archivos |
-| **Prompts** | el **texto exacto** de cada prompt enviado y de cada respuesta recibida |
-| **Casos_de_prueba** | resultado final de cada test generado |
-| **Cobertura** | por operación: códigos HTTP documentados, observados y cubiertos |
-| **Registro_manual** | plantilla opcional para ejecuciones hechas por una persona |
-
-Cada fila incluye la carpeta de origen, así que cualquier dato puede verificarse contra el archivo
-que lo produjo.
-
----
-
-## 8. Integración con GitHub Actions
-
-### 8.1 Subir el proyecto
-1. En github.com: **+ → New repository**, nombre `deltaheal-api-testing`, **Private**, sin README.
-2. En la terminal (cambia `TU_USUARIO`):
+1. Obtener una clave de Google Gemini en https://aistudio.google.com/apikey (nivel gratuito).
+2. Crear el archivo `.env` a partir de la plantilla y registrar la clave. El archivo está excluido
+   del repositorio.
    ```powershell
-   git init
-   git add .
-   git commit -m "Prototipo DeltaHeal"
-   git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/deltaheal-api-testing.git
-   git push -u origin main
+   copy .env.example .env      # GEMINI_API_KEY=<clave>
    ```
-3. **Settings → Secrets and variables → Actions → New repository secret**:
-   nombre `GEMINI_API_KEY`, valor tu clave.
+3. Verificar la conexión: `python -m deltaheal check-llm`.
+4. Ejecutar el paso 2 de la demostración sin `--provider mock --model mock-1`.
 
-### 8.2 Workflows incluidos
-| Archivo | Cuándo corre | Qué hace |
+El nivel gratuito de Gemini limita las llamadas por minuto y por día, y su tiempo de respuesta es
+variable. DeltaHeal espacia las llamadas, reintenta ante límites temporales y, si se agota la cuota
+diaria, se detiene sin perder el trabajo realizado.
+
+Proveedores soportados: `gemini`, `groq` (nivel gratuito), `ollama` (modelos locales), `openai`,
+`deepseek`, `anthropic` y `mock` (simulado).
+
+---
+
+## Referencia de la línea de comandos
+
+```
+python -m deltaheal <comando> [opciones]      # o: deltaheal <comando>, tras pip install .
+```
+
+| Comando | Función |
+|---|---|
+| `run` | Ejecuta el flujo completo y genera el reporte. |
+| `delta` | Muestra los endpoints nuevos, modificados y eliminados. No usa la API ni el modelo. |
+| `check-llm` | Verifica la clave y el modelo con una llamada mínima. |
+| `models` | Lista los modelos disponibles para la clave configurada. |
+
+**Opciones de `run`:**
+
+| Opción | Descripción | Valor por defecto |
 |---|---|---|
-| `.github/workflows/api-regression.yml` | en cada Pull Request que modifica la especificación | levanta la API, ejecuta DeltaHeal contra la rama base, **comenta el reporte en el PR**, sube los artefactos y marca el PR en rojo si hay posibles regresiones |
-| `.github/workflows/benchmark.yml` | manual (**Actions → Benchmark experiment → Run workflow**) | ejecuta el experimento, el análisis y el Excel; los deja como artefacto descargable |
-| `action.yml` | desde otros repositorios | acción reutilizable (`uses: TU_USUARIO/deltaheal-api-testing@main`) |
+| `--spec` | Ruta del contrato OpenAPI | `openapi.yaml` |
+| `--old-spec` | Contrato base como archivo (en lugar de usar git) | — |
+| `--base-ref` / `--head-ref` | Referencias de git a comparar | `origin/main` / directorio de trabajo |
+| `--base-url` | URL de la API bajo prueba | `http://localhost:8080` |
+| `--mode` | `deltaheal`, `traditional`, `llm_full`, `delta_only` o `full_heal` | `deltaheal` |
+| `--provider` / `--model` | Proveedor y modelo de IA | `gemini` / `gemini-3.8-flash` |
+| `--llm-base-url` | URL alternativa del proveedor | la del proveedor |
+| `--max-heal-iterations` | Iteraciones máximas de auto-corrección | `3` |
+| `--heal-policy` | `errors` (solo errores de código) o `all` (incluye fallas de aserción) | `errors` |
+| `--fail-on` | Condición de salida con error: `regression`, `any` o `never` | `regression` |
+| `--output-dir` / `--run-id` | Carpeta y subcarpeta de resultados | `deltaheal-out` / el modo |
+| `--json` | Imprime el reporte completo en JSON | — |
+| `-c`, `--config` | Archivo YAML con la configuración (ver [deltaheal.example.yaml](deltaheal.example.yaml)) | — |
 
-### 8.3 Probarlo
-- **Benchmark sin gastar cuota:** Actions → Benchmark experiment → Run workflow → en *config*
-  escribe `benchmark/benchmark.demo.yaml`.
-- **Flujo de Pull Request:**
-  ```powershell
-  git checkout -b prueba-cambio
-  # edita examples/demo_api/openapi_v2.yaml (p. ej. cambia un "summary") y guarda
-  git commit -am "Cambio en el contrato"
-  git push -u origin prueba-cambio
-  ```
-  En GitHub: **Compare & pull request → Create pull request**. En unos minutos aparece el
-  reporte de DeltaHeal como comentario.
-
-Para usarlo con tu propia API, en `api-regression.yml` cambia `SPEC_PATH`, `API_BASE_URL` y el paso
-"Levantar API bajo prueba".
+**Códigos de salida:** `0` sin regresiones · `1` posibles regresiones (según `--fail-on`) ·
+`2` error de conexión con el proveedor (`check-llm`, `models`) · `3` la API no responde ·
+`4` cuota diaria del proveedor agotada.
 
 ---
 
-## 9. Configuraciones del experimento y por qué son automáticas
+## Integración con GitHub Actions
 
-| Config. | `--mode` | Delta | Reparación | Qué representa |
+| Archivo | Ejecución | Función |
+|---|---|---|
+| [api-regression.yml](.github/workflows/api-regression.yml) | en cada Pull Request que modifica el contrato de la API de ejemplo | inicia la API, ejecuta DeltaHeal contra la rama base, **publica el reporte en el Pull Request** y marca el check en rojo ante posibles regresiones |
+| [benchmark.yml](.github/workflows/benchmark.yml) | manual (*Actions → Benchmark experiment → Run workflow*) | ejecuta el experimento comparativo y publica los resultados como artefacto |
+| [action.yml](action.yml) | desde otros repositorios | acción reutilizable: `uses: mariaSolangeEzcurra/Prototipo-DeltaHeal@main` |
+
+**Configuración:** registrar la clave en *Settings → Secrets and variables → Actions → New
+repository secret* con el nombre `GEMINI_API_KEY`.
+
+**Verificación:** crear una rama, modificar `demo_api/openapi_v2.yaml` (por ejemplo, un `summary`)
+y abrir un Pull Request. El reporte de DeltaHeal se publica como comentario.
+
+**Uso con otra API:** en `api-regression.yml`, ajustar `SPEC_PATH`, `API_BASE_URL` y el paso
+"Levantar API bajo prueba" (por ejemplo, `docker compose up -d`).
+
+---
+
+## Resultados
+
+Se compararon 5 configuraciones sobre 3 APIs de referencia (Swagger Petstore, VAmPI y Full Stack
+FastAPI Template), con 5 repeticiones cada una: **75 ejecuciones**. Valores promedio:
+
+| Configuración | Pruebas ejecutables | Cobertura de respuestas HTTP | Tokens por ejecución | Costo equivalente (USD) |
 |---|---|---|---|---|
-| **A** | `traditional` | — | — | Herramienta tradicional **sin IA**: Schemathesis genera casos automáticamente a partir del contrato (property-based testing), con datos válidos e inválidos |
-| **B** | `llm_full` | ✗ | ✗ | **LLM básico**: se envía la OpenAPI completa con un prompt, se toma el código tal como viene y se ejecuta |
-| **C** | `deltaheal` | ✓ | ✓ | **Prototipo propuesto** |
-| Ablación | `delta_only` | ✓ | ✗ | aísla el efecto del análisis delta |
-| Ablación | `full_heal` | ✗ | ✓ | aísla el efecto del self-healing |
+| A · Herramienta sin IA (Schemathesis) | 100 % | 76.6 % | 0 | 0 |
+| B · IA con el contrato completo | 92.4 % | 82.3 % | 10 613 | 0.0228 |
+| **C · DeltaHeal (delta + auto-corrección)** | **100 %** | **91.4 %** | **5 602** | **0.0119** |
 
-**¿Por qué A y B no las hace una persona?**
+- **Eficiencia:** 47 % menos tokens que B, con aproximadamente la mitad del costo.
+- **Cobertura:** 91.4 % de respuestas HTTP documentadas cubiertas, frente a 76.6 % de la
+  herramienta sin IA.
+- **Tiempo de ejecución:** no es un criterio comparable en este experimento, porque está dominado
+  por la latencia del nivel gratuito del proveedor (de 20 s a más de 10 min por llamada).
 
-- **A** es una *herramienta* tradicional sin IA, no testing manual. Schemathesis es una herramienta
-  de testing automático de APIs ampliamente usada; se ejecuta igual que la usaría un equipo en CI.
-- **B** reproduce lo que hace una persona con un LLM: pegar la especificación completa, pedir las
-  pruebas y ejecutarlas sin corregirlas. Se automatiza con el **mismo prompt** que C (solo cambia
-  el contexto: spec completa vs. delta). Así la comparación aísla el efecto del delta y del
-  self-healing, y no la habilidad de quien escribe el prompt.
-- Automatizar ambas da **reproducibilidad** (las 5 repeticiones se hacen en condiciones idénticas)
-  y **medición exacta** de tokens y tiempos, que en una interfaz web no se pueden medir con
-  precisión.
-- La **evidencia** de que se hizo así queda en el Excel: hoja **Prompts** (texto exacto de cada
-  prompt y respuesta), **Llamadas_LLM** y **Casos_de_prueba**.
-
-Si tu asesor pide además un contraste con pruebas hechas por una persona (por ejemplo, Postman a mano
-o un LLM usado en el chat web), regístralo en la hoja **Registro_manual**. Tiene una fila de ejemplo
-y las celdas a completar en amarillo.
+Diseño experimental, análisis estadístico e instrucciones de reproducción:
+[benchmark/README.md](benchmark/README.md).
 
 ---
 
-## 10. Métricas (definición operativa)
-
-| Métrica | Definición |
-|---|---|
-| **Tasa de pruebas ejecutables** | tests que corren hasta el final (pasan o fallan por aserción) / tests generados. Errores de sintaxis, colección, `NameError`, fixtures inexistentes, etc. = no ejecutables. |
-| **Cobertura de respuestas HTTP** | pares (operación, código HTTP) documentados en el contrato **y** observados en el tráfico real / pares documentados. Se mide sobre las operaciones del delta, el mismo denominador para todas las configuraciones. |
-| **Tokens** | entrada + salida reportados por el proveedor (incluye tokens de razonamiento), separados en generación y reparación. |
-| **Costo** | tokens × precio de lista configurado. Con el nivel gratuito el gasto real es $0; se reporta el **costo equivalente**. |
-
----
-
-## 11. Estructura del proyecto
+## Estructura del proyecto
 
 ```
-deltaheal/                 el orquestador
-  delta.py                 análisis delta de la OpenAPI (git diff + comparación por operación)
-  llm.py                   clientes LLM (Gemini, Groq, Ollama, DeepSeek, OpenAI, Anthropic, mock)
-  prompts.py               prompts de generación y reparación
-  healer.py                bucle de auto-corrección
-  patcher.py               reparación parcial (reemplaza solo los tests que fallaron)
-  runner.py                ejecución de Pytest y clasificación de resultados
-  pytest_plugin.py         fixture `api` + registro del tráfico HTTP
-  coverage.py              cobertura de respuestas HTTP
-  baseline_schemathesis.py configuración A
-  orchestrator.py, cli.py  pipeline y línea de comandos
-benchmark/
-  benchmark.yaml           diseño del experimento (APIs, configuraciones, modelo)
-  benchmark.demo.yaml      prueba del experimento sin costo
-  run_benchmark.py         ejecuta el experimento
-  analyze.py               análisis estadístico
-  export_evidence.py       Excel de evidencias
-  specs/                   especificaciones OpenAPI de las APIs
-examples/demo_api/         API de demostración (FastAPI) + contratos v1 y v2
-tests/                     pruebas del propio prototipo (32)
-.github/workflows/         integración con GitHub Actions
+deltaheal/                  aplicación (CLI en Python)
+  cli.py                    comandos: run, delta, models, check-llm
+  pipeline.py               flujo completo de una ejecución
+  config.py                 configuración (archivo YAML, variables de entorno, opciones)
+  spec_loader.py            ① carga del contrato desde archivo o git
+  delta.py                  ② análisis delta
+  prompts.py                ③ instrucciones para el modelo
+  llm.py                    ③ clientes de los proveedores de IA
+  generated_code.py         ③ extracción y validación sintáctica del código generado
+  pytest_runner.py          ④ ejecución de pruebas y clasificación de resultados
+  pytest_plugin.py          ④ fixture `api` y registro del tráfico HTTP
+  self_healing.py           ⑤ bucle de auto-corrección
+  partial_repair.py         ⑤ reparación parcial (solo las pruebas que fallaron)
+  http_coverage.py          ⑥ cobertura de respuestas HTTP
+  report.py                 ⑥ reporte Markdown y JSON
+  step_log.py               bitácora de etapas de cada ejecución
+  schemathesis_baseline.py  modo `traditional` (sin IA), usado como referencia
+demo_api/                   API de ejemplo (FastAPI) y sus contratos v1 y v2
+benchmark/                  evaluación experimental (ver benchmark/README.md)
+  config.yaml               diseño: 5 configuraciones × 3 APIs × 5 repeticiones
+  config.demo.yaml          configuración de prueba sin costo (API de ejemplo + IA simulada)
+  setup_apis.py             preparación de las APIs con Docker
+  run.py                    ejecución del experimento
+  analyze.py                análisis estadístico y gráficos
+  export_excel.py           libro Excel de evidencias
+  specs/                    contratos de las APIs evaluadas
+  docker/                   configuración Docker de FastAPI Template
+  results/                  resultados finales (75 ejecuciones)
+  pilots/                   ejecuciones piloto
+  viewer/                   visor web de resultados (Streamlit)
+tests/                      pruebas automatizadas de la herramienta
+.github/workflows/          workflows de GitHub Actions
+action.yml                  acción reutilizable de GitHub
+deltaheal.example.yaml      plantilla de configuración
 ```
 
 ---
 
-## 12. Solución de problemas
+## Limitaciones
+
+- **Alcance limitado al contrato:** los cambios en el código de la API que no se reflejan en el
+  contrato OpenAPI no se detectan.
+- **No determinismo del modelo:** dos ejecuciones pueden generar pruebas distintas; el experimento
+  lo mitiga con 5 repeticiones por caso.
+- **Dependencia del proveedor:** el nivel gratuito tiene cuotas diarias y latencia variable.
+- **Escenarios de cambio simulados:** en el experimento, la versión base de cada contrato se obtuvo
+  retirando endpoints o campos de la versión vigente.
+
+---
+
+## Solución de problemas
 
 | Mensaje | Solución |
 |---|---|
-| `No module named 'deltaheal'` | ejecuta los comandos desde la carpeta del proyecto, con el entorno activado |
-| `...Activate.ps1 no se puede cargar...` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (una vez) |
-| `API key not valid` / `401` / `403` | revisa `GEMINI_API_KEY` en `.env` (sin espacios ni comillas) |
-| `model not found` / `404` | `python -m deltaheal models` y usa un nombre de esa lista en `benchmark.yaml` |
-| `⏸ Se agotó la cuota diaria` | normal en el nivel gratuito: vuelve a ejecutar el mismo comando al día siguiente |
-| `No hay ninguna API respondiendo…` | levanta la API (uvicorn o Docker) antes de ejecutar; no se gasta cuota |
-| `esperando que la API responda…` (se queda ahí) | Docker Desktop no está abierto |
-| `container name ... already in use` | se resuelve solo; si persiste: `docker rm -f petstore3` (o `vampi`) |
-| `falta benchmark/apis/...` | ejecuta una vez `python benchmark/setup_apis.py` |
-| `port is already allocated` | otro programa usa el puerto 8080 (Petstore), 5000 (VAmPI) u 8000 (FastAPI); ciérralo |
-| `no se pudo iniciar sesión` | la API no terminó de arrancar; vuelve a ejecutar el benchmark (la corrida quedó pendiente) |
-| "Respuestas cortadas" > 0 en el reporte | el modelo agotó su presupuesto de salida; sube `max_tokens` en `benchmark.yaml` |
+| `No module named 'deltaheal'` | Ejecutar desde la raíz del proyecto con el entorno virtual activado. |
+| `...Activate.ps1 no se puede cargar...` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (una vez). |
+| `No hay ninguna API respondiendo…` | Iniciar la API antes de ejecutar DeltaHeal; no se consume cuota. |
+| `API key not valid` / `401` / `403` | Revisar `GEMINI_API_KEY` en `.env` (sin espacios ni comillas). |
+| `model not found` / `404` | Consultar `python -m deltaheal models` y usar un modelo de la lista. |
+| `Se agotó la cuota diaria` | Cuota del nivel gratuito agotada; ejecutar nuevamente al día siguiente. |
+| Puerto 8000 ocupado | Usar otro puerto: `--port 8001` en uvicorn y `--base-url http://127.0.0.1:8001`. |
 
----
-
-**Limitaciones y amenazas a la validez a discutir en la tesis:** no determinismo del LLM
-(mitigado con 5 repeticiones), escenarios de cambio sintéticos, posible presencia de APIs populares
-como Petstore en los datos de entrenamiento del LLM, cuotas del nivel gratuito (el experimento puede
-repartirse en varios días con el mismo modelo) y potencia estadística limitada con n = 5 por celda.
+Problemas del entorno experimental con Docker: [benchmark/README.md](benchmark/README.md#solución-de-problemas).

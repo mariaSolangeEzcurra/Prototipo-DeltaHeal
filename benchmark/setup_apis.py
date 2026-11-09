@@ -59,13 +59,13 @@ def main() -> int:
 
     print("\n▶ Imágenes de FastAPI Template (puede tardar varios minutos la primera vez)")
     run(["docker", "compose", "-p", "fastapi_bench", "-f", "compose.yml",
-         "-f", str(ROOT / "benchmark" / "apis_config" / "fastapi-template.override.yml"), "build", "backend"],
+         "-f", str(ROOT / "benchmark" / "docker" / "fastapi-template.override.yml"), "build", "backend"],
         cwd=APIS_DIR / "full-stack-fastapi-template")
 
     print("\n▶ Imagen de Swagger Petstore v3")
     run(["docker", "pull", PETSTORE_IMAGE])
 
-    print("\n✅ APIs listas. Ahora puedes ejecutar:  python benchmark/run_benchmark.py")
+    print("\n✅ APIs listas. Siguiente paso:  python benchmark/run.py")
     return 0
 
 

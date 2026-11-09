@@ -16,7 +16,7 @@ from __future__ import annotations
 import ast
 import re
 
-from .runner import RunResult
+from .pytest_runner import RunResult
 
 
 def _span(node: ast.stmt) -> tuple[int, int]:

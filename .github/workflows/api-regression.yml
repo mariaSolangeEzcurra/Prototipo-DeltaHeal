@@ -1,12 +1,12 @@
 # Testing de regresión de la API en cada Pull Request que modifique el contrato OpenAPI.
-# Ajusta SPEC_PATH y el paso "Levantar API bajo prueba" a tu proyecto.
+# Para otra API: ajustar SPEC_PATH, API_BASE_URL y el paso "Levantar API bajo prueba".
 name: API regression (DeltaHeal)
 
 on:
   pull_request:
     paths:
-      - "examples/demo_api/openapi_v2.yaml"   # ← ruta de tu spec OpenAPI
-      - "examples/demo_api/**"
+      - "demo_api/openapi_v2.yaml"   # ruta del contrato OpenAPI
+      - "demo_api/**"
   workflow_dispatch:
 
 permissions:
@@ -14,7 +14,7 @@ permissions:
   pull-requests: write
 
 env:
-  SPEC_PATH: examples/demo_api/openapi_v2.yaml
+  SPEC_PATH: demo_api/openapi_v2.yaml
   API_BASE_URL: http://localhost:8000
   DELTAHEAL_PROVIDER: ${{ vars.DELTAHEAL_PROVIDER || 'gemini' }}
   DELTAHEAL_MODEL: ${{ vars.DELTAHEAL_MODEL || 'gemini-3.8-flash' }}
@@ -32,14 +32,16 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        # Dependencias mínimas: DeltaHeal y la API demo.
+        run: pip install ".[demo]"
 
       - name: Levantar API bajo prueba
-        # Reemplaza por `docker compose up -d` o el comando de tu servicio.
+        # Para otra API: reemplazar por `docker compose up -d` o el comando del servicio.
         run: |
-          nohup uvicorn examples.demo_api.app:app --port 8000 > api.log 2>&1 &
+          nohup uvicorn demo_api.app:app --port 8000 > api.log 2>&1 &
           for i in $(seq 1 30); do curl -sf "$API_BASE_URL/pets" && break; sleep 2; done
 
       - name: Ejecutar DeltaHeal (análisis delta + self-healing)
