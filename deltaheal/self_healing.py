@@ -14,21 +14,28 @@ Salvaguardas:
 - Si todos los casos fallan por conexión (API caída) se detiene sin gastar tokens.
 - Se conserva la mejor versión (más tests ejecutables); si una reparación empeora
   el archivo, se vuelve a la versión anterior.
+- Revisión humana opcional (`reviewer`): antes de cada ejecución una persona puede revisar,
+  editar o cancelar las pruebas generadas o reparadas.
 """
 
 from __future__ import annotations
 
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from . import prompts
-from .codegen import extract_code, static_check
-from .evidence import StepLog, run_summary
+from .generated_code import extract_code, static_check
 from .llm import LLMClient, LLMResponse
-from .patcher import failing_toplevel_names, merge_patch, split_for_patch
-from .runner import RunResult, format_assertions_for_llm, format_errors_for_llm, run_pytest
+from .partial_repair import failing_toplevel_names, merge_patch, split_for_patch
+from .progress import progress
+from .pytest_runner import RunResult, format_assertions_for_llm, format_errors_for_llm, run_pytest
+from .step_log import StepLog, run_summary
+
+# Recibe el archivo de pruebas y el número de iteración; devuelve True para ejecutarlo.
+Reviewer = Callable[[Path, int], bool]
 
 
 @dataclass
@@ -90,6 +97,7 @@ class HealingResult:
     generated_tests: int
     iterations: list[Iteration]
     stopped_reason: str
+    reviews: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _save_call(workdir: Path, ledger: Ledger, phase: str, system: str, user: str, resp: LLMResponse) -> None:
@@ -112,13 +120,15 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
                       workdir: Path, base_url: str, max_iterations: int = 3,
                       policy: str = "errors", test_name: str = "test_generated.py",
                       pytest_timeout: int = 60, repair_mode: str = "patch",
-                      log: StepLog | None = None) -> HealingResult:
+                      log: StepLog | None = None, extra_env: dict[str, str] | None = None,
+                      reviewer: Reviewer | None = None) -> HealingResult:
     log = log or StepLog(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
     test_file = workdir / test_name
 
     user = prompts.USER_GENERATE.format(spec=spec_text, focus=focus)
-    resp = client.complete(prompts.SYSTEM_GENERATE, user)
+    with progress.waiting(f"Esperando a la IA ({client.model}): generación de pruebas"):
+        resp = client.complete(prompts.SYSTEM_GENERATE, user)
     ledger.add("generate", resp)
     _save_call(workdir, ledger, "generate", prompts.SYSTEM_GENERATE, user, resp)
     code = extract_code(resp.text)
@@ -128,16 +138,36 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
             workdir / "llm_calls" / f"{len(ledger.calls):02d}_generate_prompt.txt")
 
     iterations: list[Iteration] = []
+    reviews: list[dict[str, Any]] = []
     best: tuple[int, str, RunResult, Path, int] | None = None
     stopped = "max_iterations"
 
     for i in range(max_iterations + 1):
         test_file.write_text(code, encoding="utf-8")
+        if reviewer is not None:
+            approved = reviewer(test_file, i)
+            reviewed = test_file.read_text(encoding="utf-8")
+            edited = reviewed != code
+            reviews.append({"iteration": i, "approved": approved, "edited": edited})
+            log.add("Revisión humana",
+                    f"iteración {i}: {'aprobada' if approved else 'cancelada'}"
+                    + ("; el revisor modificó el archivo" if edited else ""), test_file)
+            code = reviewed
+            if not approved:
+                stopped = "review_cancelled"
+                if best is None:  # nada se ejecutó todavía
+                    empty_log = workdir / "http_final.jsonl"
+                    empty_log.write_text("", encoding="utf-8")
+                    return HealingResult(code, RunResult(exit_code=-1, duration_s=0.0), empty_log, test_file,
+                                         static_check(code).test_count, iterations, stopped, reviews)
+                break
         (workdir / f"{test_file.stem}.iter{i}.py").write_text(code, encoding="utf-8")
         st = static_check(code)
         http_log = workdir / f"http_iter{i}.jsonl"
         http_log.unlink(missing_ok=True)
-        run = run_pytest(test_file, workdir, base_url, http_log, timeout_per_test=pytest_timeout)
+        with progress.waiting(f"Ejecutando las pruebas contra la API (iteración {i})"):
+            run = run_pytest(test_file, workdir, base_url, http_log, timeout_per_test=pytest_timeout,
+                             junit_name=f"junit_iter{i}.xml", extra_env=extra_env)
         log.add(f"Ejecución de pruebas (iteración {i})",
                 ("" if st.ok else f"código con error de sintaxis: {st.error}; ") + run_summary(run),
                 workdir / f"{test_file.stem}.iter{i}.py")
@@ -182,7 +212,8 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
             repair_user = prompts.USER_REPAIR_PATCH.format(
                 iteration=i + 1, max_iter=max_iterations, spec=spec_text,
                 header=header, failing=failing, errors=errors)
-            resp = client.complete(prompts.SYSTEM_REPAIR_PATCH, repair_user)
+            with progress.waiting(f"Esperando a la IA ({client.model}): reparación {i + 1}"):
+                resp = client.complete(prompts.SYSTEM_REPAIR_PATCH, repair_user)
             ledger.add("repair", resp)
             _save_call(workdir, ledger, "repair", prompts.SYSTEM_REPAIR_PATCH, repair_user, resp)
             try:
@@ -194,7 +225,8 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
         else:
             repair_user = prompts.USER_REPAIR.format(iteration=i + 1, max_iter=max_iterations,
                                                      spec=spec_text, code=code, errors=errors)
-            resp = client.complete(prompts.SYSTEM_REPAIR, repair_user)
+            with progress.waiting(f"Esperando a la IA ({client.model}): reparación {i + 1}"):
+                resp = client.complete(prompts.SYSTEM_REPAIR, repair_user)
             ledger.add("repair", resp)
             _save_call(workdir, ledger, "repair", prompts.SYSTEM_REPAIR, repair_user, resp)
             new_code, action = extract_code(resp.text), "repair_full"
@@ -215,4 +247,4 @@ def generate_and_heal(client: LLMClient, ledger: Ledger, spec_text: str, focus: 
         test_file.write_text(best_code, encoding="utf-8")
     final_log = workdir / "http_final.jsonl"
     shutil.copyfile(best_log, final_log) if best_log.exists() else final_log.write_text("", encoding="utf-8")
-    return HealingResult(best_code, best_run, final_log, test_file, best_total, iterations, stopped)
+    return HealingResult(best_code, best_run, final_log, test_file, best_total, iterations, stopped, reviews)

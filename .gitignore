@@ -1,7 +1,18 @@
+# Python
 __pycache__/
 *.pyc
 .pytest_cache/
+.venv/
+venv/
+build/
+*.egg-info/
+
+# Credenciales
+.env
+
+# Salidas locales de DeltaHeal
 deltaheal-out/
 benchmark/results-demo/
-.env
+
+# Código de las APIs del experimento (lo descarga benchmark/setup_apis.py)
 benchmark/apis/

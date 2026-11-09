@@ -1,6 +1,6 @@
 """API de demostración (Pet Store mínima) para probar el pipeline de punta a punta.
 
-Ejecutar:  uvicorn examples.demo_api.app:app --port 8000
+Ejecutar:  uvicorn demo_api.app:app --port 8000
 Con DEMO_REGRESSION=1, GET /pets/{petId} devuelve 500 (regresión simulada).
 """
 

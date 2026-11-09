@@ -1,30 +1,41 @@
-# Acción compuesta reutilizable: permite usar DeltaHeal desde otros repositorios.
-#   - uses: <owner>/deltaheal-api-testing@main
+# Acción reutilizable: permite usar DeltaHeal desde otros repositorios.
+#   - uses: mariaSolangeEzcurra/Prototipo-DeltaHeal@main
 #     with: { spec: openapi.yaml, base-url: http://localhost:8080 }
+#     env:  { GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} }
+#   Para una API con autenticación, agregar en env: DELTAHEAL_AUTH_HEADER: ${{ secrets.API_AUTH_HEADER }}
 name: DeltaHeal API regression
-description: Testing de regresión de APIs REST con LLMs, análisis delta de OpenAPI y self-healing con Pytest.
+description: Generación automática de pruebas de regresión para APIs REST con IA, enfocada en los cambios del contrato OpenAPI y con auto-corrección.
 inputs:
   spec:
-    description: Ruta de la especificación OpenAPI en el repositorio
+    description: Ruta del contrato OpenAPI en el repositorio
     required: true
   base-url:
     description: URL base de la API bajo prueba (ya levantada)
     required: true
   base-ref:
-    description: Ref git contra la que se calcula el delta
+    description: Ref de git contra la que se comparan los cambios del contrato
     default: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
   mode:
+    description: "deltaheal (recomendado) | traditional | llm_full | delta_only | full_heal"
     default: deltaheal
   provider:
+    description: "Proveedor de IA: gemini | groq | ollama | openai | deepseek | anthropic | mock"
     default: gemini
   model:
+    description: Nombre del modelo del proveedor
     default: gemini-3.8-flash
   llm-base-url:
+    description: URL alternativa del proveedor de IA (vacío = URL por defecto)
     default: ""
   max-heal-iterations:
+    description: Máximo de reparaciones automáticas de las pruebas
     default: "3"
   fail-on:
+    description: "Cuándo marcar el check en rojo: regression | any | never"
     default: regression
+  accepted-file:
+    description: YAML con fallas revisadas y aceptadas por el equipo (vacío = ninguno)
+    default: ""
 outputs:
   report:
     description: Ruta del reporte Markdown
@@ -33,7 +44,13 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: pip install -r "${{ github.action_path }}/requirements.txt"
+      # Solo el núcleo; el modo "traditional" necesita además Schemathesis.
+      run: |
+        if [ "${{ inputs.mode }}" = "traditional" ]; then
+          pip install "${{ github.action_path }}[baseline]"
+        else
+          pip install "${{ github.action_path }}"
+        fi
     - shell: bash
       env:
         PYTHONPATH: ${{ github.action_path }}
@@ -42,4 +59,5 @@ runs:
           --base-ref "${{ inputs.base-ref }}" --base-url "${{ inputs.base-url }}" \
           --provider "${{ inputs.provider }}" --model "${{ inputs.model }}" ${{ inputs.llm-base-url && format('--llm-base-url {0}', inputs.llm-base-url) || '' }} \
           --max-heal-iterations "${{ inputs.max-heal-iterations }}" \
-          --fail-on "${{ inputs.fail-on }}" --output-dir deltaheal-out --run-id action
+          --fail-on "${{ inputs.fail-on }}" --output-dir deltaheal-out --run-id action \
+          ${{ inputs.accepted-file && format('--accepted {0}', inputs.accepted-file) || '' }}

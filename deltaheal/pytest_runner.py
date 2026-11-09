@@ -126,9 +126,10 @@ def parse_junit(xml_path: Path) -> tuple[list[CaseResult], str | None]:
 
 def run_pytest(test_file: Path, workdir: Path, base_url: str, http_log: Path,
                timeout_per_test: int = 60, global_timeout: int = 900,
-               extra_env: dict[str, str] | None = None) -> RunResult:
+               extra_env: dict[str, str] | None = None, junit_name: str | None = None) -> RunResult:
     test_file, workdir, http_log = test_file.resolve(), workdir.resolve(), http_log.resolve()
-    junit = workdir / f"junit_{test_file.stem}_{int(time.time()*1000)}.xml"
+    junit = workdir / (junit_name or f"junit_{test_file.stem}_{int(time.time()*1000)}.xml")
+    junit.unlink(missing_ok=True)  # evita leer el resultado de una ejecución anterior
     env = os.environ.copy()
     env.update({
         "API_BASE_URL": base_url,

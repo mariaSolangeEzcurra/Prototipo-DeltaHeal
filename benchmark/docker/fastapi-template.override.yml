@@ -1,6 +1,6 @@
 # Override de DeltaHeal para Full Stack FastAPI Template (se usa en lugar de compose.override.yml).
 # - Solo se exponen la base de datos (interna) y el backend en el puerto 8000.
-# - No se publica el puerto 5432, para no chocar con un Postgres instalado en tu PC.
+# - No se publica el puerto 5432, para evitar conflictos con una instalación local de PostgreSQL.
 # - Se desactiva el envío de correos (no hay servidor SMTP en el experimento).
 services:
   backend:

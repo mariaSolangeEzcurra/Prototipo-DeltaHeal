@@ -1,14 +1,14 @@
-# Diseño experimental: 3 configuraciones × 3 APIs × 5 repeticiones = 45 corridas
-# (+ ablaciones opcionales). Ajusta las APIs a las que uses en tu estudio.
+# Diseño del experimento: 5 configuraciones × 3 APIs × 5 repeticiones = 75 corridas.
+# Documentación: benchmark/README.md
 
 repetitions: 5
 random_seed: 2026            # semilla para aleatorizar el orden de las corridas
-# A, B, C + ablaciones (delta_only = delta sin reparación; full_heal = spec completa con
-# reparación) para atribuir el efecto de cada componente: 5 configs × 3 APIs × 5 reps = 75 corridas
+# A, B, C + controles (delta_only = delta sin reparación; full_heal = contrato completo con
+# reparación), que permiten atribuir el efecto de cada componente.
 configs: [traditional, llm_full, deltaheal, delta_only, full_heal]
 
 llm:
-  # GRATIS: nivel gratuito de Google AI Studio (sin tarjeta). Clave en .env -> GEMINI_API_KEY
+  # Nivel gratuito de Google AI Studio. Clave en .env -> GEMINI_API_KEY
   provider: gemini             # gemini | groq | ollama (local) | mock | deepseek/openai (pago)
   model: gemini-3.8-flash      # lista los disponibles: python -m deltaheal models
   base_url: null               # null = URL por defecto del proveedor
@@ -16,9 +16,9 @@ llm:
   temperature: 0.2             # >0 para observar la variabilidad entre repeticiones
   max_tokens: 32000            # presupuesto de salida (incluye el "pensamiento" del modelo)
   reasoning_effort: low        # limita el pensamiento para que no corte el código (igual para B y C)
-  # Pagas $0, pero se calcula el "costo equivalente" con el precio de lista de la capa de pago
-  # de gemini-3.8-flash: $0.75 / $3.75 por 1M tokens (tarifa vigente hasta el 31-dic-2026;
-  # desde el 1-ene-2027 se duplica). Confírmalo en ai.google.dev/pricing.
+  # El nivel gratuito no tiene costo; se reporta un "costo equivalente" con el precio de lista de
+  # la capa de pago de gemini-3.8-flash: $0.75 / $3.75 por 1M tokens (tarifa vigente hasta el
+  # 31-dic-2026; desde el 1-ene-2027 se duplica). Referencia: ai.google.dev/pricing
   price_input_per_mtok: 0.75
   price_output_per_mtok: 3.75
 
@@ -102,10 +102,10 @@ apis:
     health: http://127.0.0.1:8000/api/v1/utils/health-check/
     startup_timeout: 240
     reset:                                        # base de datos NUEVA en cada corrida
-      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans
-      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml up -d db backend
-      - docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh
-    stop: docker compose -p fastapi_bench -f compose.yml -f ../../apis_config/fastapi-template.override.yml down -v --remove-orphans
+      - docker compose -p fastapi_bench -f compose.yml -f ../../docker/fastapi-template.override.yml down -v --remove-orphans
+      - docker compose -p fastapi_bench -f compose.yml -f ../../docker/fastapi-template.override.yml up -d db backend
+      - docker compose -p fastapi_bench -f compose.yml -f ../../docker/fastapi-template.override.yml exec -T backend bash scripts/prestart.sh
+    stop: docker compose -p fastapi_bench -f compose.yml -f ../../docker/fastapi-template.override.yml down -v --remove-orphans
     smoke:
       - {method: GET, path: /api/v1/utils/health-check/, expect: 200}
     auth:

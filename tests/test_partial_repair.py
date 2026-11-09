@@ -1,7 +1,7 @@
 import pytest
 
-from deltaheal.patcher import failing_toplevel_names, merge_patch, split_for_patch
-from deltaheal.runner import CaseResult, RunResult
+from deltaheal.partial_repair import failing_toplevel_names, merge_patch, split_for_patch
+from deltaheal.pytest_runner import CaseResult, RunResult
 
 CODE = '''import pytest
 

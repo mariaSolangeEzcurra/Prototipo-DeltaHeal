@@ -1,17 +1,25 @@
-# Núcleo del orquestador
+# Todo lo necesario para trabajar en local (herramienta + experimento + visor + API demo).
+# En CI se instala solo lo necesario con los "extras" de pyproject.toml, p. ej. pip install ".[demo]"
+
+# DeltaHeal (la herramienta)
 requests>=2.31
 PyYAML>=6.0
 pytest>=8.0
 pytest-timeout>=2.3
 jsonschema>=4.20
-# Configuración A (herramienta tradicional sin IA)
+
+# Modo "traditional": herramienta clásica sin IA, para comparar
 schemathesis>=4.0
-# Análisis del experimento
+
+# Experimento: análisis estadístico y Excel
 pandas>=2.0
 scipy>=1.11
 matplotlib>=3.8
-openpyxl>=3.1          # Excel de evidencias
+openpyxl>=3.1
+
+# Visor de resultados (benchmark/viewer)
 streamlit>=1.50
-# API de demostración
+
+# API de demostración (demo_api)
 fastapi>=0.110
 uvicorn>=0.29

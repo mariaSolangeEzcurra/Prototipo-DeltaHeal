@@ -1,11 +1,11 @@
-# Copia como deltaheal.yaml y usa: python -m deltaheal run -c deltaheal.yaml
+# Plantilla de configuración. Copiar como deltaheal.yaml y ejecutar: python -m deltaheal run -c deltaheal.yaml
 spec_path: openapi.yaml
 base_ref: origin/main
 base_url: http://localhost:8080
 mode: deltaheal                 # traditional | llm_full | deltaheal | delta_only | full_heal
 
-provider: gemini                # gemini (gratis) | groq (gratis) | ollama (local, gratis) | mock
-model: gemini-3.8-flash         # python -m deltaheal models  -> lista los disponibles
+provider: gemini                # gemini | groq | ollama (local) | openai | deepseek | anthropic | mock
+model: gemini-3.8-flash         # modelos disponibles: python -m deltaheal models
 llm_base_url: null
 llm_rpm: 8                      # respeta el límite por minuto del nivel gratuito
 temperature: 0.0

@@ -6,11 +6,11 @@ import yaml
 
 from deltaheal.delta import (OperationKey, build_subspec, collect_refs_transitive, compute_delta,
                              documented_statuses)
-from deltaheal.spec_io import git_spec_changed, load_spec_at_ref
+from deltaheal.spec_loader import git_spec_changed, load_spec_at_ref
 
 ROOT = Path(__file__).resolve().parent.parent
-V1 = yaml.safe_load((ROOT / "examples/demo_api/openapi_v1.yaml").read_text(encoding="utf-8"))
-V2 = yaml.safe_load((ROOT / "examples/demo_api/openapi_v2.yaml").read_text(encoding="utf-8"))
+V1 = yaml.safe_load((ROOT / "demo_api/openapi_v1.yaml").read_text(encoding="utf-8"))
+V2 = yaml.safe_load((ROOT / "demo_api/openapi_v2.yaml").read_text(encoding="utf-8"))
 
 
 def test_no_changes_is_empty():

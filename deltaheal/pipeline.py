@@ -1,29 +1,42 @@
-"""Pipeline principal: delta → generación → self-healing → ejecución → métricas."""
+"""Flujo completo de una corrida de DeltaHeal.
+
+    1. spec_loader     carga el contrato OpenAPI anterior y el nuevo (archivo o git)
+    2. delta           detecta qué endpoints cambiaron     (sin cambios -> fin, 0 tokens)
+    3. llm + prompts   la IA escribe pruebas solo para esos endpoints
+    4. pytest_runner   ejecuta las pruebas contra la API corriendo
+    5. self_healing    si el CÓDIGO de prueba está roto, la IA lo repara (máx. 3 veces)
+    6. http_coverage   mide qué respuestas del contrato se probaron
+    7. human_review    separa las fallas ya aceptadas por el equipo (opcional)
+    8. report          escribe report.md (el comentario del PR) y report.json
+
+En el modo `traditional` los pasos 3 y 5 los reemplaza Schemathesis (sin IA).
+"""
 
 from __future__ import annotations
 
-import json
-import os
 import time
-from datetime import datetime
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from . import prompts
-from .baseline_schemathesis import write_schemathesis_test
-from .codegen import static_check
-from .config import MODES, Settings
-from .coverage import compute_coverage
-from .delta import DeltaResult, OperationKey, build_subspec, compute_delta, iter_operations
-from .evidence import StepLog, run_summary
-from .healer import Ledger, generate_and_heal
-from .llm import make_client
-from .runner import run_pytest
 import requests
 
-from .spec_io import (dump_spec, git_spec_changed, git_spec_diff_text, load_spec_at_ref,
-                      load_spec_file)
+from . import prompts
+from .config import MODES, Settings
+from .delta import DeltaResult, OperationKey, build_subspec, compute_delta, iter_operations
+from .generated_code import static_check
+from .http_coverage import compute_coverage
+from .human_review import AcceptedRule, load_accepted, split_accepted
+from .llm import make_client
+from .progress import progress
+from .pytest_runner import run_pytest
+from .report import write_reports
+from .schemathesis_baseline import write_schemathesis_test
+from .self_healing import Ledger, Reviewer, generate_and_heal
+from .spec_loader import (dump_spec, git_spec_changed, git_spec_diff_text, load_spec_at_ref,
+                          load_spec_file)
+from .step_log import StepLog, run_summary
 
 
 def _approx_tokens(text: str) -> int:
@@ -41,12 +54,15 @@ def _load_specs(s: Settings, old_spec_path: str | None) -> tuple[dict, dict, boo
 
 
 def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None,
-        prior_steps: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        prior_steps: list[dict[str, Any]] | None = None,
+        reviewer: Reviewer | None = None) -> dict[str, Any]:
+    """Ejecuta una corrida completa. `reviewer` activa la revisión humana antes de cada ejecución."""
     t0 = time.perf_counter()
     flags = MODES[s.mode]
+    accepted_rules = load_accepted(s.accepted_file) if s.accepted_file else None  # falla antes de gastar tokens
     out = (Path(s.output_dir) / (run_id or s.mode)).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    log = StepLog(out, prior_steps)
+    log = StepLog(out, prior_steps, echo=progress.step)
     log.add("Inicio de la corrida", f"configuración={s.mode}; modelo={s.model if flags['llm'] else 'sin LLM'}; "
             f"delta={'sí' if flags['delta'] else 'no'}; self-healing={'sí' if flags['heal'] else 'no'}")
 
@@ -77,7 +93,7 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
         log.add("Fin", "el contrato no cambió: no se generan pruebas (0 tokens)")
         result.update(_empty_metrics(), status="no_contract_changes", steps=log.steps,
                       duration_s=round(time.perf_counter() - t0, 3))
-        _write_reports(out, result)
+        write_reports(out, result)
         return result
 
     # Verificación previa: si la API no responde, no se gasta ni un token del LLM.
@@ -85,9 +101,9 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
         log.add("Verificación de la API", f"SIN RESPUESTA en {s.base_url}: se detiene sin llamar al LLM")
         result.update(_empty_metrics(), status="api_unreachable", steps=log.steps,
                       error=f"No hay ninguna API respondiendo en {s.base_url}. "
-                            "¿Está corriendo el servidor (uvicorn / docker)?",
+                            "Verifique que el servidor (uvicorn / docker) esté en ejecución.",
                       duration_s=round(time.perf_counter() - t0, 3))
-        _write_reports(out, result)
+        write_reports(out, result)
         return result
 
     cov_targets: list[OperationKey] = (
@@ -98,6 +114,8 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     full_text = dump_spec(new, s.spec_format)
     (out / "spec_context.yaml").write_text(spec_text, encoding="utf-8")
     log.add("Verificación de la API", f"responde en {s.base_url}")
+    if s.auth_header:
+        log.add("Autenticación", f"se envía el header '{s.auth_header_name()}' en cada petición a la API")
     log.add("Construcción del contexto",
             (f"sub-especificación con {len(scope_ops)} de {len(all_ops)} operaciones" if flags["delta"]
              else f"especificación completa ({len(all_ops)} operaciones)")
@@ -115,7 +133,7 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     if not flags["llm"]:
         result.update(_run_traditional(s, new, delta, out, log))
     else:
-        result.update(_run_llm(s, flags, delta, spec_text, out, log))
+        result.update(_run_llm(s, flags, delta, spec_text, out, log, reviewer))
 
     cov = compute_coverage(new, cov_targets, Path(result.pop("_http_log")), s.base_url)
     cov_all = compute_coverage(new, all_ops, out / "http_final.jsonl", s.base_url)
@@ -125,13 +143,30 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     log.add("Cálculo de cobertura HTTP",
             f"{cov.covered_pairs}/{cov.documented_pairs} pares (operación, código) cubiertos = {cov.ratio:.1%}; "
             f"{cov.total_requests} peticiones registradas", out / "http_final.jsonl")
+    if accepted_rules is not None:
+        _apply_accepted(result, accepted_rules, s.accepted_file or "", log)
     result["duration_s"] = round(time.perf_counter() - t0, 3)
     result["status"] = result.get("status", "ok")
     log.add("Fin", f"estado={result['status']}; tasa ejecutable={result.get('executable_rate')}; "
             f"tokens={result.get('total_tokens', 0)}; duración={result['duration_s']} s", out / "report.json")
     result["steps"] = log.steps
-    _write_reports(out, result)
+    write_reports(out, result)
     return result
+
+
+def _apply_accepted(result: dict[str, Any], rules: list[AcceptedRule], source: str, log: StepLog) -> None:
+    """Separa las posibles regresiones que el equipo ya revisó y aceptó (no bloquean el PR)."""
+    pending, accepted, expired = split_accepted(result.get("possible_regressions") or [], rules)
+    result["possible_regressions"] = pending
+    result["accepted_failures"] = accepted
+    result["expired_acceptances"] = expired
+    log.add("Fallas aceptadas", f"{len(accepted)} de {len(accepted) + len(pending)} posibles regresiones "
+            f"coinciden con reglas de {source}" + (f"; {len(expired)} reglas vencidas" if expired else ""))
+
+
+def _auth_env(s: Settings) -> dict[str, str]:
+    """Header de autenticación para el proceso de Pytest (vacío = sin autenticación)."""
+    return {"DELTAHEAL_AUTH_HEADER": s.auth_header or ""}
 
 
 def api_is_up(base_url: str, timeout: float = 5.0) -> bool:
@@ -185,7 +220,9 @@ def _run_traditional(s: Settings, new: dict, delta: DeltaResult, out: Path, log:
             "datos válidos e inválidos", test_file)
     http_log = out / "http_final.jsonl"
     http_log.unlink(missing_ok=True)
-    r = run_pytest(test_file, out, s.base_url, http_log, timeout_per_test=max(s.pytest_timeout, 300))
+    with progress.waiting("Ejecutando las pruebas de Schemathesis contra la API"):
+        r = run_pytest(test_file, out, s.base_url, http_log, timeout_per_test=max(s.pytest_timeout, 300),
+                       junit_name="junit.xml", extra_env=_auth_env(s))
     log.add("Ejecución de pruebas (Pytest)", run_summary(r), http_log)
     total = len(r.cases) if r.cases else 1
     m = _empty_metrics()
@@ -195,7 +232,7 @@ def _run_traditional(s: Settings, new: dict, delta: DeltaResult, out: Path, log:
 
 
 def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: Path,
-             log: StepLog) -> dict[str, Any]:
+             log: StepLog, reviewer: Reviewer | None = None) -> dict[str, Any]:
     client = make_client(s.provider, s.model, **_client_kwargs(s))
     ledger = Ledger(s.price_input_per_mtok, s.price_output_per_mtok)
     if flags["delta"]:
@@ -208,7 +245,8 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
     max_iter = s.max_heal_iterations if flags["heal"] else 0
     hr = generate_and_heal(client, ledger, spec_text, focus, out, s.base_url,
                            max_iterations=max_iter, policy=s.heal_policy,
-                           pytest_timeout=s.pytest_timeout, repair_mode=s.repair_mode, log=log)
+                           pytest_timeout=s.pytest_timeout, repair_mode=s.repair_mode, log=log,
+                           extra_env=_auth_env(s), reviewer=reviewer)
     m = _empty_metrics()
     m.update(ledger.summary())
     m.update(_run_metrics(hr.final_run, hr.generated_tests))
@@ -222,8 +260,12 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
         "llm_calls_detail": [asdict(c) for c in ledger.calls],
         "static_ok": static_check(hr.final_code).ok,
     })
+    if hr.reviews:
+        m["human_review"] = hr.reviews
     if hr.stopped_reason == "api_unreachable":
         m["status"] = "api_unreachable"
+    elif hr.stopped_reason == "review_cancelled" and not hr.iterations:
+        m["status"] = "review_cancelled"
     m["_http_log"] = str(hr.final_http_log)
     return m
 
@@ -231,7 +273,7 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
 def environment_note(s: Settings) -> str:
     """Contexto del entorno de pruebas, idéntico para B y C (y sus ablaciones)."""
     note = ""
-    if os.environ.get("DELTAHEAL_AUTH_HEADER"):
+    if s.auth_header:
         note += ("\nEntorno: la fixture `api` YA está autenticada (incluye el header de autorización); "
                  "no hagas login para usarla. Para probar respuestas sin autenticación (401/403) crea una "
                  "sesión sin credenciales: `requests.get(base_url + ruta)`, usando la fixture `base_url`.")
@@ -254,65 +296,3 @@ def _client_kwargs(s: Settings) -> dict[str, Any]:
         kw["reasoning_effort"] = s.reasoning_effort
     return kw
 
-
-# --------------------------------------------------------------------------- #
-# Reportes
-# --------------------------------------------------------------------------- #
-
-def _write_reports(out: Path, r: dict[str, Any]) -> None:
-    (out / "report.json").write_text(json.dumps(r, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-    (out / "report.md").write_text(render_markdown(r), encoding="utf-8")
-
-
-def _pct(x: Any) -> str:
-    return "—" if x is None else f"{100 * float(x):.1f}%"
-
-
-def render_markdown(r: dict[str, Any]) -> str:
-    d = r.get("delta", {})
-    lines = [f"## 🧪 DeltaHeal — reporte de regresión (`{r['mode']}`)", ""]
-    if r.get("status") == "api_unreachable" and r.get("error"):
-        lines += [f"❌ {r['error']} No se llamó al LLM (0 tokens)."]
-        return "\n".join(lines) + "\n"
-    if r.get("status") == "no_contract_changes":
-        lines += ["El contrato OpenAPI no cambió respecto a la rama base: no se generaron pruebas (0 tokens)."]
-        return "\n".join(lines) + "\n"
-    lines += [
-        "| Métrica | Valor |", "|---|---|",
-        f"| Operaciones nuevas / modificadas / eliminadas | {len(d.get('added', []))} / "
-        f"{len(d.get('modified', []))} / {len(d.get('removed', []))} |",
-        f"| Reducción de contexto enviado al LLM | "
-        f"{_pct(r.get('context_reduction')) if r.get('model') else 'n/a (sin LLM)'} |",
-        f"| Tests generados | {r.get('generated_tests')} |",
-        f"| Tasa de tests ejecutables | {_pct(r.get('executable_rate'))}"
-        + (f" (antes de reparar: {_pct(r.get('executable_rate_before_heal'))})"
-           if r.get("executable_rate_before_heal") is not None else "") + " |",
-        f"| Pasan / fallas de aserción / errores | {r.get('passed')} / {r.get('assertion_failures')} / "
-        f"{r.get('runtime_errors')} |",
-        f"| Cobertura de respuestas HTTP (ops objetivo) | {_pct(r.get('http_coverage'))} |",
-        f"| Iteraciones de self-healing | {r.get('heal_iterations', 0)} |",
-        f"| Tokens (entrada + salida) | {r.get('prompt_tokens', 0)} + {r.get('completion_tokens', 0)} "
-        f"= {r.get('total_tokens', 0)} |",
-        f"| Costo estimado | ${r.get('cost_usd', 0):.4f} |",
-        f"| Respuestas del LLM cortadas por límite de salida | {r.get('llm_truncated_calls', 0)} |",
-        f"| Duración total | {r.get('duration_s')} s |",
-        "",
-    ]
-    if d.get("added") or d.get("modified"):
-        lines += ["<details><summary>Operaciones analizadas</summary>", ""]
-        lines += [f"- 🆕 `{o}`" for o in d.get("added", [])]
-        lines += [f"- ✏️ `{o}`" for o in d.get("modified", [])]
-        lines += [f"- 🗑️ `{o}`" for o in d.get("removed", [])]
-        lines += ["", "</details>", ""]
-    if r.get("collection_error"):
-        lines += ["> ❌ El archivo de pruebas final no se pudo colectar en Pytest (ver artefactos `junit_*.xml`).", ""]
-    regs = r.get("possible_regressions") or []
-    if regs:
-        lines += ["### ⚠️ Posibles regresiones (fallas de aserción)", ""]
-        lines += [f"- `{x['test']}`: {x['message'][:200]}" for x in regs[:30]]
-        lines.append("")
-    undoc = (r.get("coverage") or {}).get("undocumented_observed") or {}
-    if undoc:
-        lines += ["### Códigos HTTP observados no documentados en el contrato", ""]
-        lines += [f"- `{k}`: {', '.join(map(str, v))}" for k, v in undoc.items()]
-    return "\n".join(lines) + "\n"
