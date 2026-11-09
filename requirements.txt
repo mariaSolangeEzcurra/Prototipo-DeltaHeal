@@ -11,6 +11,7 @@ pandas>=2.0
 scipy>=1.11
 matplotlib>=3.8
 openpyxl>=3.1          # Excel de evidencias
+streamlit>=1.50
 # API de demostración
 fastapi>=0.110
 uvicorn>=0.29
