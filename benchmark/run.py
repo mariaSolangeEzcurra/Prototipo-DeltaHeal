@@ -341,14 +341,10 @@ def main() -> int:
                 price_output_per_mtok=llm.get("price_output_per_mtok", 0.0),
                 output_dir=str(out_dir / api["name"]),
                 context_note=api.get("context_note", ""),
+                auth_header=auth_header or "",  # "" = sin autenticación (no hereda la del entorno)
                 **cfg.get("orchestrator", {}),
                 **({"mock_inject_error": llm.get("mock_inject_error", True)} if llm.get("provider") == "mock" else {}),
             )
-            import os
-            if auth_header:
-                os.environ["DELTAHEAL_AUTH_HEADER"] = auth_header
-            else:
-                os.environ.pop("DELTAHEAL_AUTH_HEADER", None)
             print(f"[{api['name']}] {conf} rep={rep} …", flush=True)
             try:
                 res = run(s, old_spec_path=str(scen_dir / "base.yaml"), run_id=f"{conf}_r{rep}",

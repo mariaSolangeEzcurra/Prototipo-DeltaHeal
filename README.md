@@ -65,6 +65,8 @@ que describe cada endpoint, sus parámetros y sus respuestas.
 
 - Las etapas ① y ② no requieren la API ni el modelo: comparan dos versiones de un archivo.
 - La etapa ④ requiere la API en ejecución, ya que las pruebas la invocan y verifican sus respuestas.
+- Con `--review`, una persona revisa y aprueba las pruebas antes de cada ejecución de la etapa ④
+  (ver [Supervisión humana](#supervisión-humana)).
 - **Principio de diseño:** la auto-corrección repara únicamente defectos del *código de prueba*.
   Las fallas de aserción (por ejemplo, la API responde 500 en lugar de 200) no se reparan, porque
   pueden corresponder a regresiones reales de la API; se reportan como **posibles regresiones**.
@@ -116,7 +118,8 @@ flowchart LR
 | ③ Generación de pruebas | [prompts.py](deltaheal/prompts.py), [llm.py](deltaheal/llm.py), [generated_code.py](deltaheal/generated_code.py) |
 | ④ Ejecución | [pytest_runner.py](deltaheal/pytest_runner.py), [pytest_plugin.py](deltaheal/pytest_plugin.py) |
 | ⑤ Auto-corrección | [self_healing.py](deltaheal/self_healing.py), [partial_repair.py](deltaheal/partial_repair.py) |
-| ⑥ Cobertura y reporte | [http_coverage.py](deltaheal/http_coverage.py), [report.py](deltaheal/report.py) |
+| ⑥ Cobertura y reporte | [http_coverage.py](deltaheal/http_coverage.py), [human_review.py](deltaheal/human_review.py), [report.py](deltaheal/report.py) |
+| Interfaz | [cli.py](deltaheal/cli.py), [progress.py](deltaheal/progress.py), [demo.py](deltaheal/demo.py), [init_config.py](deltaheal/init_config.py) |
 
 **Tecnologías:** Python 3.10+, Pytest, OpenAPI 3 / Swagger 2, Git, GitHub Actions y API de
 Google Gemini. Evaluación experimental: Docker, Schemathesis, pandas, SciPy y Streamlit.
@@ -125,24 +128,41 @@ Google Gemini. Evaluación experimental: Docker, Schemathesis, pandas, SciPy y S
 
 ## Supervisión humana
 
-DeltaHeal sigue un modelo de **supervisión humana sobre el ciclo (*human-on-the-loop*)**: la
-generación, ejecución y reparación de pruebas son automáticas, y la decisión final corresponde a
-la persona que revisa el Pull Request.
+DeltaHeal admite dos niveles de supervisión humana:
 
-| Responsable | Decisión |
-|---|---|
-| **DeltaHeal** | Endpoints a probar, pruebas a generar y reparación de errores de código en las pruebas. |
-| **Revisor del Pull Request** | Si cada posible regresión es un defecto real de la API o una prueba incorrecta, y si el cambio se integra. |
+| Nivel | Uso | Intervención de la persona |
+|---|---|---|
+| **Supervisión sobre el ciclo** (*human-on-the-loop*) | por defecto, en CI | Revisa el reporte del Pull Request y decide si cada posible regresión es un defecto real de la API o una prueba incorrecta, y si el cambio se integra. |
+| **Supervisión dentro del ciclo** (*human-in-the-loop*) | `--review`, en una terminal | Antes de cada ejecución contra la API, revisa las pruebas generadas o reparadas, puede editarlas y aprueba o cancela la ejecución. |
 
-Mecanismos que garantizan esta supervisión:
+Mecanismos que garantizan la supervisión:
 - **Las fallas no se ocultan:** las fallas de aserción nunca se envían a reparación; se reportan
   como posibles regresiones.
 - **Bloqueo del Pull Request:** con `--fail-on regression` (valor por defecto), el check queda en
   rojo si hay posibles regresiones y requiere revisión.
+- **Fallas aceptadas con justificación:** las posibles regresiones que el equipo ya revisó se
+  registran en un archivo con el motivo (y, opcionalmente, una fecha de vencimiento). Siguen
+  apareciendo en el reporte, en una sección aparte, pero no bloquean el Pull Request.
 - **Trazabilidad completa:** se conservan el prompt exacto, la respuesta del modelo, cada versión
-  del archivo de pruebas y cada petición HTTP.
+  del archivo de pruebas, cada decisión del revisor y cada petición HTTP.
 - **Registro de revisiones manuales:** el [visor de resultados](benchmark/viewer/) incluye una
   sección para registrar pruebas realizadas por personas y contrastarlas con las generadas.
+
+**Revisión antes de ejecutar:**
+```powershell
+python -m deltaheal run -c deltaheal.yaml --review
+```
+
+**Archivo de fallas aceptadas** (`deltaheal-accepted.yaml`; el workflow de GitHub Actions lo usa
+automáticamente si existe en la raíz del repositorio):
+```yaml
+- match: "pets_petId"          # texto en el nombre de la prueba o en el mensaje de la falla
+  reason: "Respuesta 500 conocida; corrección planificada en el issue #12"
+  until: 2026-12-31            # opcional: la regla deja de aplicarse después de esta fecha
+```
+```powershell
+python -m deltaheal run -c deltaheal.yaml --accepted deltaheal-accepted.yaml
+```
 
 ---
 
@@ -154,7 +174,7 @@ Requisitos: Python 3.10 o superior y Git.
 python -m venv .venv
 .venv\Scripts\Activate.ps1          # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-pytest                              # resultado esperado: 32 passed
+pytest                              # resultado esperado: 57 passed
 ```
 
 Para instalar solo la herramienta, sin las dependencias del experimento: `pip install .`
@@ -164,37 +184,37 @@ Para instalar solo la herramienta, sin las dependencias del experimento: `pip in
 
 ## Demostración
 
-La demostración usa la API de ejemplo ([demo_api/](demo_api/)) y un **proveedor de IA simulado**
-(`--provider mock`), que introduce un error deliberado para mostrar la auto-corrección. No requiere
+```powershell
+python -m deltaheal demo
+```
+
+El comando inicia la API de ejemplo ([demo_api/](demo_api/)) en un puerto libre, ejecuta dos
+escenarios y detiene la API al terminar. Usa un **proveedor de IA simulado** (`mock`), que
+introduce un error deliberado en el código generado para mostrar la auto-corrección. No requiere
 Docker, conexión a internet ni clave de API.
 
-**1. Iniciar la API de ejemplo** (terminal 1):
+| Escenario | Situación | Resultado esperado |
+|---|---|---|
+| 1 | El contrato v2 agrega `PATCH /pets/{petId}` y el campo `age`; la API cumple el contrato. | 1 endpoint nuevo y 3 modificados (`DELETE /pets/{petId}` se excluye porque no cambió); pruebas ejecutables 75 % → 100 % tras 1 reparación; sin regresiones. |
+| 2 | Mismo cambio, pero `GET /pets/{petId}` responde 500. | La falla se reporta como **posible regresión** y no se repara. |
+
+Opciones útiles: `--pause` (pausa entre escenarios, para presentaciones), `--scenario regression`
+(un solo escenario) y `--provider gemini` (con la IA real; requiere la clave, ver la sección
+siguiente).
+
+**Ejecución manual equivalente**, con la API en una terminal aparte:
 ```powershell
-uvicorn demo_api.app:app --port 8000
+uvicorn demo_api.app:app --port 8000                     # con $env:DEMO_REGRESSION="1" para el escenario 2
+python -m deltaheal run --provider mock --model mock-1 --spec demo_api/openapi_v2.yaml --old-spec demo_api/openapi_v1.yaml --base-url http://127.0.0.1:8000
 ```
 
-**2. Ejecutar DeltaHeal** (terminal 2). Compara el contrato base (`openapi_v1.yaml`) con el
-modificado (`openapi_v2.yaml`, que agrega `PATCH /pets/{petId}` y el campo `age`):
-```powershell
-python -m deltaheal run --mode deltaheal --provider mock --model mock-1 --spec demo_api/openapi_v2.yaml --old-spec demo_api/openapi_v1.yaml --base-url http://127.0.0.1:8000
-```
-Resultado esperado:
-- 1 endpoint nuevo y 3 modificados; `DELETE /pets/{petId}` se excluye porque no cambió.
-- Tasa de pruebas ejecutables: 75 % antes de la reparación y 100 % después de 1 iteración.
-
-**3. Simular una regresión.** Detener la API (Ctrl+C) e iniciarla con la regresión activada:
-```powershell
-$env:DEMO_REGRESSION="1"; uvicorn demo_api.app:app --port 8000
-```
-Al repetir el paso 2, `GET /pets/{petId}` responde 500 y el reporte la muestra en
-**Posibles regresiones**, sin repararla. Para desactivarla: `$env:DEMO_REGRESSION="0"`.
-
-**4. Visor de resultados del experimento** (opcional):
+**Visor de resultados del experimento** (opcional):
 ```powershell
 streamlit run benchmark\viewer\app.py
 ```
 
-Archivos generados en cada ejecución (`deltaheal-out\<modo>\`):
+Archivos generados en cada ejecución (`deltaheal-out\<modo>\`; en la demostración,
+`deltaheal-out\demo\<escenario>\`):
 
 | Archivo | Contenido |
 |---|---|
@@ -216,11 +236,23 @@ Archivos generados en cada ejecución (`deltaheal-out\<modo>\`):
    copy .env.example .env      # GEMINI_API_KEY=<clave>
    ```
 3. Verificar la conexión: `python -m deltaheal check-llm`.
-4. Ejecutar el paso 2 de la demostración sin `--provider mock --model mock-1`.
+4. Ejecutar la demostración con el modelo real: `python -m deltaheal demo --provider gemini`.
 
-El nivel gratuito de Gemini limita las llamadas por minuto y por día, y su tiempo de respuesta es
-variable. DeltaHeal espacia las llamadas, reintenta ante límites temporales y, si se agota la cuota
-diaria, se detiene sin perder el trabajo realizado.
+**Uso con otra API.** El asistente `init` crea el archivo de configuración `deltaheal.yaml`
+(detecta los contratos OpenAPI del repositorio y la rama principal):
+```powershell
+python -m deltaheal init
+python -m deltaheal delta -c deltaheal.yaml      # qué cambió, sin API ni IA
+python -m deltaheal run -c deltaheal.yaml        # flujo completo
+```
+Si la API requiere autenticación, el header se indica con `--auth-header "Authorization: Bearer <token>"`
+o con la variable de entorno `DELTAHEAL_AUTH_HEADER` (recomendado en CI, para no exponer el
+token). El token no se guarda en los reportes.
+
+Durante la ejecución se muestra el progreso de cada etapa y el tiempo de espera de la IA
+(`--quiet` lo desactiva). El nivel gratuito de Gemini limita las llamadas por minuto y por día, y
+su tiempo de respuesta es variable: DeltaHeal espacia las llamadas, reintenta ante límites
+temporales y, si se agota la cuota diaria, se detiene sin perder el trabajo realizado.
 
 Proveedores soportados: `gemini`, `groq` (nivel gratuito), `ollama` (modelos locales), `openai`,
 `deepseek`, `anthropic` y `mock` (simulado).
@@ -237,13 +269,19 @@ python -m deltaheal <comando> [opciones]      # o: deltaheal <comando>, tras pip
 |---|---|
 | `run` | Ejecuta el flujo completo y genera el reporte. |
 | `delta` | Muestra los endpoints nuevos, modificados y eliminados. No usa la API ni el modelo. |
+| `demo` | Demostración guiada con la API de ejemplo (dos escenarios). |
+| `init` | Crea el archivo de configuración `deltaheal.yaml` mediante un asistente. |
 | `check-llm` | Verifica la clave y el modelo con una llamada mínima. |
 | `models` | Lista los modelos disponibles para la clave configurada. |
+
+La ayuda completa de cada comando se obtiene con `python -m deltaheal <comando> --help`, y la
+versión con `python -m deltaheal --version`.
 
 **Opciones de `run`:**
 
 | Opción | Descripción | Valor por defecto |
 |---|---|---|
+| `-c`, `--config` | Archivo YAML con la configuración (ver `init` y [deltaheal.example.yaml](deltaheal.example.yaml)) | — |
 | `--spec` | Ruta del contrato OpenAPI | `openapi.yaml` |
 | `--old-spec` | Contrato base como archivo (en lugar de usar git) | — |
 | `--base-ref` / `--head-ref` | Referencias de git a comparar | `origin/main` / directorio de trabajo |
@@ -251,16 +289,35 @@ python -m deltaheal <comando> [opciones]      # o: deltaheal <comando>, tras pip
 | `--mode` | `deltaheal`, `traditional`, `llm_full`, `delta_only` o `full_heal` | `deltaheal` |
 | `--provider` / `--model` | Proveedor y modelo de IA | `gemini` / `gemini-3.8-flash` |
 | `--llm-base-url` | URL alternativa del proveedor | la del proveedor |
+| `--auth-header` | Header de autenticación de la API (`"Nombre: valor"`) | variable `DELTAHEAL_AUTH_HEADER` |
 | `--max-heal-iterations` | Iteraciones máximas de auto-corrección | `3` |
 | `--heal-policy` | `errors` (solo errores de código) o `all` (incluye fallas de aserción) | `errors` |
-| `--fail-on` | Condición de salida con error: `regression`, `any` o `never` | `regression` |
+| `--review` | Revisión humana antes de cada ejecución contra la API | — |
+| `--accepted` | Archivo YAML de fallas revisadas y aceptadas | — |
+| `--fail-on` | Condición de salida con código 1: `regression`, `any` o `never` | `regression` |
 | `--output-dir` / `--run-id` | Carpeta y subcarpeta de resultados | `deltaheal-out` / el modo |
 | `--json` | Imprime el reporte completo en JSON | — |
-| `-c`, `--config` | Archivo YAML con la configuración (ver [deltaheal.example.yaml](deltaheal.example.yaml)) | — |
+| `--quiet` | Oculta el progreso de cada etapa | — |
 
-**Códigos de salida:** `0` sin regresiones · `1` posibles regresiones (según `--fail-on`) ·
-`2` error de conexión con el proveedor (`check-llm`, `models`) · `3` la API no responde ·
-`4` cuota diaria del proveedor agotada.
+**Otros comandos:**
+
+| Comando | Opciones |
+|---|---|
+| `delta` | `--spec`, `--old-spec`, `--base-ref`, `--head-ref`, `-c`; `--json` (salida en JSON); `--print-subspec` (fragmento del contrato que se enviaría a la IA) |
+| `demo` | `--provider` (por defecto `mock`), `--model`, `--scenario both\|normal\|regression`, `--port`, `--pause`, `--output-dir`, `--quiet` |
+| `init` | `--file` (por defecto `deltaheal.yaml`), `--yes` (sin preguntas), `--force` (sobrescribir) |
+| `check-llm` / `models` | `--provider`, `--model`, `--llm-base-url`, `-c` |
+
+**Códigos de salida:**
+
+| Código | Significado |
+|---|---|
+| `0` | Sin posibles regresiones |
+| `1` | Posibles regresiones (según `--fail-on`) |
+| `2` | Error de uso, de configuración o de conexión con el proveedor de IA |
+| `3` | La API bajo prueba no responde |
+| `4` | Cuota diaria del proveedor de IA agotada |
+| `5` | Ejecución cancelada por el revisor (`--review`) |
 
 ---
 
@@ -279,7 +336,10 @@ repository secret* con el nombre `GEMINI_API_KEY`.
 y abrir un Pull Request. El reporte de DeltaHeal se publica como comentario.
 
 **Uso con otra API:** en `api-regression.yml`, ajustar `SPEC_PATH`, `API_BASE_URL` y el paso
-"Levantar API bajo prueba" (por ejemplo, `docker compose up -d`).
+"Levantar API bajo prueba" (por ejemplo, `docker compose up -d`). Si la API requiere
+autenticación, registrar el header completo como secreto (por ejemplo, `API_AUTH_HEADER`) y
+exponerlo en la variable `DELTAHEAL_AUTH_HEADER`. Si existe `deltaheal-accepted.yaml` en la raíz
+del repositorio, el workflow lo aplica automáticamente.
 
 ---
 
@@ -309,7 +369,7 @@ Diseño experimental, análisis estadístico e instrucciones de reproducción:
 
 ```
 deltaheal/                  aplicación (CLI en Python)
-  cli.py                    comandos: run, delta, models, check-llm
+  cli.py                    comandos: run, delta, demo, init, check-llm, models
   pipeline.py               flujo completo de una ejecución
   config.py                 configuración (archivo YAML, variables de entorno, opciones)
   spec_loader.py            ① carga del contrato desde archivo o git
@@ -323,7 +383,11 @@ deltaheal/                  aplicación (CLI en Python)
   partial_repair.py         ⑤ reparación parcial (solo las pruebas que fallaron)
   http_coverage.py          ⑥ cobertura de respuestas HTTP
   report.py                 ⑥ reporte Markdown y JSON
+  human_review.py           ⑥ revisión humana (--review) y fallas aceptadas (--accepted)
   step_log.py               bitácora de etapas de cada ejecución
+  progress.py               progreso en consola de cada etapa
+  demo.py                   demostración guiada (comando demo)
+  init_config.py            asistente de configuración (comando init)
   schemathesis_baseline.py  modo `traditional` (sin IA), usado como referencia
 demo_api/                   API de ejemplo (FastAPI) y sus contratos v1 y v2
 benchmark/                  evaluación experimental (ver benchmark/README.md)

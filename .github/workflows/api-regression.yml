@@ -49,9 +49,12 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          # Para una API con autenticación: DELTAHEAL_AUTH_HEADER: ${{ secrets.API_AUTH_HEADER }}
           BASE_REF: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: |
           set +e
+          ACCEPTED=()
+          [ -f deltaheal-accepted.yaml ] && ACCEPTED=(--accepted deltaheal-accepted.yaml)
           python -m deltaheal run \
             --mode deltaheal \
             --spec "$SPEC_PATH" \
@@ -59,7 +62,8 @@ jobs:
             --base-url "$API_BASE_URL" \
             --output-dir deltaheal-out \
             --run-id pr \
-            --fail-on regression
+            --fail-on regression \
+            "${ACCEPTED[@]}"
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           cat deltaheal-out/pr/report.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -83,5 +87,5 @@ jobs:
           code="${{ steps.deltaheal.outputs.exit_code }}"
           if [ "$code" = "1" ]; then echo "::error::Posibles regresiones detectadas"; exit 1; fi
           if [ "$code" = "3" ]; then echo "::error::La API no respondió"; exit 1; fi
-          if [ "$code" = "4" ]; then echo "::error::Se agotó la cuota gratuita del LLM por hoy"; exit 1; fi
+          if [ "$code" = "4" ]; then echo "::error::Se agotó la cuota diaria del proveedor de IA"; exit 1; fi
           exit "${code:-0}"

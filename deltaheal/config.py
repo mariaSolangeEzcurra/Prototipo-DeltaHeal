@@ -25,6 +25,10 @@ MODES = {
 }
 
 
+class UsageError(Exception):
+    """Error de uso o de configuración: la CLI lo muestra como mensaje, sin traza."""
+
+
 def load_dotenv(path: str | Path = ".env") -> None:
     """Carga variables CLAVE=valor desde un archivo .env (sin sobrescribir las ya definidas)."""
     p = Path(path)
@@ -74,6 +78,8 @@ class Settings:
     spec_format: str = "yaml"             # formato en que se envía la spec al LLM
 
     context_note: str = ""                # datos del entorno (p. ej. usuarios de prueba) para el prompt
+    auth_header: str | None = None        # "Nombre: valor" que se envía en cada petición a la API
+    accepted_file: str | None = None      # YAML con fallas revisadas y aceptadas por el equipo
     output_dir: str = "deltaheal-out"
     fail_on: str = "regression"           # regression | any | never
 
@@ -82,12 +88,14 @@ class Settings:
     @classmethod
     def load(cls, path: str | Path | None = None, **overrides: Any) -> "Settings":
         data: dict[str, Any] = {}
-        if path and Path(path).exists():
+        if path:
+            if not Path(path).exists():
+                raise ValueError(f"No existe el archivo de configuración: {path}")
             data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
         env_map = {
             "DELTAHEAL_PROVIDER": "provider", "DELTAHEAL_MODEL": "model",
             "DELTAHEAL_LLM_BASE_URL": "llm_base_url", "API_BASE_URL": "base_url",
-            "DELTAHEAL_BASE_REF": "base_ref",
+            "DELTAHEAL_BASE_REF": "base_ref", "DELTAHEAL_AUTH_HEADER": "auth_header",
         }
         for env, key in env_map.items():
             if os.getenv(env):
@@ -99,4 +107,11 @@ class Settings:
         s.extra.update(extra)
         if s.mode not in MODES:
             raise ValueError(f"mode inválido: {s.mode}. Opciones: {', '.join(MODES)}")
+        if s.auth_header and ":" not in s.auth_header:
+            raise ValueError("auth_header debe tener el formato 'Nombre: valor', "
+                             "por ejemplo 'Authorization: Bearer <token>'")
         return s
+
+    def auth_header_name(self) -> str | None:
+        """Nombre del header de autenticación (nunca el valor, para no exponer el token)."""
+        return self.auth_header.split(":", 1)[0].strip() if self.auth_header else None

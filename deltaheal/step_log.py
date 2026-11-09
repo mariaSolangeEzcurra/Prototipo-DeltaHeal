@@ -7,15 +7,18 @@ hoja "Pasos" del Excel de evidencias, para las configuraciones A, B y C por igua
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
 class StepLog:
-    def __init__(self, base_dir: Path | None = None, initial: list[dict[str, Any]] | None = None):
+    def __init__(self, base_dir: Path | None = None, initial: list[dict[str, Any]] | None = None,
+                 echo: Callable[[str, str], None] | None = None):
         self.base_dir = base_dir
         self.steps: list[dict[str, Any]] = list(initial or [])
+        self.echo = echo  # opcional: muestra cada paso en consola al registrarlo
 
     def add(self, paso: str, detalle: str = "", archivo: str | Path | None = None) -> None:
         if archivo is not None and self.base_dir is not None:
@@ -29,6 +32,8 @@ class StepLog:
             "detalle": detalle,
             "archivo": str(archivo) if archivo else "",
         })
+        if self.echo:
+            self.echo(paso, detalle)
 
 
 def run_summary(run: Any) -> str:

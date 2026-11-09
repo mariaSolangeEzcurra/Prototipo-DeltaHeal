@@ -90,7 +90,12 @@ def _retry_after_seconds(r: requests.Response) -> float | None:
 
 def _say(msg: str) -> None:
     import sys
-    print(f"   ⏳ {msg}", file=sys.stderr, flush=True)
+
+    from .progress import progress
+    if progress.enabled:
+        progress.message(f"  ⏳ {msg}")
+    else:
+        print(f"   ⏳ {msg}", file=sys.stderr, flush=True)
 
 
 def _post_with_retries(url: str, headers: dict[str, str], payload: dict[str, Any],

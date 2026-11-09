@@ -6,14 +6,14 @@
     4. pytest_runner   ejecuta las pruebas contra la API corriendo
     5. self_healing    si el CÓDIGO de prueba está roto, la IA lo repara (máx. 3 veces)
     6. http_coverage   mide qué respuestas del contrato se probaron
-    7. report          escribe report.md (el comentario del PR) y report.json
+    7. human_review    separa las fallas ya aceptadas por el equipo (opcional)
+    8. report          escribe report.md (el comentario del PR) y report.json
 
 En el modo `traditional` los pasos 3 y 5 los reemplaza Schemathesis (sin IA).
 """
 
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import asdict
 from datetime import datetime
@@ -27,11 +27,13 @@ from .config import MODES, Settings
 from .delta import DeltaResult, OperationKey, build_subspec, compute_delta, iter_operations
 from .generated_code import static_check
 from .http_coverage import compute_coverage
+from .human_review import AcceptedRule, load_accepted, split_accepted
 from .llm import make_client
+from .progress import progress
 from .pytest_runner import run_pytest
 from .report import write_reports
 from .schemathesis_baseline import write_schemathesis_test
-from .self_healing import Ledger, generate_and_heal
+from .self_healing import Ledger, Reviewer, generate_and_heal
 from .spec_loader import (dump_spec, git_spec_changed, git_spec_diff_text, load_spec_at_ref,
                           load_spec_file)
 from .step_log import StepLog, run_summary
@@ -52,12 +54,15 @@ def _load_specs(s: Settings, old_spec_path: str | None) -> tuple[dict, dict, boo
 
 
 def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None,
-        prior_steps: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        prior_steps: list[dict[str, Any]] | None = None,
+        reviewer: Reviewer | None = None) -> dict[str, Any]:
+    """Ejecuta una corrida completa. `reviewer` activa la revisión humana antes de cada ejecución."""
     t0 = time.perf_counter()
     flags = MODES[s.mode]
+    accepted_rules = load_accepted(s.accepted_file) if s.accepted_file else None  # falla antes de gastar tokens
     out = (Path(s.output_dir) / (run_id or s.mode)).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    log = StepLog(out, prior_steps)
+    log = StepLog(out, prior_steps, echo=progress.step)
     log.add("Inicio de la corrida", f"configuración={s.mode}; modelo={s.model if flags['llm'] else 'sin LLM'}; "
             f"delta={'sí' if flags['delta'] else 'no'}; self-healing={'sí' if flags['heal'] else 'no'}")
 
@@ -96,7 +101,7 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
         log.add("Verificación de la API", f"SIN RESPUESTA en {s.base_url}: se detiene sin llamar al LLM")
         result.update(_empty_metrics(), status="api_unreachable", steps=log.steps,
                       error=f"No hay ninguna API respondiendo en {s.base_url}. "
-                            "¿Está corriendo el servidor (uvicorn / docker)?",
+                            "Verifique que el servidor (uvicorn / docker) esté en ejecución.",
                       duration_s=round(time.perf_counter() - t0, 3))
         write_reports(out, result)
         return result
@@ -109,6 +114,8 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     full_text = dump_spec(new, s.spec_format)
     (out / "spec_context.yaml").write_text(spec_text, encoding="utf-8")
     log.add("Verificación de la API", f"responde en {s.base_url}")
+    if s.auth_header:
+        log.add("Autenticación", f"se envía el header '{s.auth_header_name()}' en cada petición a la API")
     log.add("Construcción del contexto",
             (f"sub-especificación con {len(scope_ops)} de {len(all_ops)} operaciones" if flags["delta"]
              else f"especificación completa ({len(all_ops)} operaciones)")
@@ -126,7 +133,7 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     if not flags["llm"]:
         result.update(_run_traditional(s, new, delta, out, log))
     else:
-        result.update(_run_llm(s, flags, delta, spec_text, out, log))
+        result.update(_run_llm(s, flags, delta, spec_text, out, log, reviewer))
 
     cov = compute_coverage(new, cov_targets, Path(result.pop("_http_log")), s.base_url)
     cov_all = compute_coverage(new, all_ops, out / "http_final.jsonl", s.base_url)
@@ -136,6 +143,8 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     log.add("Cálculo de cobertura HTTP",
             f"{cov.covered_pairs}/{cov.documented_pairs} pares (operación, código) cubiertos = {cov.ratio:.1%}; "
             f"{cov.total_requests} peticiones registradas", out / "http_final.jsonl")
+    if accepted_rules is not None:
+        _apply_accepted(result, accepted_rules, s.accepted_file or "", log)
     result["duration_s"] = round(time.perf_counter() - t0, 3)
     result["status"] = result.get("status", "ok")
     log.add("Fin", f"estado={result['status']}; tasa ejecutable={result.get('executable_rate')}; "
@@ -143,6 +152,21 @@ def run(s: Settings, old_spec_path: str | None = None, run_id: str | None = None
     result["steps"] = log.steps
     write_reports(out, result)
     return result
+
+
+def _apply_accepted(result: dict[str, Any], rules: list[AcceptedRule], source: str, log: StepLog) -> None:
+    """Separa las posibles regresiones que el equipo ya revisó y aceptó (no bloquean el PR)."""
+    pending, accepted, expired = split_accepted(result.get("possible_regressions") or [], rules)
+    result["possible_regressions"] = pending
+    result["accepted_failures"] = accepted
+    result["expired_acceptances"] = expired
+    log.add("Fallas aceptadas", f"{len(accepted)} de {len(accepted) + len(pending)} posibles regresiones "
+            f"coinciden con reglas de {source}" + (f"; {len(expired)} reglas vencidas" if expired else ""))
+
+
+def _auth_env(s: Settings) -> dict[str, str]:
+    """Header de autenticación para el proceso de Pytest (vacío = sin autenticación)."""
+    return {"DELTAHEAL_AUTH_HEADER": s.auth_header or ""}
 
 
 def api_is_up(base_url: str, timeout: float = 5.0) -> bool:
@@ -196,8 +220,9 @@ def _run_traditional(s: Settings, new: dict, delta: DeltaResult, out: Path, log:
             "datos válidos e inválidos", test_file)
     http_log = out / "http_final.jsonl"
     http_log.unlink(missing_ok=True)
-    r = run_pytest(test_file, out, s.base_url, http_log, timeout_per_test=max(s.pytest_timeout, 300),
-                   junit_name="junit.xml")
+    with progress.waiting("Ejecutando las pruebas de Schemathesis contra la API"):
+        r = run_pytest(test_file, out, s.base_url, http_log, timeout_per_test=max(s.pytest_timeout, 300),
+                       junit_name="junit.xml", extra_env=_auth_env(s))
     log.add("Ejecución de pruebas (Pytest)", run_summary(r), http_log)
     total = len(r.cases) if r.cases else 1
     m = _empty_metrics()
@@ -207,7 +232,7 @@ def _run_traditional(s: Settings, new: dict, delta: DeltaResult, out: Path, log:
 
 
 def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: Path,
-             log: StepLog) -> dict[str, Any]:
+             log: StepLog, reviewer: Reviewer | None = None) -> dict[str, Any]:
     client = make_client(s.provider, s.model, **_client_kwargs(s))
     ledger = Ledger(s.price_input_per_mtok, s.price_output_per_mtok)
     if flags["delta"]:
@@ -220,7 +245,8 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
     max_iter = s.max_heal_iterations if flags["heal"] else 0
     hr = generate_and_heal(client, ledger, spec_text, focus, out, s.base_url,
                            max_iterations=max_iter, policy=s.heal_policy,
-                           pytest_timeout=s.pytest_timeout, repair_mode=s.repair_mode, log=log)
+                           pytest_timeout=s.pytest_timeout, repair_mode=s.repair_mode, log=log,
+                           extra_env=_auth_env(s), reviewer=reviewer)
     m = _empty_metrics()
     m.update(ledger.summary())
     m.update(_run_metrics(hr.final_run, hr.generated_tests))
@@ -234,8 +260,12 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
         "llm_calls_detail": [asdict(c) for c in ledger.calls],
         "static_ok": static_check(hr.final_code).ok,
     })
+    if hr.reviews:
+        m["human_review"] = hr.reviews
     if hr.stopped_reason == "api_unreachable":
         m["status"] = "api_unreachable"
+    elif hr.stopped_reason == "review_cancelled" and not hr.iterations:
+        m["status"] = "review_cancelled"
     m["_http_log"] = str(hr.final_http_log)
     return m
 
@@ -243,7 +273,7 @@ def _run_llm(s: Settings, flags: dict, delta: DeltaResult, spec_text: str, out: 
 def environment_note(s: Settings) -> str:
     """Contexto del entorno de pruebas, idéntico para B y C (y sus ablaciones)."""
     note = ""
-    if os.environ.get("DELTAHEAL_AUTH_HEADER"):
+    if s.auth_header:
         note += ("\nEntorno: la fixture `api` YA está autenticada (incluye el header de autorización); "
                  "no hagas login para usarla. Para probar respuestas sin autenticación (401/403) crea una "
                  "sesión sin credenciales: `requests.get(base_url + ruta)`, usando la fixture `base_url`.")

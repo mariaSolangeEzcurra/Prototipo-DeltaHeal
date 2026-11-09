@@ -1,45 +1,15 @@
 """Prueba de punta a punta: API demo real + LLM simulado (sin costo, sin red externa)."""
 
-import os
-import socket
-import subprocess
-import sys
-import time
 from pathlib import Path
 
 import pytest
-import requests
 
 from deltaheal.config import Settings
+from deltaheal.demo import free_port
 from deltaheal.pipeline import run
 
 ROOT = Path(__file__).resolve().parent.parent
 pytest.importorskip("fastapi")
-
-
-def _free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-@pytest.fixture
-def demo_api(request):
-    regression = getattr(request, "param", False)
-    port = _free_port()
-    env = dict(os.environ, DEMO_REGRESSION="1" if regression else "0")
-    proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "demo_api.app:app",
-                             "--port", str(port), "--log-level", "warning"], cwd=ROOT, env=env)
-    url = f"http://127.0.0.1:{port}"
-    for _ in range(50):
-        try:
-            requests.get(url + "/pets", timeout=1)
-            break
-        except requests.RequestException:
-            time.sleep(0.2)
-    yield url
-    proc.terminate()
-    proc.wait(5)
 
 
 def _settings(url, tmp_path, mode):
@@ -79,6 +49,6 @@ def test_regression_is_reported_not_healed(demo_api, tmp_path):
 
 
 def test_api_down_spends_zero_tokens(tmp_path):
-    r = run(_settings(f"http://127.0.0.1:{_free_port()}", tmp_path, "deltaheal"),
+    r = run(_settings(f"http://127.0.0.1:{free_port()}", tmp_path, "deltaheal"),
             old_spec_path=str(ROOT / "demo_api/openapi_v1.yaml"))
     assert r["status"] == "api_unreachable" and r["total_tokens"] == 0 and r["llm_calls"] == 0

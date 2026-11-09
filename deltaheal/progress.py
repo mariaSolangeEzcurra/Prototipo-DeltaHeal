@@ -63,7 +63,7 @@ class Progress:
         t0 = time.monotonic()
 
         def show(elapsed: int) -> None:
-            line = f"  ⏳ {text}… {elapsed} s"
+            line = f"  ⏳ {text}…" + (f" {elapsed} s" if tty or elapsed else "")
             with self._lock:
                 if tty:
                     sys.stderr.write("\r" + line)
