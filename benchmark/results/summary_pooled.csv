@@ -1,0 +1,8 @@
+,executable_rate,executable_rate,executable_rate,http_coverage,http_coverage,http_coverage,total_tokens,total_tokens,total_tokens,cost_usd,cost_usd,cost_usd,duration_s,duration_s,duration_s
+,mean,std,median,mean,std,median,mean,std,median,mean,std,median,mean,std,median
+config,,,,,,,,,,,,,,,
+traditional,1.0,0.0,1.0,0.7664,0.0906,0.7368,0.0,0.0,0.0,0.0,0.0,0.0,16.1848,6.8065,15.239
+llm_full,0.9239,0.256,1.0,0.8228,0.2509,0.9,10612.8,1324.1406,10902.0,0.0228,0.0023,0.0225,183.8675,115.9243,160.907
+deltaheal,1.0,0.0,1.0,0.9137,0.0809,0.9,5602.3333,1788.4582,5120.0,0.0119,0.0022,0.0115,225.9323,182.9347,185.116
+delta_only,0.9779,0.0393,1.0,0.8853,0.1309,0.9,5187.5333,632.7341,5145.0,0.0119,0.0015,0.0115,192.8069,155.7452,134.83
+full_heal,0.9931,0.0118,1.0,0.9032,0.0929,0.9,12117.1333,4098.7164,11440.0,0.0249,0.0067,0.0233,239.2021,159.8944,198.7
